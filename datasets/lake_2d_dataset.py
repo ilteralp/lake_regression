@@ -7,70 +7,38 @@ Created on Fri Feb 19 18:12:18 2021
 """
 
 import torch
-from torch.utils.data import Dataset
-import torch.nn.functional as F
 import numpy as np
 import h5py
-import os
 import os.path as osp
 import sys
-import copy
-import csv
-from skimage import io
 sys.path.append("..")
 import constants as C
+from base_lake_dataset import BaseLakeDataset
 
-class Lake2dDataset(Dataset):
+class Lake2dDataset(BaseLakeDataset):
     """
-    Balik Lake dataset with patches as samples.
+    Balik Lake dataset with patches as samples. Will be used with DAN. 
     
     Args:
-        labeling (string): Should be one of {'labeled', 'unlabeled'}. 
-        # sample_type (string): Should be one of {'1D', '2D', '3D'}. For '3D' type, patch_size is expected. 
-        patch_size (optional, int): Size of the patch that is centered on the sample pixel.
-        # channel_first (optional, boolean): If true, data is read 12x32. Otherwise it's 32x12. 
+        learning (string): Type of samples. Should be one of {'labeled', 'unlabeled'}. 
+        patch_size (int): Size of the patch that is centered on the sample pixel. Should be an odd number. 
     """
     
     def __init__(self, learning, patch_size=3):
-        self.learning = learning.lower()
-        self.patch_size = patch_size
-        self.img_names = self._get_image_names()
-        self.dates = self._read_date_info()
-        # if self.learning == 'unlabeled':
-            # self.mask = self._load_mask()
-        self.unlabeled_mask = self._load_unlabeled_mask()
-        if self.learning == 'labeled':
-            self.reg_vals = self._read_GT()
+        BaseLakeDataset.__init__(self, learning)
         
-    def __len__(self):
-        return self.num_samples if self.learning == 'unlabeled' else len(C.LABELED_INDICES[0])
-        # Check len of splits in case of labeled samples !
-    
-    # def __getitem_base__(self, index):
-    #     chs = []
-    #     for f in os.listdir(C.IMG_DIR_PATH):
-    #         img_path = osp.join(C.IMG_DIR_PATH, f, 'level2a.h5')
-    #         if osp.exists(img_path):
-    #             with h5py.File(img_path, 'r') as img:
-    #                 data = img['bands'][:]  # (12, 650, 650)
-    #                 if data.shape != (12, 650, 650):
-    #                     raise Exception('Expected input shape to be (12, 650, 650) for {}'.format(img_path))
-    #                 data = torch.from_numpy(data.astype(np.int32))              # Pytorch cannot convert uint16
-    #                 if self.learning == 'unlabeled':
-    #                     masked = data[self.unlabeled_mask]                      # Apply mask
-    #                     px_val = masked.view(-1, 12)[index]                     # Reshape and retrieve index 
-    #                 else:
-    #                     px_val = np.transpose(data, (1, 2, 0))[C.LABELED_INDICES][index]
-    #                 chs.append(px_val)
-    #     return torch.stack(chs, dim=0)                                          # Should be 32x12. 
-    
-    def _get_image_names(self):
-        ls = os.listdir(C.IMG_DIR_PATH)
-        num_names = sorted([int(l) for l in ls if l not in['22', '23']])        # Skip empty folders
-        return [str(l) for l in num_names]
+        self.patch_size = patch_size
+        if learning.lower() == 'unlabeled':
+            self.unlabeled_mask = self._init_mask()
+            
+    """
+    Returns unlabeled sample mask that keeps unlabeled sample indices. 
+    """
+    def _init_mask(self):
+        return torch.nonzero(torch.from_numpy(self.unlabeled_mask))
     
     """
-    Use with DAN, has 12x3x3 features. 
+    A sample is 12x3x3. 
     """
     def __getitem__(self, index):
         img_idx, px_idx = index % 32, index // 32
@@ -106,54 +74,6 @@ class Lake2dDataset(Dataset):
         else:
             raise Exception('Image not found on {}'.format(img_path))
      
-    """
-    Reads ground-truth file and keeps regression value of labeled samples. 
-    """
-    def _read_GT(self):
-        if self.learning != 'labeled':
-            raise Exception('Only labeled samples have regression values!')
-        with open(C.GT_PATH) as f:
-            reader = csv.reader(f, delimiter='\t')
-            return [float(row[2]) for row in reader]
-    
-    """
-    Returns regression value of for given indices. Only for labeled samples. 
-    """
-    def _get_regression_val(self, img_idx, px_idx):
-        ln = img_idx * len(C.LABELED_INDICES[0]) + px_idx
-        if(len(self.reg_vals) < ln):
-            raise Exception('Accessing index#{} where total length is {} at {}'.format(ln, len(self.reg_vals), C.GT_PATH))
-        return self.reg_vals[ln]
-    
-    """
-    Reads month, season and year info of all images. 
-    """
-    def _read_date_info(self):
-        with open(C.DATE_LABELS_PATH, 'r') as f:
-            reader = csv.reader(f, delimiter=',')
-            return [{'month' : int(l[1]) - 1, 'season' : C.SEASONS[l[2]],       # Months start from 1.
-                     'year' : int(l[3])} for l in reader]
-
-    # def _load_mask(self):
-    #     img = io.imread(C.MASK_PATH)
-    #     return np.all(img == (255, 0, 255), axis=-1)
-    
-    def _load_unlabeled_mask(self):
-        mask = np.all(io.imread(C.MASK_PATH) == (255, 0, 255), axis=-1)         # Lake mask, 650x650
-        self.raw_mask = copy.deepcopy(mask)
-        print('before', mask[C.LABELED_INDICES])
-        print('before, sum of mask pixels:', np.sum(mask))
-        mask[C.LABELED_INDICES] = False                                         # Set labeled indices to false.  
-        # print('indices', len(torch.nonzero(torch.from_numpy(mask))))
-        self.num_samples = np.sum(mask)
-        print('after sum', self.num_samples)
-        if self.patch_size is not None:                                         # Patches will be cropped. 
-            mask = torch.nonzero(torch.from_numpy(mask))
-        else:
-            mask = torch.from_numpy(mask).unsqueeze(0).expand([12, 650, 650])   # Convert to 12x650x650 for comparison.
-        return mask
-    
-
 if __name__ == "__main__":
     # filepath = osp.join(C.ROOT_DIR, 'balik', '2', 'level2a.h5')
     # f = h5py.File(filepath, 'r')
