@@ -22,6 +22,8 @@ class BaseLakeDataset(Dataset):
         learning (string): Type of samples. Should be one of {'labeled', 'unlabeled'}. 
     """
     def __init__(self, learning):
+        if not self._verify(learning=learning):
+            raise Exception('Learning can be one of {labeled, unlabeled}.')
         self.learning = learning.lower()
         self.img_names = self._get_image_names()
         self.dates = self._read_date_info()
@@ -31,8 +33,11 @@ class BaseLakeDataset(Dataset):
         else:
             self.unlabeled_mask = self._load_unlabeled_mask()                   # Load unlabeled mask where labeled samples are removed. 
             
+    def _verify(self, learning):
+        return learning.lower() == 'labeled' or learning.lower() == 'unlabeled'
+            
     def __len__(self):
-        return self.num_samples if self.learning == 'unlabeled' else len(C.LABELED_INDICES[0])
+        return 32 * len(self.unlabeled_mask) if self.learning == 'unlabeled' else len(self.reg_vals) # unlabeled: 32 * 75662 = 2421184, labeled: 32 * 10
         # Check len of splits in case of labeled samples !
         
     """
