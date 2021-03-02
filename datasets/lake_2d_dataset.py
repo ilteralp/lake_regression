@@ -7,13 +7,14 @@ Created on Fri Feb 19 18:12:18 2021
 """
 
 import torch
+from torch.utils.data import DataLoader
 import numpy as np
 import h5py
 import os.path as osp
 import sys
 sys.path.append("..")
 import constants as C
-from base_lake_dataset import BaseLakeDataset
+from datasets import BaseLakeDataset
 
 class Lake2dDataset(BaseLakeDataset):
     """
@@ -22,10 +23,12 @@ class Lake2dDataset(BaseLakeDataset):
     Args:
         learning (string): Type of samples. Should be one of {'labeled', 'unlabeled'}. 
         patch_size (int): Size of the patch that is centered on the sample pixel. Should be an odd number. 
+        date_type (string): Type of date label that will be used for classification. 
+        Should be one of {'month', 'season', 'year'}.
     """
     
-    def __init__(self, learning, patch_size=3):
-        BaseLakeDataset.__init__(self, learning)
+    def __init__(self, learning, date_type, patch_size=3):
+        BaseLakeDataset.__init__(self, learning, date_type)
         
         self.patch_size = patch_size
         if learning.lower() == 'unlabeled':
@@ -57,7 +60,7 @@ class Lake2dDataset(BaseLakeDataset):
                 #         self.unlabeled_mask = np.pad(self.unlabeled_mask, ((0, 0), (pad, pad), (pad, pad)), mode='symmetric')
                 #         print('Padded, unlabeled_mask.shape:', self.unlabeled_mask.shape)
                 # If you decide back to padding, don't forget to add pad value to each pixel. 
-                data = torch.from_numpy(data.astype(np.int32))                  # Pytorch cannot convert uint16
+                data = torch.from_numpy(data.astype(np.float32))                  # Pytorch cannot convert uint16
                 reg_val = None
                 if self.patch_size is not None:
                     pad = self.patch_size // 2
@@ -68,9 +71,11 @@ class Lake2dDataset(BaseLakeDataset):
                     reg_val = self._get_regression_val(img_idx, px_idx)
                     
                 patch = data[:, px-pad : px+pad + 1, py-pad : py+pad+1]         # (12, 3, 3)
-                month, season, year = self.dates[img_idx].values()
-                return patch, month, season, year, reg_val
-                    
+                # month, season, year = self.dates[img_idx].values()
+                # return patch, month, season, year, reg_val, (img_idx, px, py)
+                date_class = self.dates[img_idx][self.date_type]
+                return patch, date_class, reg_val, (img_idx, px, py)
+
         else:
             raise Exception('Image not found on {}'.format(img_path))
      
@@ -91,7 +96,24 @@ if __name__ == "__main__":
     # lake_mask = np.all(img == (255, 0, 255), axis=-1) # Includes labeled pixels too! It must be 
     # print('Total lake pixels: {}'.format(np.sum(lake_mask)))
     
-    sup_2d_lake_dataset = Lake2dDataset(learning='labeled', patch_size=3)
-    # unsup_lake_dataset = Lake2dDataset(learning='unlabeled')
-    unsup_2d_lake_dataset = Lake2dDataset(learning='unlabeled', patch_size=3)
-    patch, month, season, year, reg_val = sup_2d_lake_dataset[0]
+    labeled_2d_dataset = Lake2dDataset(learning='labeled', date_type='year', patch_size=3)
+    # unlabeled_2d_dataset = Lake2dDataset(learning='unlabeled', date_type='year', patch_size=3)
+    # patch, month, season, year, reg_val, (img_idx, px, py) = labeled_2d_dataset[0]
+    
+    labeled_args = {'batch_size': C.BATCH_SIZE,                                              # 12 in SegNet paper
+                    'shuffle': False,
+                    'num_workers': 4}
+    labeled_loader = DataLoader(labeled_2d_dataset, **labeled_args)
+    it = iter(labeled_loader)
+    first = next(it)
+    sec = next(it)
+    print('1st, img, pixels: {}'.format(first[-1]))
+    print('2nd, img, pixels: {}'.format(sec[-1]))
+     
+    # for e in range(0, 2):
+    # for batch_idx, (patch, month, season, year, reg_val, (img_idx, px, py)) in enumerate(labeled_loader):
+    #     print('shape, patch: {}, reg_val: {}'.format(patch.shape, reg_val.shape))
+            
+            # print('batch:', batch_idx)
+            # print('pixels: ({}, {})'.format(px, py))
+    
