@@ -10,10 +10,11 @@ import torch
 import numpy as np
 import h5py
 import os.path as osp
+import os
 import sys
 sys.path.append("..")
+from datasets import BaseLakeDataset
 import constants as C
-from base_lake_dataset import BaseLakeDataset
 
 class Lake1dDataset(BaseLakeDataset):
     """
@@ -21,9 +22,11 @@ class Lake1dDataset(BaseLakeDataset):
     
     Args:
         learning (string): Type of samples. Should be one of {'labeled', 'unlabeled'}. 
+        date_type (string): Type of date label that will be used for classification. 
+        Should be one of {'month', 'season', 'year'}.
     """
-    def __init__(self, learning):
-        BaseLakeDataset.__init__(self, learning)
+    def __init__(self, learning, date_type):
+        BaseLakeDataset.__init__(self, learning, date_type)
         
         if learning.lower() == 'unlabeled':
             self.unlabeled_mask = self._init_mask()
@@ -57,17 +60,19 @@ class Lake1dDataset(BaseLakeDataset):
                     reg_val = self._get_regression_val(img_idx, px_idx)
                     
                 px_val = data[:, px, py].unsqueeze(0)                       # Reshape to 1x12.
-                month, season, year = self.dates[img_idx].values()
+                # month, season, year = self.dates[img_idx].values()
                 # print('\npixel: ({}, {}) at image {}:\n\t{}'.format(px, py, self.img_names[img_idx], px_val))
-                return px_val, month, season, year, reg_val
+                # return px_val, month, season, year, reg_val, (px, py)
+                date_class = self.dates[img_idx][self.date_type]
+                return px_val, date_class, reg_val, (img_idx, px, py)
         else:
             raise Exception('Image not found on {}'.format(img_path))
                 
 if __name__ == "__main__":
-    sup_px_idx = -1
-    sup_1d_dataset = Lake1dDataset(learning='labeled')
-    unsup_1d_dataset = Lake1dDataset(learning='unlabeled')
-    px_val, month, season, year, reg_val = sup_1d_dataset[sup_px_idx]
+    sel_px_idx = -1
+    labeled_1d_dataset = Lake1dDataset(learning='labeled', date_type='year')
+    unlabeled_1d_dataset = Lake1dDataset(learning='unlabeled', date_type='year')
+    px_val, month, season, year, reg_val, (px, py) = labeled_1d_dataset[sel_px_idx]
     
     # """ =============== Comparing with h5py indexing =============== """
     # h_img_name = '34'
