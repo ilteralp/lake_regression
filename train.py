@@ -17,6 +17,7 @@ from datetime import datetime
 import constants as C
 from datasets import Lake2dDataset
 from metrics import Metrics
+from models import DandadaDAN
 
 """
 Takes a dataset and splits it into train, test and validation sets. 
@@ -45,7 +46,7 @@ def _calc_mean_std(train_loader, args):
     regs_mean, regs_std = 0., 0.
     num_samples = 0.
     for batch_id, data in enumerate(train_loader):
-        patches, monthes, seasons, years, reg_vals, (img_idxs, pxs, pys) = data
+        patches, date_type, reg_vals, (img_idxs, pxs, pys) = data
         batch_samples = patches.size(0)
         patches = patches.view(batch_samples, patches.size(1), -1)              # (num_samples, 12, 3, 3) -> (num_samples, 12, 9)
         patches_mean += patches.mean(2).sum(0)                                  # 12 means and 12 stds
@@ -102,7 +103,7 @@ def _validate(model, val_loader, metrics, args, loss_fn_reg, loss_fn_class, val_
 """
 Trains model with labeled data only. 
 """
-def _train_labeled_only(model, train_loader, args, metrics, loss_fn_reg, fold, run_name, val_loader=None):
+def _train_labeled_only(model, train_loader, args, metrics, loss_fn_reg, loss_fn_class, fold, run_name, val_loader=None):
     model.apply(weight_reset)                                                   # Or save weights of the model first & load them.
     model.train()
     optimizer = RMSprop(params=model.parameters(), lr=args['lr'])               # EA uses RMSprop with lr=0.0001, I can try SGD or Adam as in [1, 2] or [3].
@@ -230,7 +231,7 @@ Takes a labeled dataset, a train function and arguments.
 Creates dataset's folds and applies train function.
 """
 def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, loss_fn_reg, args):
-    kf = KFold(n_splits=args['num_folds'], shuffle=False, random_state=args['seed'])
+    kf = KFold(n_splits=args['num_folds'], shuffle=True, random_state=args['seed'])
     unlabeled_loader = DataLoader(unlabeled_dataset, **args['unlabeled'])
     metrics = Metrics(num_folds=args['num_folds'])
     indices = [*range(len(dataset))]                                            # Sample indices
@@ -248,6 +249,8 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
         tr_set = Subset(dataset, indices=tr_index)
         tr_loader = DataLoader(tr_set, **args['tr'])
         
+        # patches_mean, patches_std, regs_mean, regs_std = _calc_mean_std(train_loader=tr_loader, args=args['tr'])
+        
         """ Train """
         train_fn(model=model, train_loader=tr_loader, val_loader=val_loader, args=args, metrics=metrics, 
                  unlabeled_loader=unlabeled_loader, loss_fn_reg=loss_fn_reg, loss_fn_class=loss_fn_class, 
@@ -261,14 +264,14 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
             
         
 if __name__ == "__main__":
-    labeled_set = Lake2dDataset(learning='labeled')
-    unlabeled_set = Lake2dDataset(learning='unlabeled')
+    labeled_set = Lake2dDataset(learning='labeled', date_type='month')
+    unlabeled_set = Lake2dDataset(learning='unlabeled', date_type='month')
     # sup_tr_set, sup_val_set, sup_test_set = split_dataset(labeled_set, test_ratio=0.1, val_ratio=0.1)
     # print('lens, tr: {}, val: {}, test: {}'.format(len(sup_tr_set), len(sup_val_set), len(sup_test_set)))
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    args = {'num_folds': None,
-            'max_epoch': None,
+    args = {'num_folds': 3,
+            'max_epoch': 5,
             'device': device,
             'metrics': None,
             'seed':  42,
@@ -279,15 +282,19 @@ if __name__ == "__main__":
             'val': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4},
             'unlabeled': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4}}
     
-    model = None
+    in_channels, num_classes = labeled_set[0][0].shape[1], C.NUM_CLASSES[labeled_set.date_type]
+    model = DandadaDAN(in_channels=in_channels, num_classes=num_classes)
     model.to(args['device'])
     loss_fn_reg = torch.nn.MSELoss().to(args['device'])                         # Regression loss function
     loss_fn_class = torch.nn.CrossEntropyLoss().to(args['device'])             # Classification loss function 
 
-    """ Getting normalization values """
-    # patches_mean, patches_std, regs_mean, regs_std = _calc_mean_std(train_loader=labeled_loader, args=args['tr'])
+    # """ Getting normalization values """
+    # # patches_mean, patches_std, regs_mean, regs_std = _calc_mean_std(train_loader=labeled_loader, args=args['tr'])
     
 """
+Ideas:
+1. Normalize patch values
+
 References
 [1]: https://medium.com/@benjamin.phillips22/simple-regression-with-neural-networks-in-pytorch-313f06910379
 [2]: https://github.com/VICO-UoE/L2I/blob/master/Regression/train-MT.py
