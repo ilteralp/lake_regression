@@ -32,6 +32,7 @@ IMG_SHAPE = [12, 650, 650]
 SEASONS = {"'spring'" : 0, "'summer'" : 1, "'autumn'" : 2, "'winter'" : 3}
 YEARS = {'2017' : 0, '2018' : 1, '2019' : 2}
 DATE_TYPES = {'month' : 0, 'season' : 1, 'year' : 2}
+NUM_CLASSES = {'month' : 12, 'season' : len(SEASONS), 'year' : len(YEARS)}
 
 """ ===================== Model params ===================== """
 BATCH_SIZE = 4
