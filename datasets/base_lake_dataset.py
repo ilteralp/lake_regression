@@ -20,11 +20,14 @@ class BaseLakeDataset(Dataset):
     
     Args:
         learning (string): Type of samples. Should be one of {'labeled', 'unlabeled'}. 
+        date_type (Optional, string): Type of date label that will be used for classification. 
+        Should be one of {'month', 'season', 'year'} or None.
     """
-    def __init__(self, learning):
-        if not self._verify(learning=learning):
-            raise Exception('Learning can be one of {labeled, unlabeled}.')
+    def __init__(self, learning, date_type):
+        if not self._verify(learning=learning, date_type=date_type):
+            raise Exception('Params should be one from each, learning: {labeled, unlabeled} and date_type: {month, season, year}.')
         self.learning = learning.lower()
+        self.date_type = None if date_type is None else date_type.lower()
         self.img_names = self._get_image_names()
         self.dates = self._read_date_info()
         
@@ -33,11 +36,11 @@ class BaseLakeDataset(Dataset):
         else:
             self.unlabeled_mask = self._load_unlabeled_mask()                   # Load unlabeled mask where labeled samples are removed. 
             
-    def _verify(self, learning):
-        return learning.lower() == 'labeled' or learning.lower() == 'unlabeled'
+    def _verify(self, learning, date_type):
+        return learning.lower() in ['labeled', 'unlabeled'] and date_type.lower() in ['month', 'season', 'year']
             
-    def __len__(self):
-        return 32 * len(self.unlabeled_mask) if self.learning == 'unlabeled' else len(self.reg_vals) # unlabeled: 32 * 75662 = 2421184, labeled: 32 * 10
+    def __len__(self):                                                          # unlabeled: 32 * 75662 = 2421184, labeled: 32 * 10
+        return 32 * len(self.unlabeled_mask) if self.learning == 'unlabeled' else len(self.reg_vals) 
         # Check len of splits in case of labeled samples !
         
     """
@@ -73,9 +76,9 @@ class BaseLakeDataset(Dataset):
     def _read_date_info(self):
         with open(C.DATE_LABELS_PATH, 'r') as f:
             reader = csv.reader(f, delimiter=',')
-            return [{'month' : int(l[1]) - 1, 'season' : C.SEASONS[l[2]],       # Months start from 1.
-                     'year' : int(l[3])} for l in reader]
-    
+            return [{'month' : int(l[1]) - 1, 'season' : C.SEASONS[l[2]],       # Months start from 1. Converts seasons to {0, 1, 2, 3}
+                     'year' : C.YEARS[l[3]]} for l in reader]                   # Converts years to {0, 1, 2}. 
+                     # 'year' : int(l[3])} for l in reader]
     """
     Loads lake mask of unlabeled samples. Within it, labeled samples are also false. 
     """
