@@ -64,6 +64,7 @@ class Lake1dDataset(BaseLakeDataset):
                 # print('\npixel: ({}, {}) at image {}:\n\t{}'.format(px, py, self.img_names[img_idx], px_val))
                 # return px_val, month, season, year, reg_val, (px, py)
                 date_class = self.dates[img_idx][self.date_type]
+                # See Idea#1
                 return px_val, date_class, reg_val, (img_idx, px, py)
         else:
             raise Exception('Image not found on {}'.format(img_path))
@@ -83,3 +84,8 @@ if __name__ == "__main__":
     # print('\nvs\n\npixel: ({}, {}) at image {}:'.format(p1, p2, h_img_name))
     # arr_val = img[:, p1, p2]
     # print('\t', arr_val)
+
+"""
+Ideas
+1. How about using one date type as class label and the rest for categorical features ?
+"""
