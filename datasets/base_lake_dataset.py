@@ -30,6 +30,8 @@ class BaseLakeDataset(Dataset):
         self.date_type = None if date_type is None else date_type.lower()
         self.img_names = self._get_image_names()
         self.dates = self._read_date_info()
+        self.patch_means = None
+        self.patch_stds = None
         
         if self.learning == 'labeled':                                          # Load regression values for labeled samples
             self.reg_vals = self._read_GT()
@@ -90,3 +92,10 @@ class BaseLakeDataset(Dataset):
         self.num_samples = np.sum(mask)
         print('after removing labeled samples, number of unlabeled samples:', self.num_samples)
         return mask
+    
+    """
+    Sets patch means and stds of dataset.
+    """
+    def set_mean_std(self, means, stds):
+        self.patch_means = means
+        self.patch_stds = stds
