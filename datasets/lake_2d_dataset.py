@@ -74,6 +74,10 @@ class Lake2dDataset(BaseLakeDataset):
                 # month, season, year = self.dates[img_idx].values()
                 # return patch, month, season, year, reg_val, (img_idx, px, py)
                 date_class = self.dates[img_idx][self.date_type]
+                
+                if self.patch_means is not None and self.patch_stds is None:    # Normalize patch
+                    patch = (patch - self.patch_means) / self.patch_stds
+                
                 return patch, date_class, reg_val, (img_idx, px, py)
 
         else:
@@ -109,7 +113,7 @@ if __name__ == "__main__":
     sec = next(it)
     print('1st, img, pixels: {}'.format(first[-1]))
     print('2nd, img, pixels: {}'.format(sec[-1]))
-     
+    
     # for e in range(0, 2):
     # for batch_idx, (patch, month, season, year, reg_val, (img_idx, px, py)) in enumerate(labeled_loader):
     #     print('shape, patch: {}, reg_val: {}'.format(patch.shape, reg_val.shape))
