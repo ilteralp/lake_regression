@@ -8,6 +8,7 @@ Created on Wed Feb 24 16:56:33 2021
 import torch
 from torch.utils.data import Dataset, random_split, Subset, DataLoader
 from torch.optim import RMSprop
+from torch.utils.tensorboard import SummaryWriter
 import numpy as np
 import h5py
 import os
@@ -40,6 +41,7 @@ def split_dataset(dataset, test_ratio, val_ratio=None):
 Takes a train set loader and args. Calculates mean and std of patches and
 regression values. Adapted from 
 https://discuss.pytorch.org/t/computing-the-mean-and-std-of-dataset/34949/2
+Do it like https://www.youtube.com/watch?v=y6IEcEBRZks
 """
 def _calc_mean_std(train_loader, args):
     patches_mean, patches_std = 0., 0.
@@ -70,19 +72,50 @@ def weight_reset(m):
         m.reset_parameters()
         
 """
-Returns verbose message
+Returns verbose message with loss and score.
 """
-def get_msg(loss, e):
-    msg = "Epoch #{}, Losses, Train, total: {:.4f} labeled_reg_loss: {:.4f}".format(
-        e, np.mean(loss[e]['total']), np.mean(loss[e]['l_reg_loss']))
+def get_msg(loss, score, e, dataset):
+    msg = "Epoch #{}, Losses, {}, total: {:.4f} labeled_reg_loss: {:.4f}".format(
+        e, dataset, np.mean(loss[e]['total']), np.mean(loss[e]['l_reg_loss']))
     if 'l_class_loss' in loss[e]:
         msg += ", labeled_class_loss: {:.4f}".format(np.mean(loss[e]['l_class_loss']))
+    msg += "\t Scores, MAE: {:.4f}, R2: {:.4f}, RMSE: {:.4f}".format(
+        np.mean(score['mae']), np.mean(score['r2']), np.mean(score['rmse']))
+    return msg
+
+"""
+Checks given args
+"""
+def verify_args(args):
+    if args['num_folds'] < 3:
+        raise Exception('Number of folds should be at least 3 since validation and test set have the same size.')
+
+"""
+Plots loss and scores to Tensorboard
+"""
+def plot(writer, tr_loss, val_loss, tr_scores, val_scores, epoch):
+    """ Losses """
+    writer.add('1_Loss/train (total)', np.mean(tr_loss[epoch]['total']))
+    writer.add('1_Loss/val (total)', np.mean(val_loss[epoch]['total']))
+    writer.add('2_Loss/train (labeled_reg)', np.mean(tr_loss[epoch]['l_reg_loss']))
+    writer.add('2_Loss/val (labeled_reg)', np.mean(val_loss[epoch]['l_reg_loss']))
+    writer.add('3_Loss/train (labeled_class)', np.mean(tr_loss[epoch]['l_class_loss']))
+    writer.add('3_Loss/val (labeled_class)', np.mean(val_loss[epoch]['l_class_loss']))
+    writer.add('4_Loss/train (unlabeled_class)', np.mean(tr_loss[epoch]['u_class_loss']))
+    
+    """ Scores """
+    writer.add("5_MAE/Train", np.mean(tr_scores[epoch]['mae']))
+    writer.add("5_MAE/Val", np.mean(val_scores[epoch]['mae']))
+    writer.add("6_RMSE/Train", np.mean(tr_scores[epoch]['rmse']))
+    writer.add("6_RMSE/Val", np.mean(val_scores[epoch]['rmse']))
+    writer.add("7_MAE/Train", np.mean(tr_scores[epoch]['r2']))
+    writer.add("7_MAE/Val", np.mean(val_scores[epoch]['r2']))
         
 """
 Takes model and validation set. Calculates metrics on validation set. 
 Runs for each epoch. 
 """
-def _validate(model, val_loader, metrics, args, loss_fn_reg, loss_fn_class, val_loss, epoch):
+def _validate(model, val_loader, metrics, args, loss_fn_reg, loss_fn_class, val_loss, val_scores, epoch):
     model.eval()
     
     with torch.no_grad:
@@ -96,9 +129,16 @@ def _validate(model, val_loader, metrics, args, loss_fn_reg, loss_fn_class, val_
             reg_loss_class = loss_fn_class(input=v_class_preds, target=v_date_types)
             loss = reg_loss_val + reg_loss_class
             
+            """ Keep loss """
             val_loss[epoch]['l_reg_loss'].append(reg_loss_val.item())
             val_loss[epoch]['l_class_loss'].append(reg_loss_class.item())
             val_loss[epoch]['total'].append(loss.item())
+            
+            """ Calculate & keep score """
+            score = metrics.eval_reg_batch_metrics(preds=v_reg_preds, targets=v_reg_vals)
+            val_scores[epoch]['r2'].append(score['r2'])
+            val_scores[epoch]['mae'].append(score['mae'])
+            val_scores[epoch]['rmse'].append(score['rmse'])
             
 """
 Trains model with labeled data only. 
@@ -157,21 +197,24 @@ def _train_labeled_only(model, train_loader, args, metrics, loss_fn_reg, loss_fn
 """
 Trains model with labeled and unlabeled data. 
 """
-def _train(model, train_loader, unlabeled_loader, args, metrics, loss_fn_reg, loss_fn_class, fold, run_name, val_loader=None):
+def _train(model, train_loader, unlabeled_loader, args, metrics, loss_fn_reg, loss_fn_class, fold, run_name, writer, val_loader=None):
     model.apply(weight_reset)                                                   # Or save weights of the model first & load them.
     model.train()
     optimizer = RMSprop(params=model.parameters(), lr=args['lr'])               # EA uses RMSprop with lr=0.0001, I can try SGD or Adam as in [1, 2] or [3].
     tr_loss = [{'l_reg_loss': [], 'l_class_loss' : [], 'u_class_loss' : []} for e in range(args['max_epoch'])]
     val_loss = [{'l_reg_loss': [], 'l_class_loss' : []} for e in range(args['max_epoch'])]
+    tr_scores = [{'r2' : [], 'mae' : [], 'rmse' : []} for e in range(args['max_epoch'])]
+    val_scores = [{'r2' : [], 'mae' : [], 'rmse' : []} for e in range(args['max_epoch'])]
     best_val_loss = float('inf')
-    fold_path = osp.join(C.MODEL_DIR_PATH, run_name, 'fold_' + str(fold))
-    os.mkdir(fold_path)
+    model_dir_path = osp.join(C.MODEL_DIR_PATH, run_name, 'fold_' + str(fold))
+    os.mkdir(model_dir_path)
     
     for e in range(args['max_epoch']):
         len_loader = min(len(train_loader), len(unlabeled_loader))              # Update unlabeled batch size to use all its samples. 
         labeled_iter = iter(train_loader)
         unlabeled_iter = iter(unlabeled_loader)
-        
+    
+        """ Train """
         batch_id = 0
         while batch_id < len_loader:
             optimizer.zero_grad()
@@ -203,27 +246,37 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, loss_fn_reg, lo
             tr_loss[e]['l_class_loss'].append(class_loss_labeled.item())
             tr_loss[e]['u_class_loss'].append(class_loss_unlabeled.item())
             tr_loss[e]['total'].append(loss.item())
+            
+            """ Keep scores for plotting """
+            score = metrics.eval_reg_batch_metrics(preds=l_reg_preds, targets=l_reg_vals)
+            tr_scores[e]['r2'].append(score['r2'])
+            tr_scores[e]['mae'].append(score['mae'])
+            tr_scores[e]['rmse'].append(score['rmse'])
             batch_id += 1
             
-        print(get_msg(tr_loss, e))                                              # Print train set epoch loss
+        print(get_msg(tr_loss, tr_scores, e, dataset='train'))                  # Print train set epoch loss & score. 
             
         """ Validation """
         if val_loader is not None:
-            _validate(model, val_loader, metrics, args, loss_fn_reg, loss_fn_class, val_loss, e)
+            _validate(model, val_loader, metrics, args, loss_fn_reg, loss_fn_class, val_loss, val_scores, e)
             if np.mean(val_loss['total'] < best_val_loss):
                 best_val_loss = np.mean(val_loss['total'])
-                torch.save(model.state_dict(), fold_path + 'best_val_loss.pth')
-            print(get_msg(val_loss, e))                                         # Print validation set epoch loss
+                torch.save(model.state_dict(), model_dir_path + 'best_val_loss.pth')
+            print(get_msg(val_loss, val_scores, e, dataset='val'))              # Print validation set epoch loss & score.
+            
+        """ Plot loss & scores """
+        plot(writer=writer, tr_loss=tr_loss, val_loss=val_loss, tr_scores=tr_scores, val_scores=val_scores, epoch=e)
         
-    torch.save(model.state_dict(), fold_path + 'model_last_epoch.pth')          # Save model of last epoch.
+    torch.save(model.state_dict(), model_dir_path + 'model_last_epoch.pth')     # Save model of last epoch.
+    
     
     # X Re-init model as in https://discuss.pytorch.org/t/reinitializing-the-weights-after-each-cross-validation-fold/11034
     # X Create a new optimizer. 
     # Normalize data ? 
-    # One folder per model, can be 'fold_1' or fold_1_val=13'. 
+    # X One folder per model, can be 'fold_1' or fold_1_val=13'. 
     # Use all unlabeled samples. 
-    # Save each model to its folder under 'models\'.
-    # Save train result to metrics. 
+    # X Save each fold's model to its folder under 'models\{run_name}'.
+    # X Save train result to metrics. 
     # Test'te sadece regresyon sonucunu al, DAN oyle yapiyor. 
 
 """
@@ -238,6 +291,7 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
     run_name = datetime.now().strftime("%Y_%m_%d__%H_%M_%S")
     os.mkdir(osp.join(C.MODEL_DIR_PATH, run_name))                              # Create run folder.
     
+    
     for fold, (tr_index, test_index) in enumerate(kf.split(indices)):
         tr_index = np.random.shuffle(tr_index)                                  # kfold does not shuffle samples in splits.     
         val_loader = None
@@ -248,19 +302,21 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
             val_loader = DataLoader(val_set, **args['val'])
         tr_set = Subset(dataset, indices=tr_index)
         tr_loader = DataLoader(tr_set, **args['tr'])
+        writer = SummaryWriter(osp.join('runs', run_name, 'fold_{}'.format(fold)))
         
         # patches_mean, patches_std, regs_mean, regs_std = _calc_mean_std(train_loader=tr_loader, args=args['tr'])
         
         """ Train """
         train_fn(model=model, train_loader=tr_loader, val_loader=val_loader, args=args, metrics=metrics, 
                  unlabeled_loader=unlabeled_loader, loss_fn_reg=loss_fn_reg, loss_fn_class=loss_fn_class, 
-                 fold=fold, run_name=run_name)
+                 fold=fold, run_name=run_name, writer=writer)
         
         """ Test """
         
         test_set = Subset(dataset, indices=test_index)
         # # test_loader = DataLoader(test_set, **args['test'])
         print('lens, tr: {}, val: {}, test: {}'.format(len(tr_set), len(val_set), len(test_set)))
+        writer.close()
             
         
 if __name__ == "__main__":
@@ -273,14 +329,15 @@ if __name__ == "__main__":
     args = {'num_folds': 3,
             'max_epoch': 5,
             'device': device,
-            'metrics': None,
-            'seed':  42,
+            'seed': 42,
             'create_val': True,                                                 # Creates validation set
             'lr': 0.0001,                                                       # From EA's model, default is 1e-2. 
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'val': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4},
             'unlabeled': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4}}
+    
+    verify_args(args)
     
     in_channels, num_classes = labeled_set[0][0].shape[1], C.NUM_CLASSES[labeled_set.date_type]
     model = DandadaDAN(in_channels=in_channels, num_classes=num_classes)
@@ -294,6 +351,7 @@ if __name__ == "__main__":
 """
 Ideas:
 1. Normalize patch values
+2. Change normalization to https://www.youtube.com/watch?v=y6IEcEBRZks
 
 References
 [1]: https://medium.com/@benjamin.phillips22/simple-regression-with-neural-networks-in-pytorch-313f06910379
