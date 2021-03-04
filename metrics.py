@@ -38,7 +38,7 @@ class Metrics:
     """
     def eval_reg_batch_metrics(self, preds, targets):
         # rmse = self._root_mean_squared_error(preds, targets)
-        preds, targets = preds.numpy().flatten(), targets.numpy().flatten()
+        preds, targets = preds.detach().numpy().flatten(), targets.detach().numpy().flatten()
         rmse = mean_squared_error(y_true=targets, y_pred=preds, squared=False)
         r2 = r2_score(y_true=targets, y_pred=preds)
         mae = mean_squared_error(y_true=targets, y_pred=preds)
