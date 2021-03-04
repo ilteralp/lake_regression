@@ -218,45 +218,45 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, loss_fn_reg, lo
     
         """ Train """
         batch_id = 0
-        while batch_id < len_loader:
-            optimizer.zero_grad()
-            
-            """ Labeled data """
-            labeled_data = next(labeled_iter)
-            l_patches, l_date_types, l_reg_vals, (l_img_idxs, l_pxs, l_pys) = labeled_data
-            l_patches, l_reg_vals, l_date_types = l_patches.to(args['device']), l_reg_vals.to(args['device']), l_date_types.to(args['device'])
-            
-            """ Prediction on labeled data """
-            l_reg_preds, l_class_preds = model(l_patches)
-            reg_loss_labeled = loss_fn_reg(input=l_reg_preds, target=l_reg_vals)
-            class_loss_labeled = loss_fn_class(input=l_class_preds, target=l_date_types)
-            
-            """ Unlabeled data """
-            unlabeled_data = next(unlabeled_iter)
-            u_patches, u_date_types, _, (u_img_idxs, u_pxs, u_pys) = unlabeled_data
-            u_patches, u_date_types = u_patches.to(args['device']), u_date_types.to(args['device'])
-            
-            """ Prediction on unlabeled data """
-            _, u_class_preds = model(u_patches)
-            class_loss_unlabeled = loss_fn_class(input=u_class_preds, target=u_date_types)
+        # while batch_id < len_loader:
+        optimizer.zero_grad()
+        
+        """ Labeled data """
+        labeled_data = next(labeled_iter)
+        l_patches, l_date_types, l_reg_vals, (l_img_idxs, l_pxs, l_pys) = labeled_data
+        l_patches, l_reg_vals, l_date_types = l_patches.to(args['device']), l_reg_vals.to(args['device']), l_date_types.to(args['device'])
+        
+        """ Prediction on labeled data """
+        l_reg_preds, l_class_preds = model(l_patches)
+        reg_loss_labeled = loss_fn_reg(input=l_reg_preds, target=l_reg_vals)
+        class_loss_labeled = loss_fn_class(input=l_class_preds, target=l_date_types)
+        
+        """ Unlabeled data """
+        unlabeled_data = next(unlabeled_iter)
+        u_patches, u_date_types, _, (u_img_idxs, u_pxs, u_pys) = unlabeled_data
+        u_patches, u_date_types = u_patches.to(args['device']), u_date_types.to(args['device'])
+        
+        """ Prediction on unlabeled data """
+        _, u_class_preds = model(u_patches)
+        class_loss_unlabeled = loss_fn_class(input=u_class_preds, target=u_date_types)
 
-            """ Calculate loss """
-            loss = reg_loss_labeled + class_loss_labeled + class_loss_unlabeled
-            loss.backward()
-            optimizer.step()
-            
-            """ Keep losses for plotting """
-            tr_loss[e]['l_reg_loss'].append(reg_loss_labeled.item())
-            tr_loss[e]['l_class_loss'].append(class_loss_labeled.item())
-            tr_loss[e]['u_class_loss'].append(class_loss_unlabeled.item())
-            tr_loss[e]['total'].append(loss.item())
-            
-            """ Keep scores for plotting """
-            score = metrics.eval_reg_batch_metrics(preds=l_reg_preds, targets=l_reg_vals)
-            tr_scores[e]['r2'].append(score['r2'])
-            tr_scores[e]['mae'].append(score['mae'])
-            tr_scores[e]['rmse'].append(score['rmse'])
-            batch_id += 1
+        """ Calculate loss """
+        loss = reg_loss_labeled + class_loss_labeled + class_loss_unlabeled
+        loss.backward()
+        optimizer.step()
+        
+        """ Keep losses for plotting """
+        tr_loss[e]['l_reg_loss'].append(reg_loss_labeled.item())
+        tr_loss[e]['l_class_loss'].append(class_loss_labeled.item())
+        tr_loss[e]['u_class_loss'].append(class_loss_unlabeled.item())
+        tr_loss[e]['total'].append(loss.item())
+        
+        """ Keep scores for plotting """
+        score = metrics.eval_reg_batch_metrics(preds=l_reg_preds, targets=l_reg_vals)
+        tr_scores[e]['r2'].append(score['r2'])
+        tr_scores[e]['mae'].append(score['mae'])
+        tr_scores[e]['rmse'].append(score['rmse'])
+        batch_id += 1
             
         print(get_msg(tr_loss, tr_scores, e, dataset='train'))                  # Print train set epoch loss & score. 
             
@@ -389,6 +389,7 @@ Ideas:
 1. Normalize patch values
 2. Change normalization to https://www.youtube.com/watch?v=y6IEcEBRZks
 3. Change metrics calculation from mean of batches to all samples. 
+4. Try with one-batch learning
 
 References
 [1]: https://medium.com/@benjamin.phillips22/simple-regression-with-neural-networks-in-pytorch-313f06910379
