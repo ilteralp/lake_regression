@@ -298,9 +298,9 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
     if args['num_folds'] is not None:
         kf = KFold(n_splits=args['num_folds'], shuffle=True, random_state=args['seed'])
         for fold, (tr_index, test_index) in enumerate(kf.split(indices)):
-            tr_index = np.random.shuffle(tr_index)                                  # kfold does not shuffle samples in splits.     
+            np.random.shuffle(tr_index)                                         # kfold does not shuffle samples in splits.     
             val_loader = None
-            if args['create_val']:                                                  # Create validation set
+            if args['create_val']:                                              # Create validation set
                 val_len = len(test_index)
                 tr_index, val_index = tr_index[:-val_len], tr_index[-val_len:]
                 val_set = Subset(dataset, indices=val_index)
@@ -326,7 +326,7 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
     # Train and test without cross-validation
     else:
         """ Create train, val and test sets """
-        indices = np.random.shuffle(indices)
+        np.random.shuffle(indices)
         len_test = int(len(indices) * args['test_per'])
         tr_index = indices[0:-2*len_test]
         val_index = indices[-2*len_test:-len_test]
