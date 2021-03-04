@@ -370,7 +370,7 @@ if __name__ == "__main__":
     unlabeled_set = Lake2dDataset(learning='unlabeled', date_type='month')
     
     """ Create model, regression and classification losses  """
-    in_channels, num_classes = labeled_set[0][0].shape[1], C.NUM_CLASSES[labeled_set.date_type]
+    in_channels, num_classes = labeled_set[0][0].shape[0], C.NUM_CLASSES[labeled_set.date_type]
     model = DandadaDAN(in_channels=in_channels, num_classes=num_classes)
     model.to(args['device'])
     loss_fn_reg = torch.nn.MSELoss().to(args['device'])                        # Regression loss function
