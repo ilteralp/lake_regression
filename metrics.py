@@ -13,6 +13,14 @@ import numpy as np
 import constants as C
 
 class Metrics:
+    """
+    Measures regression and classification metrics.
+    
+    Args:
+        num_folds (int): Number of folds. Can be None for training without 
+        cross-validation or an int >=3 for training with cross-validation. 
+    """
+    
     def __init__(self, num_folds):
         self.num_folds = num_folds
         
