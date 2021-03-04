@@ -58,6 +58,7 @@ class DandadaDAN(nn.Module):
                                                       out_features=self.num_classes))           # (bs, 100) -> (bs, num_class)
     
     def forward(self, x):
+        print('Shape of input: {}'.format(x.shape))
         feature = self.feature(x)                                                               # -> (bs, 50, 3, 3)
         feature = feature.view(-1, 50 * 3 * 3)                                                  # Flatten features
         reg_out = self.regressor(feature)
@@ -67,7 +68,7 @@ class DandadaDAN(nn.Module):
     
 if __name__ == "__main__":
     dan = DandadaDAN(in_channels=12, num_classes=4)
-    inp = torch.rand(4, 12, 3, 3)
+    inp = torch.rand(8, 12, 3, 3)
     reg_out, class_out = dan(inp)
     print('shapes, reg: {} class: {}'.format(reg_out.shape, class_out.shape))
 
