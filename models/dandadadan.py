@@ -58,7 +58,6 @@ class DandadaDAN(nn.Module):
                                                       out_features=self.num_classes))           # (bs, 100) -> (bs, num_class)
     
     def forward(self, x):
-        print('Shape of input: {}'.format(x.shape))
         feature = self.feature(x)                                                               # -> (bs, 50, 3, 3)
         feature = feature.view(-1, 50 * 3 * 3)                                                  # Flatten features
         reg_out = self.regressor(feature)
