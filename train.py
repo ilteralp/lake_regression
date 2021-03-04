@@ -75,12 +75,12 @@ def weight_reset(m):
 Returns verbose message with loss and score.
 """
 def get_msg(loss, score, e, dataset):
-    msg = "Epoch #{}, Losses, {}, total: {:.4f} labeled_reg_loss: {:.4f}".format(
+    msg = "Epoch #{}, Losses (R+C): {}, {:.2f} = {:.2f}".format(
         e, dataset, np.mean(loss[e]['total']), np.mean(loss[e]['l_reg_loss']))
     if 'l_class_loss' in loss[e]:
-        msg += ", labeled_class_loss: {:.4f}".format(np.mean(loss[e]['l_class_loss']))
-    msg += "\t Scores, MAE: {:.4f}, R2: {:.4f}, RMSE: {:.4f}".format(
-        np.mean(score['mae']), np.mean(score['r2']), np.mean(score['rmse']))
+        msg += " + {:.2f}".format(np.mean(loss[e]['l_class_loss']))
+    # msg += "\t Scores, MAE: {:.2f}, R2: {:.2f}, RMSE: {:.2f}".format(
+        # np.mean(score[e]['mae']), np.mean(score[e]['r2']), np.mean(score[e]['rmse']))
     return msg
 
 """
@@ -97,21 +97,21 @@ Plots loss and scores to Tensorboard
 """
 def plot(writer, tr_loss, val_loss, tr_scores, val_scores, epoch):
     """ Losses """
-    writer.add('1_Loss/train (total)', np.mean(tr_loss[epoch]['total']))
-    writer.add('1_Loss/val (total)', np.mean(val_loss[epoch]['total']))
-    writer.add('2_Loss/train (labeled_reg)', np.mean(tr_loss[epoch]['l_reg_loss']))
-    writer.add('2_Loss/val (labeled_reg)', np.mean(val_loss[epoch]['l_reg_loss']))
-    writer.add('3_Loss/train (labeled_class)', np.mean(tr_loss[epoch]['l_class_loss']))
-    writer.add('3_Loss/val (labeled_class)', np.mean(val_loss[epoch]['l_class_loss']))
-    writer.add('4_Loss/train (unlabeled_class)', np.mean(tr_loss[epoch]['u_class_loss']))
+    writer.add_scalar('1_Loss/train (total)', np.mean(tr_loss[epoch]['total']))
+    writer.add_scalar('1_Loss/val (total)', np.mean(val_loss[epoch]['total']))
+    writer.add_scalar('2_Loss/train (labeled_reg)', np.mean(tr_loss[epoch]['l_reg_loss']))
+    writer.add_scalar('2_Loss/val (labeled_reg)', np.mean(val_loss[epoch]['l_reg_loss']))
+    writer.add_scalar('3_Loss/train (labeled_class)', np.mean(tr_loss[epoch]['l_class_loss']))
+    writer.add_scalar('3_Loss/val (labeled_class)', np.mean(val_loss[epoch]['l_class_loss']))
+    writer.add_scalar('4_Loss/train (unlabeled_class)', np.mean(tr_loss[epoch]['u_class_loss']))
     
     """ Scores """
-    writer.add("5_MAE/Train", np.mean(tr_scores[epoch]['mae']))
-    writer.add("5_MAE/Val", np.mean(val_scores[epoch]['mae']))
-    writer.add("6_RMSE/Train", np.mean(tr_scores[epoch]['rmse']))
-    writer.add("6_RMSE/Val", np.mean(val_scores[epoch]['rmse']))
-    writer.add("7_MAE/Train", np.mean(tr_scores[epoch]['r2']))
-    writer.add("7_MAE/Val", np.mean(val_scores[epoch]['r2']))
+    writer.add_scalar("5_MAE/Train", np.mean(tr_scores[epoch]['mae']))
+    writer.add_scalar("5_MAE/Val", np.mean(val_scores[epoch]['mae']))
+    writer.add_scalar("6_RMSE/Train", np.mean(tr_scores[epoch]['rmse']))
+    writer.add_scalar("6_RMSE/Val", np.mean(val_scores[epoch]['rmse']))
+    writer.add_scalar("7_MAE/Train", np.mean(tr_scores[epoch]['r2']))
+    writer.add_scalar("7_MAE/Val", np.mean(val_scores[epoch]['r2']))
         
 """
 Takes model and validation set. Calculates metrics on validation set. 
@@ -120,7 +120,7 @@ Runs for each epoch.
 def _validate(model, val_loader, metrics, args, loss_fn_reg, loss_fn_class, val_loss, val_scores, epoch):
     model.eval()
     
-    with torch.no_grad:
+    with torch.no_grad():
         for batch_id, val_data in enumerate(val_loader):
             v_patches, v_date_types, v_reg_vals, (v_img_idxs, v_pxs, v_pys) = val_data
             v_patches, v_date_types, v_reg_vals = v_patches.to(args['device']), v_date_types.to(args['device']), v_reg_vals.to(args['device'])
@@ -203,8 +203,8 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, loss_fn_reg, lo
     model.apply(weight_reset)                                                   # Or save weights of the model first & load them.
     model.train()
     optimizer = RMSprop(params=model.parameters(), lr=args['lr'])               # EA uses RMSprop with lr=0.0001, I can try SGD or Adam as in [1, 2] or [3].
-    tr_loss = [{'l_reg_loss': [], 'l_class_loss' : [], 'u_class_loss' : []} for e in range(args['max_epoch'])]
-    val_loss = [{'l_reg_loss': [], 'l_class_loss' : []} for e in range(args['max_epoch'])]
+    tr_loss = [{'l_reg_loss': [], 'l_class_loss' : [], 'u_class_loss' : [], 'total' : []} for e in range(args['max_epoch'])]
+    val_loss = [{'l_reg_loss': [], 'l_class_loss' : [], 'total' : []} for e in range(args['max_epoch'])]
     tr_scores = [{'r2' : [], 'mae' : [], 'rmse' : []} for e in range(args['max_epoch'])]
     val_scores = [{'r2' : [], 'mae' : [], 'rmse' : []} for e in range(args['max_epoch'])]
     best_val_loss = float('inf')
@@ -263,10 +263,10 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, loss_fn_reg, lo
         """ Validation """
         if val_loader is not None:
             _validate(model, val_loader, metrics, args, loss_fn_reg, loss_fn_class, val_loss, val_scores, e)
-            if np.mean(val_loss['total'] < best_val_loss):
-                best_val_loss = np.mean(val_loss['total'])
+            if np.mean(val_loss[e]['total']) < best_val_loss:
+                best_val_loss = np.mean(val_loss[e]['total'])
                 torch.save(model.state_dict(), model_dir_path + 'best_val_loss.pth')
-            print(get_msg(val_loss, val_scores, e, dataset='val'))              # Print validation set epoch loss & score.
+            # print(get_msg(val_loss, val_scores, e, dataset='val'))              # Print validation set epoch loss & score.
             
         """ Plot loss & scores """
         plot(writer=writer, tr_loss=tr_loss, val_loss=val_loss, tr_scores=tr_scores, val_scores=val_scores, epoch=e)
