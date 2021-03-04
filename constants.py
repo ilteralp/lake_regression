@@ -9,7 +9,7 @@ Created on Fri Feb 19 18:13:13 2021
 
 import os.path as osp
 
-LOCAL_ENV = True
+LOCAL_ENV = False
 ROG_ENV = not LOCAL_ENV
 
 """ Melike local """
@@ -35,4 +35,4 @@ DATE_TYPES = {'month' : 0, 'season' : 1, 'year' : 2}
 NUM_CLASSES = {'month' : 12, 'season' : len(SEASONS), 'year' : len(YEARS)}
 
 """ ===================== Model params ===================== """
-BATCH_SIZE = 4
+BATCH_SIZE = 8
