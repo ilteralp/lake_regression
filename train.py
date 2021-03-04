@@ -388,6 +388,7 @@ if __name__ == "__main__":
 Ideas:
 1. Normalize patch values
 2. Change normalization to https://www.youtube.com/watch?v=y6IEcEBRZks
+3. Change metrics calculation from mean of batches to all samples. 
 
 References
 [1]: https://medium.com/@benjamin.phillips22/simple-regression-with-neural-networks-in-pytorch-313f06910379
