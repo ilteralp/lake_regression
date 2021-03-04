@@ -60,7 +60,7 @@ class Lake2dDataset(BaseLakeDataset):
                 #         self.unlabeled_mask = np.pad(self.unlabeled_mask, ((0, 0), (pad, pad), (pad, pad)), mode='symmetric')
                 #         print('Padded, unlabeled_mask.shape:', self.unlabeled_mask.shape)
                 # If you decide back to padding, don't forget to add pad value to each pixel. 
-                data = torch.from_numpy(data.astype(np.float32)).double()       # Pytorch cannot convert uint16
+                data = torch.from_numpy(data.astype(np.float32))       # Pytorch cannot convert uint16
                 reg_val = 1.0
                 if self.patch_size is not None:
                     pad = self.patch_size // 2
@@ -78,7 +78,7 @@ class Lake2dDataset(BaseLakeDataset):
                 if self.patch_means is not None and self.patch_stds is None:    # Normalize patch
                     patch = (patch - self.patch_means) / self.patch_stds
                 
-                return patch, date_class, np.expand_dims(reg_val, axis=0), (img_idx, px, py)
+                return patch, date_class, np.expand_dims(reg_val, axis=0).astype(np.float32), (img_idx, px, py)
 
         else:
             raise Exception('Image not found on {}'.format(img_path))
@@ -102,14 +102,18 @@ if __name__ == "__main__":
     
     labeled_2d_dataset = Lake2dDataset(learning='labeled', date_type='year', patch_size=3)
     # unlabeled_2d_dataset = Lake2dDataset(learning='unlabeled', date_type='year', patch_size=3)
-    patch, date_type, reg_val, (img_idx, px, py) = labeled_2d_dataset[0]
+    # patch, date_type, reg_val, (img_idx, px, py) = labeled_2d_dataset[0]
+
     
-    # labeled_args = {'batch_size': C.BATCH_SIZE,                                              # 12 in SegNet paper
-    #                 'shuffle': False,
-    #                 'num_workers': 4}
-    # labeled_loader = DataLoader(labeled_2d_dataset, **labeled_args)
-    # it = iter(labeled_loader)
-    # first = next(it)
+    labeled_args = {'batch_size': C.BATCH_SIZE,                                              # 12 in SegNet paper
+                    'shuffle': False,
+                    'num_workers': 4}
+    labeled_loader = DataLoader(labeled_2d_dataset, **labeled_args)
+    it = iter(labeled_loader)
+    first = next(it)
+    patch, date_type, reg_val, (img_idx, px, py) = first 
+    for d in [patch, date_type, reg_val]:
+        print('type: {}, dtype: {}, shape: {}'.format(type(d), d.dtype, d.shape))
     # sec = next(it)
     # print('1st, img, pixels: {}'.format(first[-1]))
     # print('2nd, img, pixels: {}'.format(sec[-1]))
