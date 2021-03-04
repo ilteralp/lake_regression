@@ -350,10 +350,6 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
 
         
 if __name__ == "__main__":
-    labeled_set = Lake2dDataset(learning='labeled', date_type='month')
-    unlabeled_set = Lake2dDataset(learning='unlabeled', date_type='month')
-    # sup_tr_set, sup_val_set, sup_test_set = split_dataset(labeled_set, test_ratio=0.1, val_ratio=0.1)
-    # print('lens, tr: {}, val: {}, test: {}'.format(len(sup_tr_set), len(sup_val_set), len(sup_test_set)))
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
     args = {'num_folds': 3,
@@ -367,14 +363,23 @@ if __name__ == "__main__":
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'val': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4},
             'unlabeled': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4}}
-    
     verify_args(args)
     
+    """ Create labeled and unlabeled datasets. """
+    labeled_set = Lake2dDataset(learning='labeled', date_type='month')
+    unlabeled_set = Lake2dDataset(learning='unlabeled', date_type='month')
+    
+    """ Create model, regression and classification losses  """
     in_channels, num_classes = labeled_set[0][0].shape[1], C.NUM_CLASSES[labeled_set.date_type]
     model = DandadaDAN(in_channels=in_channels, num_classes=num_classes)
     model.to(args['device'])
     loss_fn_reg = torch.nn.MSELoss().to(args['device'])                        # Regression loss function
     loss_fn_class = torch.nn.CrossEntropyLoss().to(args['device'])             # Classification loss function 
+    
+    """ Train """
+    train_on_folds(model=model, dataset=labeled_set, unlabeled_dataset=unlabeled_set, train_fn=_train, 
+                   loss_fn_reg=loss_fn_reg, loss_fn_class=loss_fn_class, args=args)
+    
 
     # """ Getting normalization values """
     # # patches_mean, patches_std, regs_mean, regs_std = _calc_mean_std(train_loader=labeled_loader, args=args['tr'])
