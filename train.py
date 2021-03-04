@@ -87,8 +87,10 @@ def get_msg(loss, score, e, dataset):
 Checks given args
 """
 def verify_args(args):
-    if args['num_folds'] < 3:
+    if args['num_folds'] is not None and args['num_folds'] < 3:
         raise Exception('Number of folds should be at least 3 since validation and test set have the same size.')
+    if args['test_per'] >= 0.5:
+        raise Exception('Test percent should be less than 0.5 since validation set has the same length with it.')
 
 """
 Plots loss and scores to Tensorboard
@@ -224,6 +226,7 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, loss_fn_reg, lo
             l_patches, l_date_types, l_reg_vals, (l_img_idxs, l_pxs, l_pys) = labeled_data
             l_patches, l_reg_vals, l_date_types = l_patches.to(args['device']), l_reg_vals.to(args['device']), l_date_types.to(args['device'])
             
+            """ Prediction on labeled data """
             l_reg_preds, l_class_preds = model(l_patches)
             reg_loss_labeled = loss_fn_reg(input=l_reg_preds, target=l_reg_vals)
             class_loss_labeled = loss_fn_class(input=l_class_preds, target=l_date_types)
@@ -233,6 +236,7 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, loss_fn_reg, lo
             u_patches, u_date_types, _, (u_img_idxs, u_pxs, u_pys) = unlabeled_data
             u_patches, u_date_types = u_patches.to(args['device']), u_date_types.to(args['device'])
             
+            """ Prediction on unlabeled data """
             _, u_class_preds = model(u_patches)
             class_loss_unlabeled = loss_fn_class(input=u_class_preds, target=u_date_types)
 
@@ -284,40 +288,66 @@ Takes a labeled dataset, a train function and arguments.
 Creates dataset's folds and applies train function.
 """
 def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, loss_fn_reg, args):
-    kf = KFold(n_splits=args['num_folds'], shuffle=True, random_state=args['seed'])
     unlabeled_loader = DataLoader(unlabeled_dataset, **args['unlabeled'])
     metrics = Metrics(num_folds=args['num_folds'])
     indices = [*range(len(dataset))]                                            # Sample indices
     run_name = datetime.now().strftime("%Y_%m_%d__%H_%M_%S")
     os.mkdir(osp.join(C.MODEL_DIR_PATH, run_name))                              # Create run folder.
-    
-    
-    for fold, (tr_index, test_index) in enumerate(kf.split(indices)):
-        tr_index = np.random.shuffle(tr_index)                                  # kfold does not shuffle samples in splits.     
-        val_loader = None
-        if args['create_val']:                                                  # Create validation set
-            val_len = len(test_index)
-            tr_index, val_index = tr_index[:-val_len], tr_index[-val_len:]
-            val_set = Subset(dataset, indices=val_index)
-            val_loader = DataLoader(val_set, **args['val'])
-        tr_set = Subset(dataset, indices=tr_index)
-        tr_loader = DataLoader(tr_set, **args['tr'])
-        writer = SummaryWriter(osp.join('runs', run_name, 'fold_{}'.format(fold)))
+
+    """ Train & test with cross-validation """
+    if args['num_folds'] is not None:
+        kf = KFold(n_splits=args['num_folds'], shuffle=True, random_state=args['seed'])
+        for fold, (tr_index, test_index) in enumerate(kf.split(indices)):
+            tr_index = np.random.shuffle(tr_index)                                  # kfold does not shuffle samples in splits.     
+            val_loader = None
+            if args['create_val']:                                                  # Create validation set
+                val_len = len(test_index)
+                tr_index, val_index = tr_index[:-val_len], tr_index[-val_len:]
+                val_set = Subset(dataset, indices=val_index)
+                val_loader = DataLoader(val_set, **args['val'])
+            tr_set = Subset(dataset, indices=tr_index)
+            tr_loader = DataLoader(tr_set, **args['tr'])
+            writer = SummaryWriter(osp.join('runs', run_name, 'fold_{}'.format(fold)))
+            
+            # patches_mean, patches_std, regs_mean, regs_std = _calc_mean_std(train_loader=tr_loader, args=args['tr'])
+            
+            """ Train """
+            train_fn(model=model, train_loader=tr_loader, val_loader=val_loader, args=args, metrics=metrics, 
+                     unlabeled_loader=unlabeled_loader, loss_fn_reg=loss_fn_reg, loss_fn_class=loss_fn_class, 
+                     fold=fold, run_name=run_name, writer=writer)
+            
+            """ Test """
+            
+            test_set = Subset(dataset, indices=test_index)
+            # # test_loader = DataLoader(test_set, **args['test'])
+            print('lens, tr: {}, val: {}, test: {}'.format(len(tr_set), len(val_set), len(test_set)))
+            writer.close()
+            
+    # Train and test without cross-validation
+    else:
+        """ Create train, val and test sets """
+        indices = np.random.shuffle(indices)
+        len_test = len(indices) * args['test_per']
+        tr_index = indices[0:-2*len_test]
+        val_index = indices[-2*len_test:-len_test]
+        test_index = indices[-len_test:]
+        tr_set, val_set, test_set = Subset(dataset, tr_index), Subset(dataset, val_index), Subset(dataset, test_index)
         
-        # patches_mean, patches_std, regs_mean, regs_std = _calc_mean_std(train_loader=tr_loader, args=args['tr'])
+        tr_loader = DataLoader(tr_set, **args['tr'])
+        val_loader = DataLoader(val_set, **args['val'])
+        writer = SummaryWriter('runs/' + run_name)
         
         """ Train """
-        train_fn(model=model, train_loader=tr_loader, val_loader=val_loader, args=args, metrics=metrics, 
-                 unlabeled_loader=unlabeled_loader, loss_fn_reg=loss_fn_reg, loss_fn_class=loss_fn_class, 
-                 fold=fold, run_name=run_name, writer=writer)
+        train_fn(model=model, train_loader=tr_loader, unlabeled_loader=unlabeled_loader, val_loader=val_loader, 
+                 args=args, metrics=metrics, loss_fn_reg=loss_fn_reg, loss_fn_class=loss_fn_class, fold=1,
+                 run_name=run_name, writer=writer)
         
         """ Test """
         
-        test_set = Subset(dataset, indices=test_index)
-        # # test_loader = DataLoader(test_set, **args['test'])
-        print('lens, tr: {}, val: {}, test: {}'.format(len(tr_set), len(val_set), len(test_set)))
+        
         writer.close()
-            
+        
+
         
 if __name__ == "__main__":
     labeled_set = Lake2dDataset(learning='labeled', date_type='month')
@@ -331,6 +361,7 @@ if __name__ == "__main__":
             'device': device,
             'seed': 42,
             'create_val': True,                                                 # Creates validation set
+            'test_per': 0.1,
             'lr': 0.0001,                                                       # From EA's model, default is 1e-2. 
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
@@ -342,7 +373,7 @@ if __name__ == "__main__":
     in_channels, num_classes = labeled_set[0][0].shape[1], C.NUM_CLASSES[labeled_set.date_type]
     model = DandadaDAN(in_channels=in_channels, num_classes=num_classes)
     model.to(args['device'])
-    loss_fn_reg = torch.nn.MSELoss().to(args['device'])                         # Regression loss function
+    loss_fn_reg = torch.nn.MSELoss().to(args['device'])                        # Regression loss function
     loss_fn_class = torch.nn.CrossEntropyLoss().to(args['device'])             # Classification loss function 
 
     # """ Getting normalization values """
