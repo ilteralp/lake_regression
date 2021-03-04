@@ -61,7 +61,7 @@ class Lake2dDataset(BaseLakeDataset):
                 #         print('Padded, unlabeled_mask.shape:', self.unlabeled_mask.shape)
                 # If you decide back to padding, don't forget to add pad value to each pixel. 
                 data = torch.from_numpy(data.astype(np.float32))                  # Pytorch cannot convert uint16
-                reg_val = None
+                reg_val = 1.0
                 if self.patch_size is not None:
                     pad = self.patch_size // 2
                 if self.learning == 'unlabeled':
