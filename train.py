@@ -327,7 +327,7 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
     else:
         """ Create train, val and test sets """
         indices = np.random.shuffle(indices)
-        len_test = len(indices) * args['test_per']
+        len_test = int(len(indices) * args['test_per'])
         tr_index = indices[0:-2*len_test]
         val_index = indices[-2*len_test:-len_test]
         test_index = indices[-len_test:]
