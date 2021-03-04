@@ -21,8 +21,9 @@ class Metrics:
         cross-validation or an int >=3 for training with cross-validation. 
     """
     
-    def __init__(self, num_folds):
+    def __init__(self, num_folds, device):
         self.num_folds = num_folds
+        self.device = device
         
     # def _root_mean_squared_error(self, x, y):
     #     return torch.sqrt(torch.mean(torch.pow(x-y, 2.0)))
@@ -38,6 +39,8 @@ class Metrics:
     """
     def eval_reg_batch_metrics(self, preds, targets):
         # rmse = self._root_mean_squared_error(preds, targets)
+        if self.device != 'cpu':
+            preds, targets = preds.cpu(), targets.cpu()
         preds, targets = preds.detach().numpy().flatten(), targets.detach().numpy().flatten()
         rmse = mean_squared_error(y_true=targets, y_pred=preds, squared=False)
         r2 = r2_score(y_true=targets, y_pred=preds)

@@ -289,7 +289,7 @@ Creates dataset's folds and applies train function.
 """
 def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, loss_fn_reg, args):
     unlabeled_loader = DataLoader(unlabeled_dataset, **args['unlabeled'])
-    metrics = Metrics(num_folds=args['num_folds'])
+    metrics = Metrics(num_folds=args['num_folds'], device=args['device'].type)
     indices = [*range(len(dataset))]                                            # Sample indices
     run_name = datetime.now().strftime("%Y_%m_%d__%H_%M_%S")
     os.mkdir(osp.join(C.MODEL_DIR_PATH, run_name))                              # Create run folder.
