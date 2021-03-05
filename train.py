@@ -315,8 +315,13 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
 
             """ Normalize patches on all datasets """
             if args['patch_norm']:
-                patches_mean, patches_std, _, _ = calc_mean_std(DataLoader(tr_set, **args['tr'])) # Calculate mean and std of train set. 
-                dataset.set_mean_std(means=patches_mean, stds=patches_std)                        # Set train's mean and std as dataset's. Updates with each new train set. 
+                patches_mean, patches_std, _, _ = calc_mean_std(DataLoader(tr_set, **args['tr'])) # Calculate patch mean and std of each channel on train set. 
+                dataset.set_patch_mean_std(means=patches_mean, stds=patches_std)                  # Set train set's patch mean and std as dataset's. Updated with each new train set. 
+                
+            """ Normalize regression value on all datasets """
+            if args['reg_norm']:
+                _, _, reg_mean, reg_std = calc_mean_std(DataLoader(tr_set, **args['tr']))         # Calculate mean and std regression values on train set. 
+                dataset.set_reg_mean_std(reg_mean=reg_mean, reg_std=reg_std)                      # Set train set's regression mean and std as dataset's. Updated with each new train set. 
                 
             """ Load data """
             tr_loader = DataLoader(tr_set, **args['tr'])                                          # Loaders have to be after normalization. 
@@ -349,8 +354,13 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
         """ Normalize patches on all datasets """
         if args['patch_norm']:
             patches_mean, patches_std, _, _ = calc_mean_std(DataLoader(tr_set, **args['tr']))   # Calculate mean and std of train set. 
-            dataset.set_mean_std(means=patches_mean, stds=patches_std)                          # Set train's mean and std as dataset's. 
-        
+            dataset.set_patch_mean_std(means=patches_mean, stds=patches_std)                    # Set train's mean and std as dataset's. 
+            
+        """ Normalize regression value on all datasets """
+        if args['reg_norm']:
+            _, _, reg_mean, reg_std = calc_mean_std(DataLoader(tr_set, **args['tr']))           # Calculate mean and std regression values on train set. 
+            dataset.set_reg_mean_std(reg_mean=reg_mean, reg_std=reg_std)                        # Set train set's regression mean and std as dataset's. Updated with each new train set. 
+                
         """ Load data """
         tr_loader = DataLoader(tr_set, **args['tr'])
         val_loader = DataLoader(val_set, **args['val'])
@@ -382,7 +392,8 @@ if __name__ == "__main__":
             'create_val': True,                                                 # Creates validation set
             'test_per': 0.1,
             'lr': 0.0001,                                                       # From EA's model, default is 1e-2.
-            'patch_norm': False,                                                 # Normalizes patches
+            'patch_norm': True,                                                 # Normalizes patches
+            'reg_norm': True,                                                   # Normalize regression values
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'val': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4},
