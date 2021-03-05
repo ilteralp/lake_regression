@@ -149,7 +149,6 @@ Trains model with labeled data only.
 """
 def _train_labeled_only(model, train_loader, args, metrics, loss_fn_reg, loss_fn_class, fold, run_name, val_loader=None):
     model.apply(weight_reset)                                                   # Or save weights of the model first & load them.
-    model.train()
     optimizer = RMSprop(params=model.parameters(), lr=args['lr'])               # EA uses RMSprop with lr=0.0001, I can try SGD or Adam as in [1, 2] or [3].
     tr_loss = [{'l_reg_loss': [], 'l_class_loss' : []} for e in range(args['max_epoch'])]
     val_loss = [{'l_reg_loss': [], 'l_class_loss' : []} for e in range(args['max_epoch'])]
@@ -158,6 +157,7 @@ def _train_labeled_only(model, train_loader, args, metrics, loss_fn_reg, loss_fn
     os.mkdir(fold_path)
     
     for e in range(args['max_epoch']):
+        model.train()
         len_loader = len(train_loader)
         labeled_iter = iter(train_loader)
         
