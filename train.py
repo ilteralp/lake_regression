@@ -232,6 +232,8 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, loss_fn_reg, lo
             
             """ Prediction on labeled data """
             l_reg_preds, l_class_preds = model(l_patches)
+            if e == 0:
+                print('preds: {}'.format(l_reg_preds[0, 0, :, :]))
             reg_loss_labeled = loss_fn_reg(input=l_reg_preds, target=l_reg_vals)
             class_loss_labeled = loss_fn_class(input=l_class_preds, target=l_date_types)
             
@@ -375,7 +377,7 @@ if __name__ == "__main__":
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
     args = {'num_folds': None,
-            'max_epoch': 20,
+            'max_epoch': 5,
             'device': device,
             'seed': 42,
             'create_val': True,                                                 # Creates validation set
