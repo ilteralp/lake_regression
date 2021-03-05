@@ -84,13 +84,15 @@ class Lake2dDataset(BaseLakeDataset):
                             ),
                         ])
                     patch = transform(patch)
-                    # patch = torch.sub(patch, self.patch_means) / self.patch_stds
+                    
+                if self.reg_mean is not None and self.reg_std is not None:       # Normalize regression value. 
+                    reg_val = (reg_val - self.reg_mean) / self.reg_std
                 
                 return patch, date_class, np.expand_dims(reg_val, axis=0).astype(np.float32), (img_idx, px, py)
 
         else:
             raise Exception('Image not found on {}'.format(img_path))
-     
+
 if __name__ == "__main__":
     # filepath = osp.join(C.ROOT_DIR, 'balik', '2', 'level2a.h5')
     # f = h5py.File(filepath, 'r')
@@ -115,11 +117,13 @@ if __name__ == "__main__":
     labeled_args = {'batch_size': C.BATCH_SIZE,                                              # 12 in SegNet paper
                     'shuffle': False,
                     'num_workers': 4}
-    patches_mean, patches_std, regs_mean, regs_std = labeled_2d_dataset._calc_mean_std(labeled_args)
-    labeled_2d_dataset.set_mean_std(means=patches_mean, stds=patches_std)
+    patches_mean, patches_std, regs_mean, regs_std = calc_mean_std(DataLoader(labeled_2d_dataset, **labeled_args))
+    # labeled_2d_dataset.set_patch_mean_std(means=patches_mean, stds=patches_std)
+    labeled_2d_dataset.set_reg_mean_std(reg_mean=regs_mean, reg_std=regs_std)
 
     # patch, date_type, reg_val, (img_idx, px, py) = labeled_2d_dataset[0]
     patch, date_type, reg_val, (img_idx, px, py) = labeled_2d_dataset[0]
+    # print('reg_val:', reg_val)
     
     # labeled_loader = DataLoader(labeled_2d_dataset, **labeled_args)
     # it = iter(labeled_loader)

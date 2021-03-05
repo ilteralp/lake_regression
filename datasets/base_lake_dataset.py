@@ -21,7 +21,7 @@ class BaseLakeDataset(Dataset):
     Args:
         learning (string): Type of samples. Should be one of {'labeled', 'unlabeled'}. 
         date_type (Optional, string): Type of date label that will be used for classification. 
-        Should be one of {'month', 'season', 'year'} or None.
+        Should be one of {'month', 'season', 'year'}.
     """
     def __init__(self, learning, date_type):
         if not self._verify(learning=learning, date_type=date_type):
@@ -32,6 +32,8 @@ class BaseLakeDataset(Dataset):
         self.dates = self._read_date_info()
         self.patch_means = None
         self.patch_stds = None
+        self.reg_mean = None
+        self.reg_std = None
         
         if self.learning == 'labeled':                                          # Load regression values for labeled samples
             self.reg_vals = self._read_GT()
@@ -96,6 +98,13 @@ class BaseLakeDataset(Dataset):
     """
     Sets patch means and stds of dataset.
     """
-    def set_mean_std(self, means, stds):
+    def set_patch_mean_std(self, means, stds):
         self.patch_means = means
         self.patch_stds = stds
+        
+    """
+    Sets regression values' mean and std of dataset. 
+    """
+    def set_reg_mean_std(self, reg_mean, reg_std):
+        self.reg_mean = reg_mean
+        self.reg_std = reg_std
