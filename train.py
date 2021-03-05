@@ -168,8 +168,6 @@ def _train_labeled_only(model, train_loader, args, metrics, loss_fn_reg, loss_fn
             """ Labeled data only """
             labeled_data = next(labeled_iter)
             l_patches, l_date_types, l_reg_vals, (l_img_idxs, l_pxs, l_pys) = labeled_data
-            if e == 0:
-                print('img#{} px: ({}, {}), patch:\n{}'.format(l_img_idxs[0], l_pxs[0], l_pys[0], l_patches[0, 0, :, :]))
             l_patches, l_reg_vals, l_date_types = l_patches.to(args['device']), l_reg_vals.to(args['device']), l_date_types.to(args['device'])
             
             l_reg_preds, l_class_preds = model(l_patches)
@@ -228,6 +226,8 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, loss_fn_reg, lo
             """ Labeled data """
             labeled_data = next(labeled_iter)
             l_patches, l_date_types, l_reg_vals, (l_img_idxs, l_pxs, l_pys) = labeled_data
+            if e == 0:
+                print('img#{} px: ({}, {}), patch:\n{}'.format(l_img_idxs[0], l_pxs[0], l_pys[0], l_patches[0, 0, :, :]))
             l_patches, l_reg_vals, l_date_types = l_patches.to(args['device']), l_reg_vals.to(args['device']), l_date_types.to(args['device'])
             
             """ Prediction on labeled data """
