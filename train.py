@@ -96,24 +96,25 @@ def verify_args(args):
 """
 Plots loss and scores to Tensorboard
 """
-def plot(writer, tr_loss, val_loss, tr_scores, val_scores, epoch):
+def plot(writer, tr_loss, val_loss, tr_scores, val_scores, e):
+    
     """ Losses """
-    writer.add_scalar('1_Loss/train (total)', np.mean(tr_loss[epoch]['total']))
-    writer.add_scalar('1_Loss/val (total)', np.mean(val_loss[epoch]['total']))
-    writer.add_scalar('2_Loss/train (labeled_reg)', np.mean(tr_loss[epoch]['l_reg_loss']))
-    writer.add_scalar('2_Loss/val (labeled_reg)', np.mean(val_loss[epoch]['l_reg_loss']))
-    writer.add_scalar('3_Loss/train (labeled_class)', np.mean(tr_loss[epoch]['l_class_loss']))
-    writer.add_scalar('3_Loss/val (labeled_class)', np.mean(val_loss[epoch]['l_class_loss']))
-    writer.add_scalar('4_Loss/train (unlabeled_class)', np.mean(tr_loss[epoch]['u_class_loss']))
+    writer.add_scalar('1_Loss/train (total)', np.mean(tr_loss[e]['total']), e)
+    writer.add_scalar('1_Loss/val (total)', np.mean(val_loss[e]['total']), e)
+    writer.add_scalar('2_Loss/train (labeled_reg)', np.mean(tr_loss[e]['l_reg_loss']), e)
+    writer.add_scalar('2_Loss/val (labeled_reg)', np.mean(val_loss[e]['l_reg_loss']), e)
+    writer.add_scalar('3_Loss/train (labeled_class)', np.mean(tr_loss[e]['l_class_loss']), e)
+    writer.add_scalar('3_Loss/val (labeled_class)', np.mean(val_loss[e]['l_class_loss']), e)
+    writer.add_scalar('4_Loss/train (unlabeled_class)', np.mean(tr_loss[e]['u_class_loss']), e)
     
     """ Scores """
-    writer.add_scalar("5_MAE/Train", np.mean(tr_scores[epoch]['mae']))
-    writer.add_scalar("5_MAE/Val", np.mean(val_scores[epoch]['mae']))
-    writer.add_scalar("6_RMSE/Train", np.mean(tr_scores[epoch]['rmse']))
-    writer.add_scalar("6_RMSE/Val", np.mean(val_scores[epoch]['rmse']))
-    writer.add_scalar("7_MAE/Train", np.mean(tr_scores[epoch]['r2']))
-    writer.add_scalar("7_MAE/Val", np.mean(val_scores[epoch]['r2']))
-
+    writer.add_scalar("5_MAE/Train", np.mean(tr_scores[e]['mae']), e)
+    writer.add_scalar("5_MAE/Val", np.mean(val_scores[e]['mae']), e)
+    writer.add_scalar("6_RMSE/Train", np.mean(tr_scores[e]['rmse']), e)
+    writer.add_scalar("6_RMSE/Val", np.mean(val_scores[e]['rmse']), e)
+    writer.add_scalar("7_MAE/Train", np.mean(tr_scores[e]['r2']), e)
+    writer.add_scalar("7_MAE/Val", np.mean(val_scores[e]['r2']), e)
+    
 """
 Takes model and validation set. Calculates metrics on validation set. 
 Runs for each epoch. 
@@ -268,9 +269,9 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, loss_fn_reg, lo
                 best_val_loss = np.mean(val_loss[e]['total'])
                 torch.save(model.state_dict(), model_dir_path + 'best_val_loss.pth')
             # print(get_msg(val_loss, val_scores, e, dataset='val'))              # Print validation set epoch loss & score.
-            
+          
         """ Plot loss & scores """
-        plot(writer=writer, tr_loss=tr_loss, val_loss=val_loss, tr_scores=tr_scores, val_scores=val_scores, epoch=e)
+        plot(writer=writer, tr_loss=tr_loss, val_loss=val_loss, tr_scores=tr_scores, val_scores=val_scores, e=e)
         
     torch.save(model.state_dict(), model_dir_path + 'model_last_epoch.pth')     # Save model of last epoch.
     
@@ -401,10 +402,11 @@ if __name__ == "__main__":
 
 """
 Ideas:
-1. Normalize patch values
+X 1. Normalize patch values
 2. Change normalization to https://www.youtube.com/watch?v=y6IEcEBRZks
 3. Change metrics calculation from mean of batches to all samples. 
-4. Try with one-batch learning
+X 4. Try with one-batch learning
+5. Do not forget to change from one-batch learning to all batches. 
 
 References
 [1]: https://medium.com/@benjamin.phillips22/simple-regression-with-neural-networks-in-pytorch-313f06910379
