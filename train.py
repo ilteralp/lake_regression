@@ -260,7 +260,7 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, loss_fn_reg, lo
             tr_scores[e]['rmse'].append(score['rmse'])
             batch_id += 1
                 
-        print(get_msg(tr_loss, tr_scores, e, dataset='train'))                  # Print train set epoch loss & score. 
+        print(get_msg(tr_loss, tr_scores, e, dataset='train'))                  # Print train set loss & score for each **epoch**. 
             
         """ Validation """
         if val_loader is not None:
@@ -268,7 +268,7 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, loss_fn_reg, lo
             if np.mean(val_loss[e]['total']) < best_val_loss:
                 best_val_loss = np.mean(val_loss[e]['total'])
                 torch.save(model.state_dict(), model_dir_path + 'best_val_loss.pth')
-            # print(get_msg(val_loss, val_scores, e, dataset='val'))              # Print validation set epoch loss & score.
+            # print(get_msg(val_loss, val_scores, e, dataset='val'))              # Print validation set loss & score for each **epoch**. 
           
         """ Plot loss & scores """
         plot(writer=writer, tr_loss=tr_loss, val_loss=val_loss, tr_scores=tr_scores, val_scores=val_scores, e=e)
