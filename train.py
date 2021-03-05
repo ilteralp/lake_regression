@@ -226,14 +226,13 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, loss_fn_reg, lo
             """ Labeled data """
             labeled_data = next(labeled_iter)
             l_patches, l_date_types, l_reg_vals, (l_img_idxs, l_pxs, l_pys) = labeled_data
-            if e == 0:
-                print('img#{} px: ({}, {}), patch:\n{}'.format(l_img_idxs[0], l_pxs[0], l_pys[0], l_patches[0, 0, :, :]))
             l_patches, l_reg_vals, l_date_types = l_patches.to(args['device']), l_reg_vals.to(args['device']), l_date_types.to(args['device'])
             
             """ Prediction on labeled data """
             l_reg_preds, l_class_preds = model(l_patches)
             if e == 0:
-                print('preds: {}'.format(l_reg_preds[0, 0, :, :]))
+                print('input: {}'.format(l_reg_vals.view(1, -1)))
+                print('preds: {}'.format(l_reg_preds.view(1, -1)))
             reg_loss_labeled = loss_fn_reg(input=l_reg_preds, target=l_reg_vals)
             class_loss_labeled = loss_fn_class(input=l_class_preds, target=l_date_types)
             
@@ -383,7 +382,7 @@ if __name__ == "__main__":
             'create_val': True,                                                 # Creates validation set
             'test_per': 0.1,
             'lr': 0.0001,                                                       # From EA's model, default is 1e-2.
-            'patch_norm': True,                                                 # Normalizes patches
+            'patch_norm': False,                                                 # Normalizes patches
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'val': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4},
