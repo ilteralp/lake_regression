@@ -203,7 +203,6 @@ Trains model with labeled and unlabeled data.
 """
 def _train(model, train_loader, unlabeled_loader, args, metrics, loss_fn_reg, loss_fn_class, fold, run_name, writer, val_loader=None):
     model.apply(weight_reset)                                                   # Or save weights of the model first & load them.
-    model.train()
     optimizer = RMSprop(params=model.parameters(), lr=args['lr'])               # EA uses RMSprop with lr=0.0001, I can try SGD or Adam as in [1, 2] or [3].
     tr_loss = [{'l_reg_loss': [], 'l_class_loss' : [], 'u_class_loss' : [], 'total' : []} for e in range(args['max_epoch'])]
     val_loss = [{'l_reg_loss': [], 'l_class_loss' : [], 'total' : []} for e in range(args['max_epoch'])]
@@ -214,6 +213,7 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, loss_fn_reg, lo
     os.mkdir(model_dir_path)
     
     for e in range(args['max_epoch']):
+        model.train()
         len_loader = min(len(train_loader), len(unlabeled_loader))              # Update unlabeled batch size to use all its samples. 
         labeled_iter = iter(train_loader)
         unlabeled_iter = iter(unlabeled_loader)
@@ -348,6 +348,7 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
             patches_mean, patches_std, _, _ = calc_mean_std(DataLoader(tr_set, **args['tr']))   # Calculate mean and std of train set. 
             dataset.set_mean_std(means=patches_mean, stds=patches_std)                          # Set train's mean and std as dataset's. 
         
+        """ Load data """
         tr_loader = DataLoader(tr_set, **args['tr'])
         val_loader = DataLoader(val_set, **args['val'])
         writer = SummaryWriter('runs/' + run_name)
