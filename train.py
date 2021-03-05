@@ -291,19 +291,19 @@ Creates dataset's folds and applies train function.
 def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, loss_fn_reg, args):
     unlabeled_loader = DataLoader(unlabeled_dataset, **args['unlabeled'])
     metrics = Metrics(num_folds=args['num_folds'], device=args['device'].type)
-    indices = [*range(len(dataset))]                                            # Sample indices
+    indices = [*range(len(dataset))]                                                              # Sample indices
     run_name = datetime.now().strftime("%Y_%m_%d__%H_%M_%S")
-    os.mkdir(osp.join(C.MODEL_DIR_PATH, run_name))                              # Create run folder.
+    os.mkdir(osp.join(C.MODEL_DIR_PATH, run_name))                                                # Create run folder.
 
     """ Train & test with cross-validation """
     if args['num_folds'] is not None:
         kf = KFold(n_splits=args['num_folds'], shuffle=True, random_state=args['seed'])
         for fold, (tr_index, test_index) in enumerate(kf.split(indices)):
-            np.random.shuffle(tr_index)                                         # kfold does not shuffle samples in splits.     
+            np.random.shuffle(tr_index)                                                           # kfold does not shuffle samples in splits.     
             val_loader = None
             
             """ Create train and validation set """ 
-            if args['create_val']:                                              # Create validation set
+            if args['create_val']:                                                                # Create validation set
                 val_len = len(test_index)
                 tr_index, val_index = tr_index[:-val_len], tr_index[-val_len:]
                 val_set = Subset(dataset, indices=val_index)
@@ -315,7 +315,7 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
                 dataset.set_mean_std(means=patches_mean, stds=patches_std)                        # Set train's mean and std as dataset's. Updates with each new train set. 
                 
             """ Load data """
-            tr_loader = DataLoader(tr_set, **args['tr'])
+            tr_loader = DataLoader(tr_set, **args['tr'])                                          # Loaders have to be after normalization. 
             if args['create_val']:
                 val_loader = DataLoader(val_set, **args['val'])
             writer = SummaryWriter(osp.join('runs', run_name, 'fold_{}'.format(fold)))
