@@ -10,6 +10,7 @@ from torch.utils.data import Dataset, random_split, Subset, DataLoader
 from torch.optim import RMSprop
 from torch.utils.tensorboard import SummaryWriter
 import numpy as np
+import random
 import h5py
 import os
 import os.path as osp
@@ -43,7 +44,7 @@ regression values. Adapted from
 https://discuss.pytorch.org/t/computing-the-mean-and-std-of-dataset/34949/2
 Do it like https://www.youtube.com/watch?v=y6IEcEBRZks
 """
-def _calc_mean_std(train_loader, args):
+def calc_mean_std(train_loader):
     patches_mean, patches_std = 0., 0.
     regs_mean, regs_std = 0., 0.
     num_samples = 0.
@@ -112,7 +113,7 @@ def plot(writer, tr_loss, val_loss, tr_scores, val_scores, epoch):
     writer.add_scalar("6_RMSE/Val", np.mean(val_scores[epoch]['rmse']))
     writer.add_scalar("7_MAE/Train", np.mean(tr_scores[epoch]['r2']))
     writer.add_scalar("7_MAE/Val", np.mean(val_scores[epoch]['r2']))
-        
+
 """
 Takes model and validation set. Calculates metrics on validation set. 
 Runs for each epoch. 
@@ -333,6 +334,11 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
         test_index = indices[-len_test:]
         tr_set, val_set, test_set = Subset(dataset, tr_index), Subset(dataset, val_index), Subset(dataset, test_index)
         
+        """ Normalize patches on all datasets """
+        if args['patch_norm']:
+            patches_mean, patches_std, _, _ = calc_mean_std(DataLoader(tr_set, **args['tr']))   # Calculate mean and std of train set. 
+            dataset.set_mean_std(means=patches_mean, stds=patches_std)                          # Set train's mean and std as dataset's. 
+        
         tr_loader = DataLoader(tr_set, **args['tr'])
         val_loader = DataLoader(val_set, **args['val'])
         writer = SummaryWriter('runs/' + run_name)
@@ -343,7 +349,6 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
                  run_name=run_name, writer=writer)
         
         """ Test """
-        
         
         writer.close()
         
@@ -358,7 +363,8 @@ if __name__ == "__main__":
             'seed': 42,
             'create_val': True,                                                 # Creates validation set
             'test_per': 0.1,
-            'lr': 0.0001,                                                       # From EA's model, default is 1e-2. 
+            'lr': 0.0001,                                                       # From EA's model, default is 1e-2.
+            'patch_norm': True,                                                 # Normalizes patches
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'val': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4},
@@ -379,11 +385,7 @@ if __name__ == "__main__":
     """ Train """
     train_on_folds(model=model, dataset=labeled_set, unlabeled_dataset=unlabeled_set, train_fn=_train, 
                    loss_fn_reg=loss_fn_reg, loss_fn_class=loss_fn_class, args=args)
-    
 
-    # """ Getting normalization values """
-    # # patches_mean, patches_std, regs_mean, regs_std = _calc_mean_std(train_loader=labeled_loader, args=args['tr'])
-    
 """
 Ideas:
 1. Normalize patch values
