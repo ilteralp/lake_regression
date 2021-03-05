@@ -301,16 +301,24 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
         for fold, (tr_index, test_index) in enumerate(kf.split(indices)):
             np.random.shuffle(tr_index)                                         # kfold does not shuffle samples in splits.     
             val_loader = None
+            
+            """ Create train and validation set """ 
             if args['create_val']:                                              # Create validation set
                 val_len = len(test_index)
                 tr_index, val_index = tr_index[:-val_len], tr_index[-val_len:]
                 val_set = Subset(dataset, indices=val_index)
-                val_loader = DataLoader(val_set, **args['val'])
             tr_set = Subset(dataset, indices=tr_index)
+
+            """ Normalize patches on all datasets """
+            if args['patch_norm']:
+                patches_mean, patches_std, _, _ = calc_mean_std(DataLoader(tr_set, **args['tr'])) # Calculate mean and std of train set. 
+                dataset.set_mean_std(means=patches_mean, stds=patches_std)                        # Set train's mean and std as dataset's. Updates with each new train set. 
+                
+            """ Load data """
             tr_loader = DataLoader(tr_set, **args['tr'])
+            if args['create_val']:
+                val_loader = DataLoader(val_set, **args['val'])
             writer = SummaryWriter(osp.join('runs', run_name, 'fold_{}'.format(fold)))
-            
-            # patches_mean, patches_std, regs_mean, regs_std = _calc_mean_std(train_loader=tr_loader, args=args['tr'])
             
             """ Train """
             train_fn(model=model, train_loader=tr_loader, val_loader=val_loader, args=args, metrics=metrics, 
