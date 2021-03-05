@@ -7,6 +7,7 @@ Created on Fri Feb 19 18:12:18 2021
 """
 
 import torch
+import torchvision
 from torch.utils.data import DataLoader
 import numpy as np
 import h5py
@@ -75,8 +76,15 @@ class Lake2dDataset(BaseLakeDataset):
                 # return patch, month, season, year, reg_val, (img_idx, px, py)
                 date_class = self.dates[img_idx][self.date_type]
                 
-                if self.patch_means is not None and self.patch_stds is None:    # Normalize patch
-                    patch = (patch - self.patch_means) / self.patch_stds
+                if self.patch_means is not None and self.patch_stds is not None: # Normalize patch
+                    transform = torchvision.transforms.Compose([
+                        torchvision.transforms.Normalize(
+                            mean=self.patch_means,
+                            std=self.patch_stds
+                            ),
+                        ])
+                    patch = transform(patch)
+                    # patch = torch.sub(patch, self.patch_means) / self.patch_stds
                 
                 return patch, date_class, np.expand_dims(reg_val, axis=0).astype(np.float32), (img_idx, px, py)
 
@@ -103,17 +111,24 @@ if __name__ == "__main__":
     labeled_2d_dataset = Lake2dDataset(learning='labeled', date_type='year', patch_size=3)
     # unlabeled_2d_dataset = Lake2dDataset(learning='unlabeled', date_type='year', patch_size=3)
     # patch, date_type, reg_val, (img_idx, px, py) = labeled_2d_dataset[0]
-
     
     labeled_args = {'batch_size': C.BATCH_SIZE,                                              # 12 in SegNet paper
                     'shuffle': False,
                     'num_workers': 4}
-    labeled_loader = DataLoader(labeled_2d_dataset, **labeled_args)
-    it = iter(labeled_loader)
-    first = next(it)
-    patch, date_type, reg_val, (img_idx, px, py) = first 
-    for d in [patch, date_type, reg_val]:
-        print('type: {}, dtype: {}, shape: {}'.format(type(d), d.dtype, d.shape))
+    patches_mean, patches_std, regs_mean, regs_std = labeled_2d_dataset._calc_mean_std(labeled_args)
+    labeled_2d_dataset.set_mean_std(means=patches_mean, stds=patches_std)
+
+    # patch, date_type, reg_val, (img_idx, px, py) = labeled_2d_dataset[0]
+    patch, date_type, reg_val, (img_idx, px, py) = labeled_2d_dataset[0]
+    
+    # labeled_loader = DataLoader(labeled_2d_dataset, **labeled_args)
+    # it = iter(labeled_loader)
+    # first = next(it)
+    # patch, date_type, reg_val, (img_idx, px, py) = first 
+    # # for d in [patch, date_type, reg_val]:
+    #     # print('type: {}, dtype: {}, shape: {}'.format(type(d), d.dtype, d.shape))
+    
+        
     # sec = next(it)
     # print('1st, img, pixels: {}'.format(first[-1]))
     # print('2nd, img, pixels: {}'.format(sec[-1]))
