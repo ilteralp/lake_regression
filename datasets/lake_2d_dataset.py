@@ -86,14 +86,7 @@ class Lake2dDataset(BaseLakeDataset):
                     patch = transform(patch)
                     
                 if self.reg_mean is not None and self.reg_std is not None:       # Normalize regression value. 
-                    # reg_val = (reg_val - self.reg_mean) / self.reg_std
-                    transform = torchvision.transforms.Compose([
-                        torchvision.transforms.Normalize(
-                            mean=self.reg_mean,
-                            std=self.reg_std
-                        ),
-                    ])
-                    reg_val = transform(reg_val)
+                    reg_val = (reg_val - self.reg_mean) / self.reg_std
                 
                 return patch, date_class, np.expand_dims(reg_val, axis=0).astype(np.float32), (img_idx, px, py)
 
