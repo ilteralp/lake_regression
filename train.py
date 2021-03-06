@@ -47,9 +47,9 @@ Do it like https://www.youtube.com/watch?v=y6IEcEBRZks
 def calc_mean_std(train_loader):
     patches_mean, patches_std = 0., 0.
     # regs_mean, regs_std = 0., 0.
-    regs_sum, regs_squared_sum, num_batches = 0, 0, 0
+    # regs_sum, regs_squared_sum, num_batches = 0, 0, 0
     num_samples = 0.
-    max_r, min_r = 0.0, float('inf')
+    # max_r, min_r = 0.0, float('inf')
     for data in train_loader:
         patches, date_type, reg_vals, (img_idxs, pxs, pys) = data
         batch_samples = patches.size(0)
@@ -58,22 +58,21 @@ def calc_mean_std(train_loader):
         patches_std += patches.std(2).sum(0)
         # regs_mean += reg_vals.mean()
         # regs_std += reg_vals.std()
-        regs_sum += torch.mean(reg_vals)
-        regs_squared_sum += torch.mean(reg_vals ** 2)
+        # regs_sum += torch.mean(reg_vals)
+        # regs_squared_sum += torch.mean(reg_vals ** 2)
         num_samples += batch_samples
-        num_batches += 1
-        if max_r < torch.max(reg_vals):
-            max_r = torch.max(reg_vals)
-        if min_r > torch.min(reg_vals):
-            min_r = torch.min(reg_vals)
+        # num_batches += 1
+        # if max_r < torch.max(reg_vals):
+        #     max_r = torch.max(reg_vals)
+        # if min_r > torch.min(reg_vals):
+        #     min_r = torch.min(reg_vals)
     patches_mean /= num_samples
     patches_std /= num_samples
-    # regs_mean /= (batch_id + 1)
-    # regs_std /= (batch_id + 1)
-    regs_mean = regs_sum / num_batches
-    regs_std = (regs_squared_sum / num_batches - regs_mean ** 2) ** 0.5
-    print('train, min: {:.2f}, max: {:.2f}'.format(min_r, max_r))
-    return patches_mean, patches_std, regs_mean, regs_std
+    # # regs_mean /= (batch_id + 1)
+    # # regs_std /= (batch_id + 1)
+    # regs_mean = regs_sum / num_batches
+    # regs_std = (regs_squared_sum / num_batches - regs_mean ** 2) ** 0.5
+    return patches_mean, patches_std
 
 """
 Returns min and max of given train set regression values.
@@ -253,12 +252,12 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, loss_fn_reg, lo
             
             """ Prediction on labeled data """
             l_reg_preds, l_class_preds = model(l_patches)
-            if e == 0:
-                print('img#{}, ({}, {})'.format(l_img_idxs[0], l_pxs[0], l_pys[0]))
+            # if e == 0:
+                # print('img#{}, ({}, {})'.format(l_img_idxs[0], l_pxs[0], l_pys[0]))
                 # print('input: {}'.format(l_reg_vals.view(1, -1)))
                 # print('preds: {}'.format(l_reg_preds.view(1, -1)))
-                print('input, min: {:.4f}, max: {:.4f}, mean: {:.4f}, median: {:.4f}'.format(torch.min(l_reg_vals), torch.max(l_reg_vals), torch.mean(l_reg_vals), torch.median(l_reg_vals)))
-                print('preds, min: {:.4f}, max: {:.4f}, mean: {:.4f}, median: {:.4f}'.format(torch.min(l_reg_preds), torch.max(l_reg_preds), torch.mean(l_reg_preds), torch.median(l_reg_preds)))
+                # print('input, min: {:.4f}, max: {:.4f}, mean: {:.4f}, median: {:.4f}'.format(torch.min(l_reg_vals), torch.max(l_reg_vals), torch.mean(l_reg_vals), torch.median(l_reg_vals)))
+                # print('preds, min: {:.4f}, max: {:.4f}, mean: {:.4f}, median: {:.4f}'.format(torch.min(l_reg_preds), torch.max(l_reg_preds), torch.mean(l_reg_preds), torch.median(l_reg_preds)))
             reg_loss_labeled = loss_fn_reg(input=l_reg_preds, target=l_reg_vals)
             class_loss_labeled = loss_fn_class(input=l_class_preds, target=l_date_types)
             
@@ -341,7 +340,7 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
 
             """ Normalize patches on all datasets """
             if args['patch_norm']:
-                patches_mean, patches_std, _, _ = calc_mean_std(DataLoader(tr_set, **args['tr'])) # Calculate patch mean and std of each channel on train set. 
+                patches_mean, patches_std = calc_mean_std(DataLoader(tr_set, **args['tr']))       # Calculate patch mean and std of each channel on train set. 
                 dataset.set_patch_mean_std(means=patches_mean, stds=patches_std)                  # Set train set's patch mean and std as dataset's. Updated with each new train set. 
                 
             """ Normalize regression value on all datasets """
@@ -382,7 +381,7 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
         
         """ Normalize patches on all datasets """
         if args['patch_norm']:
-            patches_mean, patches_std, _, _ = calc_mean_std(DataLoader(tr_set, **args['tr']))   # Calculate mean and std of train set. 
+            patches_mean, patches_std = calc_mean_std(DataLoader(tr_set, **args['tr']))         # Calculate mean and std of train set. 
             dataset.set_patch_mean_std(means=patches_mean, stds=patches_std)                    # Set train's mean and std as dataset's. 
             
         """ Normalize regression value on all datasets """
