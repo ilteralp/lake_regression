@@ -374,7 +374,9 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
             
         """ Normalize regression value on all datasets """
         if args['reg_norm']:
-            _, _, reg_mean, reg_std = calc_mean_std(DataLoader(tr_set, **args['tr']))           # Calculate mean and std regression values on train set. 
+            tr_reg_vals = dataset.reg_vals[tr_index]
+            reg_mean, reg_std = np.mean(tr_reg_vals), np.std(tr_reg_vals)
+            # _, _, reg_mean, reg_std = calc_mean_std(DataLoader(tr_set, **args['tr']))           # Calculate mean and std regression values on train set. 
             dataset.set_reg_mean_std(reg_mean=reg_mean, reg_std=reg_std)                       # Set train set's regression mean and std as dataset's. Updated with each new train set. 
             print('tr dataset, reg_mean: {}, reg_std: {}'.format(reg_mean, reg_std))
                 
