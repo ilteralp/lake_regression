@@ -98,8 +98,9 @@ def weight_reset(m):
 Returns verbose message with loss and score.
 """
 def get_msg(loss, score, e, dataset):
-    msg = "Epoch #{}, Losses (R+C): {}, {:.2f} = {:.2f} + {:.2f} ".format(
-        e, dataset, np.mean(loss[e]['total']), np.mean(loss[e]['l_reg_loss']), np.mean(loss[e]['l_class_loss']))
+    sum_str = '(R+C_L+C_U)' if dataset == 'train' else '(R+C)'
+    msg = "Epoch #{}, Losses {}: {}, {:.2f} = {:.2f} + {:.2f}".format(
+        e, sum_str, dataset, np.mean(loss[e]['total']), np.mean(loss[e]['l_reg_loss']), np.mean(loss[e]['l_class_loss']))
     if 'u_class_loss' in loss[e]:
         msg += " + {:.2f}".format(np.mean(loss[e]['u_class_loss']))
     # msg += "\t Scores, MAE: {:.2f}, R2: {:.2f}, RMSE: {:.2f}".format(
@@ -418,7 +419,7 @@ if __name__ == "__main__":
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
     args = {'num_folds': None,
-            'max_epoch': 2,
+            'max_epoch': 60,
             'device': device,
             'seed': 42,
             'create_val': True,                                                 # Creates validation set
