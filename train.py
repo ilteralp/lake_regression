@@ -62,15 +62,17 @@ def calc_mean_std(train_loader):
         regs_squared_sum += torch.mean(reg_vals ** 2)
         num_samples += batch_samples
         num_batches += 1
-        max_r = torch.max(reg_vals)
-        min_r = torch.min(reg_vals)
+        if max_r < torch.max(reg_vals):
+            max_r = torch.max(reg_vals)
+        if min_r > torch.min(reg_vals):
+            min_r = torch.min(reg_vals)
     patches_mean /= num_samples
     patches_std /= num_samples
     # regs_mean /= (batch_id + 1)
     # regs_std /= (batch_id + 1)
     regs_mean = regs_sum / num_batches
     regs_std = (regs_squared_sum / num_batches - regs_mean ** 2) ** 0.5
-    print('train, min: {}, max: {}'.format(min_r, max_r))
+    print('train, min: {:.2f}, max: {:.2f}'.format(min_r, max_r))
     return patches_mean, patches_std, regs_mean, regs_std
     
 """
