@@ -74,7 +74,18 @@ def calc_mean_std(train_loader):
     regs_std = (regs_squared_sum / num_batches - regs_mean ** 2) ** 0.5
     print('train, min: {:.2f}, max: {:.2f}'.format(min_r, max_r))
     return patches_mean, patches_std, regs_mean, regs_std
-    
+
+"""
+Returns min and max of given train set regression values.
+"""
+def get_reg_min_max(tr_reg_vals):
+    reg_min = np.min(tr_reg_vals)
+    reg_max = np.max(tr_reg_vals)
+    if reg_min == reg_max:
+        raise Exception('Given constant regression values with train set!')
+    else:
+        return reg_min, reg_max
+
 """
 Takes a model, resets layer weights
 https://discuss.pytorch.org/t/how-to-re-set-alll-parameters-in-a-network/20819/7
@@ -335,8 +346,10 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
                 
             """ Normalize regression value on all datasets """
             if args['reg_norm']:
-                _, _, reg_mean, reg_std = calc_mean_std(DataLoader(tr_set, **args['tr']))         # Calculate mean and std regression values on train set. 
-                dataset.set_reg_mean_std(reg_mean=reg_mean, reg_std=reg_std)                      # Set train set's regression mean and std as dataset's. Updated with each new train set. 
+                # _, _, reg_mean, reg_std = calc_mean_std(DataLoader(tr_set, **args['tr']))         # Calculate mean and std regression values on train set. 
+                # dataset.set_reg_mean_std(reg_mean=reg_mean, reg_std=reg_std)                      # Set train set's regression mean and std as dataset's. Updated with each new train set. 
+                reg_min, reg_max = get_reg_min_max(dataset.reg_vals[tr_index])
+                dataset.set_reg_min_max(reg_min=reg_min, reg_max=reg_max)
                 
             """ Load data """
             tr_loader = DataLoader(tr_set, **args['tr'])                                          # Loaders have to be after normalization. 
@@ -374,11 +387,12 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
             
         """ Normalize regression value on all datasets """
         if args['reg_norm']:
-            tr_reg_vals = dataset.reg_vals[tr_index]
-            reg_mean, reg_std = np.mean(tr_reg_vals), np.std(tr_reg_vals)
+            reg_min, reg_max = get_reg_min_max(dataset.reg_vals[tr_index])
+            dataset.set_reg_min_max(reg_min=reg_min, reg_max=reg_max)
+            # reg_mean, reg_std = np.mean(tr_reg_vals), np.std(tr_reg_vals)
             # _, _, reg_mean, reg_std = calc_mean_std(DataLoader(tr_set, **args['tr']))           # Calculate mean and std regression values on train set. 
-            dataset.set_reg_mean_std(reg_mean=reg_mean, reg_std=reg_std)                       # Set train set's regression mean and std as dataset's. Updated with each new train set. 
-            print('tr dataset, reg_mean: {}, reg_std: {}'.format(reg_mean, reg_std))
+            # dataset.set_reg_mean_std(reg_mean=reg_mean, reg_std=reg_std)                       # Set train set's regression mean and std as dataset's. Updated with each new train set. 
+            # print('tr dataset, reg_mean: {:.2f}, reg_std: {:.2f}'.format(reg_mean, reg_std))
                 
         """ Load data """
         tr_loader = DataLoader(tr_set, **args['tr'])
