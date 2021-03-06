@@ -34,6 +34,8 @@ class BaseLakeDataset(Dataset):
         self.patch_stds = None
         self.reg_mean = None
         self.reg_std = None
+        self.reg_min = None
+        self.reg_max = None        
         
         if self.learning == 'labeled':                                          # Load regression values for labeled samples
             self.reg_vals = self._read_GT()
@@ -108,3 +110,11 @@ class BaseLakeDataset(Dataset):
     def set_reg_mean_std(self, reg_mean, reg_std):
         self.reg_mean = reg_mean
         self.reg_std = reg_std
+    
+    """
+    Sets min and max of regression values. 
+    """
+    def set_reg_min_max(self, reg_min, reg_max):
+        self.reg_min = reg_min
+        self.reg_max = reg_max
+    
