@@ -85,8 +85,11 @@ class Lake2dDataset(BaseLakeDataset):
                         ])
                     patch = transform(patch)
                     
-                if self.reg_mean is not None and self.reg_std is not None:       # Normalize regression value. 
-                    reg_val = (reg_val - self.reg_mean) / self.reg_std
+                # if self.reg_mean is not None and self.reg_std is not None:    # Standardize regression value. 
+                #     reg_val = (reg_val - self.reg_mean) / self.reg_std
+                
+                if self.reg_min is not None and self.reg_max is not None:       # Normalize regression value. 
+                    reg_val = 2 * (reg_val - self.reg_min) / (self.reg_max - self.reg_min) - 1
                 
                 return patch, date_class, np.expand_dims(reg_val, axis=0).astype(np.float32), (img_idx, px, py)
 
@@ -117,9 +120,7 @@ if __name__ == "__main__":
     labeled_args = {'batch_size': C.BATCH_SIZE,                                              # 12 in SegNet paper
                     'shuffle': False,
                     'num_workers': 4}
-    patches_mean, patches_std, regs_mean, regs_std = calc_mean_std(DataLoader(labeled_2d_dataset, **labeled_args))
-    # labeled_2d_dataset.set_patch_mean_std(means=patches_mean, stds=patches_std)
-    labeled_2d_dataset.set_reg_mean_std(reg_mean=regs_mean, reg_std=regs_std)
+    # patches_mean, patches_std, _, _ = calc_mean_std(DataLoader(labeled_2d_dataset, **labeled_args))
 
     # patch, date_type, reg_val, (img_idx, px, py) = labeled_2d_dataset[0]
     patch, date_type, reg_val, (img_idx, px, py) = labeled_2d_dataset[0]
