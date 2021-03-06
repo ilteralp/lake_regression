@@ -232,8 +232,10 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, loss_fn_reg, lo
             l_reg_preds, l_class_preds = model(l_patches)
             if e == 0:
                 print('img#{}, ({}, {})'.format(l_img_idxs[0], l_pxs[0], l_pys[0]))
-                print('input: {}'.format(l_reg_vals.view(1, -1)))
-                print('preds: {}'.format(l_reg_preds.view(1, -1)))
+                # print('input: {}'.format(l_reg_vals.view(1, -1)))
+                # print('preds: {}'.format(l_reg_preds.view(1, -1)))
+                print('input, min: {}, max: {}'.format(torch.min(l_reg_vals), torch.max(l_reg_vals)))
+                print('preds, min: {}, max: {}'.format(torch.min(l_reg_preds), torch.max(l_reg_preds)))
             reg_loss_labeled = loss_fn_reg(input=l_reg_preds, target=l_reg_vals)
             class_loss_labeled = loss_fn_class(input=l_class_preds, target=l_date_types)
             
