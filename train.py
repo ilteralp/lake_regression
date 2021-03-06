@@ -46,21 +46,27 @@ Do it like https://www.youtube.com/watch?v=y6IEcEBRZks
 """
 def calc_mean_std(train_loader):
     patches_mean, patches_std = 0., 0.
-    regs_mean, regs_std = 0., 0.
+    # regs_mean, regs_std = 0., 0.
+    regs_sum, regs_squared_sum, num_batches = 0, 0, 0
     num_samples = 0.
-    for batch_id, data in enumerate(train_loader):
+    for data in train_loader:
         patches, date_type, reg_vals, (img_idxs, pxs, pys) = data
         batch_samples = patches.size(0)
         patches = patches.view(batch_samples, patches.size(1), -1)              # (num_samples, 12, 3, 3) -> (num_samples, 12, 9)
         patches_mean += patches.mean(2).sum(0)                                  # 12 means and 12 stds
         patches_std += patches.std(2).sum(0)
-        regs_mean += reg_vals.mean()
-        regs_std += reg_vals.std()
+        # regs_mean += reg_vals.mean()
+        # regs_std += reg_vals.std()
+        regs_sum += torch.mean(reg_vals)
+        regs_squared_sum += torch.mean(reg_vals ** 2)
         num_samples += batch_samples
+        num_batches += 1
     patches_mean /= num_samples
     patches_std /= num_samples
-    regs_mean /= (batch_id + 1)
-    regs_std /= (batch_id + 1)
+    # regs_mean /= (batch_id + 1)
+    # regs_std /= (batch_id + 1)
+    regs_mean = regs_sum / num_batches
+    regs_std = (regs_squared_sum / num_batches - regs_mean ** 2) ** 0.5
     return patches_mean, patches_std, regs_mean, regs_std
     
 """
