@@ -350,6 +350,7 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
         val_index = indices[-2*len_test:-len_test]
         test_index = indices[-len_test:]
         tr_set, val_set, test_set = Subset(dataset, tr_index), Subset(dataset, val_index), Subset(dataset, test_index)
+        print('tr: {}, val: {}, test: {}'.format(tr_index[0:3], val_index[0:3], test_index[0:3]))
         
         """ Normalize patches on all datasets """
         if args['patch_norm']:
@@ -379,10 +380,10 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
         
 if __name__ == "__main__":
     
-    # seed = 42
-    # torch.manual_seed(seed)
-    # np.random.seed(seed)
-    # random.seed(seed)    
+    seed = 42
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+    random.seed(seed)    
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
     args = {'num_folds': None,
