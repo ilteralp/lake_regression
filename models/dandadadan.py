@@ -31,18 +31,18 @@ class DandadaDAN(nn.Module):
         self.feature.add_module('f_conv1', nn.Conv2d(in_channels=self.in_channels,              # Cannot use padding of Conv2d because it applies zero padding.
                                                      out_channels=64, kernel_size=3, stride=1)) # (bs, 12, 7, 7) -> (bs, 64, 5, 5)
         self.feature.add_module('f_bn1', nn.BatchNorm2d(num_features=64))
-        self.feature.add_module('f_tanh1', nn.ReLU(True))
+        self.feature.add_module('f_tanh1', nn.Tanh())
         self.feature.add_module('f_conv2', nn.Conv2d(in_channels=64, out_channels=50,
                                                      kernel_size=3, stride=1))                  # (bs, 64, 5, 5) -> (bs, 50, 3, 3)
         self.feature.add_module('f_bn2', nn.BatchNorm2d(num_features=50))
         self.feature.add_module('f_drop1', nn.Dropout2d())
-        self.feature.add_module('f_tanh2', nn.ReLU(True))
+        self.feature.add_module('f_tanh2', nn.Tanh())
         
         """ Regression """
         self.regressor = nn.Sequential()
         self.regressor.add_module('r_fc1', nn.Linear(in_features=50 * 3 * 3, out_features=100)) # (bs, 300) -> (bs, 100)
         self.regressor.add_module('r_bn1', nn.BatchNorm1d(100))
-        self.regressor.add_module('r_tanh1', nn.ReLU(True))
+        self.regressor.add_module('r_tanh1', nn.Tanh())
         self.regressor.add_module('r_drop1', nn.Dropout())                                      # DAN used Dropout2d but it drops whole channel.
         self.regressor.add_module('r_fc2', nn.Linear(in_features=100, out_features=100))        # (bs, 100) -> (bs, 100)    
         self.regressor.add_module('r_bn2', nn.BatchNorm1d(100))
@@ -53,7 +53,7 @@ class DandadaDAN(nn.Module):
         self.classifier = nn.Sequential()
         self.classifier.add_module('c_fc1', nn.Linear(in_features=50 * 3 * 3, out_features=100)) # (bs, 300) -> (bs, 100)
         self.classifier.add_module('c_bn1', nn.BatchNorm1d(num_features=100))
-        self.classifier.add_module('c_tanh1', nn.ReLU(True))
+        self.classifier.add_module('c_tanh1', nn.Tanh())
         self.classifier.add_module('c_fc2', nn.Linear(in_features=100, 
                                                       out_features=self.num_classes))           # (bs, 100) -> (bs, num_class)
     
@@ -67,7 +67,7 @@ class DandadaDAN(nn.Module):
     
 if __name__ == "__main__":
     dan = DandadaDAN(in_channels=12, num_classes=4)
-    inp = torch.rand(8, 12, 3, 3)
+    inp = torch.rand(2, 12, 3, 3)
     reg_out, class_out = dan(inp)
     print('shapes, reg: {} class: {}'.format(reg_out.shape, class_out.shape))
 
