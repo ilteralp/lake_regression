@@ -86,13 +86,20 @@ class Lake2dDataset(BaseLakeDataset):
                     patch = transform(patch)
                     
                 if self.reg_mean is not None and self.reg_std is not None:       # Normalize regression value. 
-                    reg_val = (reg_val - self.reg_mean) / self.reg_std
+                    # reg_val = (reg_val - self.reg_mean) / self.reg_std
+                    transform = torchvision.transforms.Compose([
+                        torchvision.transforms.Normalize(
+                            mean=self.reg_mean,
+                            std=self.reg_std
+                        ),
+                    ])
+                    reg_val = transform(reg_val)
                 
                 return patch, date_class, np.expand_dims(reg_val, axis=0).astype(np.float32), (img_idx, px, py)
 
         else:
             raise Exception('Image not found on {}'.format(img_path))
-
+            
 if __name__ == "__main__":
     # filepath = osp.join(C.ROOT_DIR, 'balik', '2', 'level2a.h5')
     # f = h5py.File(filepath, 'r')
@@ -123,7 +130,7 @@ if __name__ == "__main__":
 
     # patch, date_type, reg_val, (img_idx, px, py) = labeled_2d_dataset[0]
     patch, date_type, reg_val, (img_idx, px, py) = labeled_2d_dataset[0]
-    # print('reg_val:', reg_val)
+    print('reg_val:', reg_val)
     
     # labeled_loader = DataLoader(labeled_2d_dataset, **labeled_args)
     # it = iter(labeled_loader)
