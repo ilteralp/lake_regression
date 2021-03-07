@@ -154,7 +154,12 @@ def _test(test_set, model_name, in_channels, num_classes, metrics, args, loss_fn
     test_scores = [{'r2' : [], 'mae' : [], 'rmse' : []}]
     _validate(model=test_model, val_loader=test_loader, metrics=metrics, args=args, loss_fn_reg=loss_fn_reg,
               loss_fn_class=loss_fn_class, val_loss=test_loss, val_scores=test_scores, epoch=0)
-    print(get_msg(test_loss, test_scores, e=0, dataset='test'))
+    
+    """ Save result to file """
+    msg = get_msg(test_loss, test_scores, e=0, dataset='test')
+    with open(osp.join(model_dir_path, model_name + '.res'), 'w') as f:
+        f.write(msg)
+        
     
 """
 Takes model and validation set. Calculates metrics on validation set. 
