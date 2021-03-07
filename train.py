@@ -412,16 +412,16 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
         
 if __name__ == "__main__":
     
-    seed = 42
-    torch.manual_seed(seed)
-    np.random.seed(seed)
-    random.seed(seed)    
+    seed = None
+    # torch.manual_seed(seed)
+    # np.random.seed(seed)
+    # random.seed(seed)    
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    args = {'num_folds': None,
-            'max_epoch': 60,
+    args = {'num_folds': 3,
+            'max_epoch': 2,
             'device': device,
-            'seed': 42,
+            'seed': seed,
             'create_val': True,                                                 # Creates validation set
             'test_per': 0.1,
             'lr': 0.0001,                                                       # From EA's model, default is 1e-2.
