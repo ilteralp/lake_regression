@@ -103,8 +103,9 @@ def get_msg(loss, score, e, dataset):
         e, sum_str, dataset, np.mean(loss[e]['total']), np.mean(loss[e]['l_reg_loss']), np.mean(loss[e]['l_class_loss']))
     if 'u_class_loss' in loss[e]:
         msg += " + {:.2f}".format(np.mean(loss[e]['u_class_loss']))
-    # msg += "\t Scores, MAE: {:.2f}, R2: {:.2f}, RMSE: {:.2f}".format(
-        # np.mean(score[e]['mae']), np.mean(score[e]['r2']), np.mean(score[e]['rmse']))
+    if dataset == 'test':
+        msg += "\t Scores, MAE: {:.2f}, R2: {:.2f}, RMSE: {:.2f}".format(
+            np.mean(score[e]['mae']), np.mean(score[e]['r2']), np.mean(score[e]['rmse']))
     return msg
 
 """
@@ -138,6 +139,20 @@ def plot(writer, tr_loss, val_loss, tr_scores, val_scores, e):
     writer.add_scalar("6_RMSE/Val", np.mean(val_scores[e]['rmse']), e)
     writer.add_scalar("7_R2/Train", np.mean(tr_scores[e]['r2']), e)
     writer.add_scalar("7_R2/Val", np.mean(val_scores[e]['r2']), e)
+    
+"""
+Loads the model with given name and prints its results. 
+"""
+def _test(test_set, model_name, in_channels, num_classes, metrics, args, loss_fn_reg, loss_fn_class, fold, run_name):
+    test_model = DandadaDAN(in_channels=in_channels, num_classes=num_classes)
+    model_dir_path = osp.join(C.MODEL_DIR_PATH, run_name, 'fold_' + str(fold))
+    test_model.load(osp.join(model_dir_path, model_name))
+    test_loader = DataLoader(test_set, **args['test'])
+    test_loss = [{'l_reg_loss': [], 'l_class_loss' : [], 'total' : []}]
+    test_scores = [{'r2' : [], 'mae' : [], 'rmse' : []}]
+    _validate(model=test_model, val_loader=test_loader, metrics=metrics, args=args, loss_fn_reg=loss_fn_reg,
+              loss_fn_class=loss_fn_class, val_loss=test_loss, val_scores=test_scores, epoch=0)
+    print(get_msg(test_loss, test_scores, e=0, dataset='test'))
     
 """
 Takes model and validation set. Calculates metrics on validation set. 
@@ -371,17 +386,22 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
                 val_loader = DataLoader(val_set, **args['val'])
             writer = SummaryWriter(osp.join('runs', run_name, 'fold_{}'.format(fold)))
             
-            """ Train """
+            """ Train & Validation """
             train_fn(model=model, train_loader=tr_loader, val_loader=val_loader, args=args, metrics=metrics, 
                      unlabeled_loader=unlabeled_loader, loss_fn_reg=loss_fn_reg, loss_fn_class=loss_fn_class, 
                      fold=fold, run_name=run_name, writer=writer)
-            
-            """ Test """
-            
-            test_set = Subset(dataset, indices=test_index)
-            # # test_loader = DataLoader(test_set, **args['test'])
-            print('lens, tr: {}, val: {}, test: {}'.format(len(tr_set), len(val_set), len(test_set)))
             writer.close()
+
+            """ Test """
+            test_set = Subset(dataset, indices=test_index)
+            in_channels, num_classes = dataset[0][0].shape[0], C.NUM_CLASSES[dataset.date_type]
+            for model_name in ['best_val_loss.pth', 'model_last_epoch.pth']:
+                _test(test_set=test_set, model_name=model_name, in_channels=in_channels, num_classes=num_classes, 
+                      metrics=metrics, args=args, loss_fn_reg=loss_fn_reg, loss_fn_class=loss_fn_class, fold=fold, 
+                      run_name=run_name)
+            
+            
+            # print('lens, tr: {}, val: {}, test: {}'.format(len(tr_set), len(val_set), len(test_set)))
             
     # Train and test without cross-validation
     else:
@@ -412,15 +432,20 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
         val_loader = DataLoader(val_set, **args['val'])
         writer = SummaryWriter('runs/' + run_name)
         
-        """ Train """
+        """ Train & Validation """
         train_fn(model=model, train_loader=tr_loader, unlabeled_loader=unlabeled_loader, val_loader=val_loader, 
                  args=args, metrics=metrics, loss_fn_reg=loss_fn_reg, loss_fn_class=loss_fn_class, fold=1,
                  run_name=run_name, writer=writer)
         
-        """ Test """
-        
         writer.close()
         
+        """ Test """
+        test_set = Subset(dataset, indices=test_index)
+        in_channels, num_classes = dataset[0][0].shape[0], C.NUM_CLASSES[dataset.date_type]
+        for model_name in ['best_val_loss.pth', 'model_last_epoch.pth']:
+            _test(test_set=test_set, model_name=model_name, in_channels=in_channels, num_classes=num_classes, 
+                  metrics=metrics, args=args, loss_fn_reg=loss_fn_reg, loss_fn_class=loss_fn_class, fold=fold, 
+                  run_name=run_name)
 
         
 if __name__ == "__main__":
