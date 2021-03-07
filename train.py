@@ -144,6 +144,7 @@ def plot(writer, tr_loss, val_loss, tr_scores, val_scores, e):
 Loads the model with given name and prints its results. 
 """
 def _test(test_set, model_name, in_channels, num_classes, metrics, args, loss_fn_reg, loss_fn_class, fold, run_name):
+    print('Testing on model: {} with fold: {}'.format(model_name, st(fold)))
     test_model = DandadaDAN(in_channels=in_channels, num_classes=num_classes)
     model_dir_path = osp.join(C.MODEL_DIR_PATH, run_name, 'fold_' + str(fold))
     test_model.load(osp.join(model_dir_path, model_name))
@@ -444,7 +445,7 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
         in_channels, num_classes = dataset[0][0].shape[0], C.NUM_CLASSES[dataset.date_type]
         for model_name in ['best_val_loss.pth', 'model_last_epoch.pth']:
             _test(test_set=test_set, model_name=model_name, in_channels=in_channels, num_classes=num_classes, 
-                  metrics=metrics, args=args, loss_fn_reg=loss_fn_reg, loss_fn_class=loss_fn_class, fold=fold, 
+                  metrics=metrics, args=args, loss_fn_reg=loss_fn_reg, loss_fn_class=loss_fn_class, fold=1, 
                   run_name=run_name)
 
         
