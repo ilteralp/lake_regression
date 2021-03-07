@@ -412,13 +412,14 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
         
 if __name__ == "__main__":
     
-    seed = None
-    # torch.manual_seed(seed)
-    # np.random.seed(seed)
-    # random.seed(seed)    
+    seed = 42
+    if seed is not None:
+        torch.manual_seed(seed)
+        np.random.seed(seed)
+        random.seed(seed)    
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    args = {'num_folds': 3,
+    args = {'num_folds': None,
             'max_epoch': 10,
             'device': device,
             'seed': seed,
