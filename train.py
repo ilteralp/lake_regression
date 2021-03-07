@@ -159,6 +159,7 @@ def _test(test_set, model_name, in_channels, num_classes, metrics, args, loss_fn
     msg = get_msg(test_loss, test_scores, e=0, dataset='test')
     with open(osp.join(model_dir_path, model_name + '.res'), 'w') as f:
         f.write(msg)
+    print(msg)
         
     
 """
@@ -478,7 +479,7 @@ if __name__ == "__main__":
             'lr': 0.0001,                                                       # From EA's model, default is 1e-2.
             'patch_norm': True,                                                 # Normalizes patches
             'reg_norm': True,                                                   # Normalize regression values
-            'use_unlabeled_samples': False,
+            'use_unlabeled_samples': True,
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'val': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4},
