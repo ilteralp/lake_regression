@@ -432,7 +432,7 @@ if __name__ == "__main__":
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'val': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4},
-            'unlabeled': {'batch_size': C.BATCH_SIZE * 16, 'shuffle': True, 'num_workers': 4}}
+            'unlabeled': {'batch_size': C.BATCH_SIZE * 128, 'shuffle': True, 'num_workers': 4}}
     verify_args(args)
     
     """ Create labeled and unlabeled datasets. """
