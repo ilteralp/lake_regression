@@ -59,14 +59,14 @@ class DandadaDAN(nn.Module):
         #                                               out_features=self.num_classes))           # (bs, 100) -> (bs, num_class)
         
         self.classifier = nn.Sequential()
-        self.regressor.add_module('c_fc1', nn.Linear(in_features=50 * 3 * 3, out_features=100)) # (bs, 300) -> (bs, 100)
-        self.regressor.add_module('c_bn1', nn.BatchNorm1d(100))
-        self.regressor.add_module('c_tanh1', nn.Tanh())
-        self.regressor.add_module('c_drop1', nn.Dropout())                                      # DAN used Dropout2d but it drops whole channel.
-        self.regressor.add_module('c_fc2', nn.Linear(in_features=100, out_features=100))        # (bs, 100) -> (bs, 100)    
-        self.regressor.add_module('c_bn2', nn.BatchNorm1d(100))
-        self.regressor.add_module('c_tanh2', nn.ReLU())
-        self.regressor.add_module('c_fc3', nn.Linear(in_features=100, 
+        self.classifier.add_module('c_fc1', nn.Linear(in_features=50 * 3 * 3, out_features=100)) # (bs, 300) -> (bs, 100)
+        self.classifier.add_module('c_bn1', nn.BatchNorm1d(100))
+        self.classifier.add_module('c_tanh1', nn.Tanh())
+        self.classifier.add_module('c_drop1', nn.Dropout())                                      # DAN used Dropout2d but it drops whole channel.
+        self.classifier.add_module('c_fc2', nn.Linear(in_features=100, out_features=100))        # (bs, 100) -> (bs, 100)    
+        self.classifier.add_module('c_bn2', nn.BatchNorm1d(100))
+        self.classifier.add_module('c_tanh2', nn.ReLU())
+        self.classifier.add_module('c_fc3', nn.Linear(in_features=100, 
                                                      out_features=self.num_classes))          # (bs, 100) -> (bs, 4)
     
     def forward(self, x):
