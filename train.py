@@ -147,7 +147,7 @@ def _test(test_set, model_name, in_channels, num_classes, metrics, args, loss_fn
     print('Testing on model: {} with fold: {}'.format(model_name, str(fold)))
     test_model = DandadaDAN(in_channels=in_channels, num_classes=num_classes)
     model_dir_path = osp.join(C.MODEL_DIR_PATH, run_name, 'fold_' + str(fold))
-    test_model.load(osp.join(model_dir_path, model_name))
+    test_model.load_state_dict(torch.load(osp.join(model_dir_path, model_name)))
     test_loader = DataLoader(test_set, **args['test'])
     test_loss = [{'l_reg_loss': [], 'l_class_loss' : [], 'total' : []}]
     test_scores = [{'r2' : [], 'mae' : [], 'rmse' : []}]
