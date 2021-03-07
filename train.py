@@ -322,6 +322,7 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
     unlabeled_loader = DataLoader(unlabeled_dataset, **args['unlabeled'])
     metrics = Metrics(num_folds=args['num_folds'], device=args['device'].type)
     indices = [*range(len(dataset))]                                                              # Sample indices
+    np.random.shuffle(indices)
     run_name = datetime.now().strftime("%Y_%m_%d__%H_%M_%S")
     os.mkdir(osp.join(C.MODEL_DIR_PATH, run_name))                                                # Create run folder.
 
@@ -372,7 +373,6 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
     # Train and test without cross-validation
     else:
         """ Create train, val and test sets """
-        np.random.shuffle(indices)
         len_test = int(len(indices) * args['test_per'])
         tr_index = indices[0:-2*len_test]
         val_index = indices[-2*len_test:-len_test]
@@ -419,7 +419,7 @@ if __name__ == "__main__":
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
     args = {'num_folds': 3,
-            'max_epoch': 2,
+            'max_epoch': 10,
             'device': device,
             'seed': seed,
             'create_val': True,                                                 # Creates validation set
