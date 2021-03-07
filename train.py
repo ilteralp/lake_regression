@@ -234,6 +234,7 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, loss_fn_reg, lo
     best_val_loss = float('inf')
     model_dir_path = osp.join(C.MODEL_DIR_PATH, run_name, 'fold_' + str(fold))
     os.mkdir(model_dir_path)
+    print('len loaders, train: {}, unlabeled: {}'.format(len(train_loader), len(unlabeled_loader)))
     
     for e in range(args['max_epoch']):
         model.train()
@@ -431,7 +432,7 @@ if __name__ == "__main__":
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'val': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4},
-            'unlabeled': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4}}
+            'unlabeled': {'batch_size': C.BATCH_SIZE * 16, 'shuffle': True, 'num_workers': 4}}
     verify_args(args)
     
     """ Create labeled and unlabeled datasets. """
