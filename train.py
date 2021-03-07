@@ -99,8 +99,9 @@ Returns verbose message with loss and score.
 """
 def get_msg(loss, score, e, dataset):
     sum_str = '(R+C_L+C_U)' if dataset == 'train' else '(R+C)'
-    msg = "Epoch #{}, Losses {}: {}, {:.2f} = {:.2f} + {:.2f}".format(
-        e, sum_str, dataset, np.mean(loss[e]['total']), np.mean(loss[e]['l_reg_loss']), np.mean(loss[e]['l_class_loss']))
+    start_str = '' if dataset == 'test' else 'Epoch #{}, '.format(e) 
+    msg = "{}Losses {}: {}, {:.2f} = {:.2f} + {:.2f}".format(
+        start_str, sum_str, dataset, np.mean(loss[e]['total']), np.mean(loss[e]['l_reg_loss']), np.mean(loss[e]['l_class_loss']))
     if 'u_class_loss' in loss[e]:
         msg += " + {:.2f}".format(np.mean(loss[e]['u_class_loss']))
     if dataset == 'test':
@@ -144,7 +145,7 @@ def plot(writer, tr_loss, val_loss, tr_scores, val_scores, e):
 Loads the model with given name and prints its results. 
 """
 def _test(test_set, model_name, in_channels, num_classes, metrics, args, loss_fn_reg, loss_fn_class, fold, run_name):
-    print('Testing on model: {} with fold: {}'.format(model_name, str(fold)))
+    print('model: {} with fold: {}'.format(model_name, str(fold)))
     test_model = DandadaDAN(in_channels=in_channels, num_classes=num_classes).to(args['device'])
     model_dir_path = osp.join(C.MODEL_DIR_PATH, run_name, 'fold_' + str(fold))
     test_model.load_state_dict(torch.load(osp.join(model_dir_path, model_name)))
@@ -359,6 +360,7 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
     if args['num_folds'] is not None:
         kf = KFold(n_splits=args['num_folds'], shuffle=True, random_state=args['seed'])
         for fold, (tr_index, test_index) in enumerate(kf.split(indices)):
+            print('\nFold#'.format(fold))
             np.random.shuffle(tr_index)                                                           # kfold does not shuffle samples in splits.     
             val_loader = None
             
@@ -388,15 +390,16 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
             writer = SummaryWriter(osp.join('runs', run_name, 'fold_{}'.format(fold)))
             
             """ Train & Validation """
+            print('\n Train & Validation')
             train_fn(model=model, train_loader=tr_loader, val_loader=val_loader, args=args, metrics=metrics, 
                      unlabeled_loader=unlabeled_loader, loss_fn_reg=loss_fn_reg, loss_fn_class=loss_fn_class, 
                      fold=fold, run_name=run_name, writer=writer)
             writer.close()
 
             """ Test """
+            print('\nTest')
             test_set = Subset(dataset, indices=test_index)
             in_channels, num_classes = dataset[0][0].shape[0], C.NUM_CLASSES[dataset.date_type]
-            print('Test indices: {}'.format(test_index[0:3]))
             for model_name in ['best_val_loss.pth', 'model_last_epoch.pth']:
                 _test(test_set=test_set, model_name=model_name, in_channels=in_channels, num_classes=num_classes, 
                       metrics=metrics, args=args, loss_fn_reg=loss_fn_reg, loss_fn_class=loss_fn_class, fold=fold, 
@@ -404,7 +407,7 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
             
             
             # print('lens, tr: {}, val: {}, test: {}'.format(len(tr_set), len(val_set), len(test_set)))
-            
+            print('=' * 72)    
     # Train and test without cross-validation
     else:
         """ Create train, val and test sets """
@@ -435,6 +438,7 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
         writer = SummaryWriter('runs/' + run_name)
         
         """ Train & Validation """
+        print('\n Train & Validation')
         train_fn(model=model, train_loader=tr_loader, unlabeled_loader=unlabeled_loader, val_loader=val_loader, 
                  args=args, metrics=metrics, loss_fn_reg=loss_fn_reg, loss_fn_class=loss_fn_class, fold=1,
                  run_name=run_name, writer=writer)
@@ -442,9 +446,9 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
         writer.close()
         
         """ Test """
+        print('\nTest')
         test_set = Subset(dataset, indices=test_index)
         in_channels, num_classes = dataset[0][0].shape[0], C.NUM_CLASSES[dataset.date_type]
-        print('Test indices: {}'.format(test_index[0:3]))
         for model_name in ['best_val_loss.pth', 'model_last_epoch.pth']:
             _test(test_set=test_set, model_name=model_name, in_channels=in_channels, num_classes=num_classes, 
                   metrics=metrics, args=args, loss_fn_reg=loss_fn_reg, loss_fn_class=loss_fn_class, fold=1, 
