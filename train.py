@@ -462,6 +462,27 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
                   metrics=metrics, args=args, loss_fn_reg=loss_fn_reg, loss_fn_class=loss_fn_class, fold=1, 
                   run_name=run_name)
 
+"""
+Runs model with given args. 
+"""        
+def run(args):
+    """ Create labeled and unlabeled datasets. """
+    labeled_set = Lake2dDataset(learning='labeled', date_type='month')
+    unlabeled_set = Lake2dDataset(learning='unlabeled', date_type='month')
+    
+    """ Create model, regression and classification losses  """
+    in_channels, num_classes = labeled_set[0][0].shape[0], C.NUM_CLASSES[labeled_set.date_type]
+    model = DandadaDAN(in_channels=in_channels, num_classes=num_classes)
+    model.to(args['device'])
+    loss_fn_reg = torch.nn.MSELoss().to(args['device'])                        # Regression loss function
+    loss_fn_class = torch.nn.CrossEntropyLoss().to(args['device'])             # Classification loss function 
+    
+    """ Train """
+    train_fn = _train if args['use_unlabeled_samples'] else _train_labeled_only
+    train_on_folds(model=model, dataset=labeled_set, unlabeled_dataset=unlabeled_set, train_fn=train_fn, 
+                   loss_fn_reg=loss_fn_reg, loss_fn_class=loss_fn_class, args=args)
+    
+    
 if __name__ == "__main__":
     
     seed = 42
@@ -488,21 +509,10 @@ if __name__ == "__main__":
             'test': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4}}
     verify_args(args)
     
-    """ Create labeled and unlabeled datasets. """
-    labeled_set = Lake2dDataset(learning='labeled', date_type='month')
-    unlabeled_set = Lake2dDataset(learning='unlabeled', date_type='month')
-    
-    """ Create model, regression and classification losses  """
-    in_channels, num_classes = labeled_set[0][0].shape[0], C.NUM_CLASSES[labeled_set.date_type]
-    model = DandadaDAN(in_channels=in_channels, num_classes=num_classes)
-    model.to(args['device'])
-    loss_fn_reg = torch.nn.MSELoss().to(args['device'])                        # Regression loss function
-    loss_fn_class = torch.nn.CrossEntropyLoss().to(args['device'])             # Classification loss function 
-    
-    """ Train """
-    train_fn = _train if args['use_unlabeled_samples'] else _train_labeled_only
-    train_on_folds(model=model, dataset=labeled_set, unlabeled_dataset=unlabeled_set, train_fn=train_fn, 
-                   loss_fn_reg=loss_fn_reg, loss_fn_class=loss_fn_class, args=args)
+    for use_unlabeled_samples in [True, False]:
+        args['use_unlabeled_samples'] = use_unlabeled_samples
+        run(args)
+
 
 """
 Ideas:
