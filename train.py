@@ -360,7 +360,7 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
     if args['num_folds'] is not None:
         kf = KFold(n_splits=args['num_folds'], shuffle=True, random_state=args['seed'])
         for fold, (tr_index, test_index) in enumerate(kf.split(indices)):
-            print('\nFold#'.format(fold))
+            print('\nFold#{}'.format(fold))
             np.random.shuffle(tr_index)                                                           # kfold does not shuffle samples in splits.     
             val_loader = None
             
@@ -390,7 +390,7 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
             writer = SummaryWriter(osp.join('runs', run_name, 'fold_{}'.format(fold)))
             
             """ Train & Validation """
-            print('\n Train & Validation')
+            print('\nTrain & Validation')
             train_fn(model=model, train_loader=tr_loader, val_loader=val_loader, args=args, metrics=metrics, 
                      unlabeled_loader=unlabeled_loader, loss_fn_reg=loss_fn_reg, loss_fn_class=loss_fn_class, 
                      fold=fold, run_name=run_name, writer=writer)
@@ -438,7 +438,7 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
         writer = SummaryWriter('runs/' + run_name)
         
         """ Train & Validation """
-        print('\n Train & Validation')
+        print('\nTrain & Validation')
         train_fn(model=model, train_loader=tr_loader, unlabeled_loader=unlabeled_loader, val_loader=val_loader, 
                  args=args, metrics=metrics, loss_fn_reg=loss_fn_reg, loss_fn_class=loss_fn_class, fold=1,
                  run_name=run_name, writer=writer)
