@@ -473,7 +473,7 @@ if __name__ == "__main__":
             'lr': 0.0001,                                                       # From EA's model, default is 1e-2.
             'patch_norm': True,                                                 # Normalizes patches
             'reg_norm': True,                                                   # Normalize regression values
-            'use_unlabeled_samples': True,
+            'use_unlabeled_samples': False,
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'val': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4},
@@ -500,10 +500,10 @@ if __name__ == "__main__":
 """
 Ideas:
 X 1. Normalize patch values
-2. Change normalization to https://www.youtube.com/watch?v=y6IEcEBRZks
+X 2. Change normalization to https://www.youtube.com/watch?v=y6IEcEBRZks
 3. Change metrics calculation from mean of batches to all samples. 
 X 4. Try with one-batch learning
-5. Do not forget to change from one-batch learning to all batches. 
+X 5. Do not forget to change from one-batch learning to all batches. 
 
 References
 [1]: https://medium.com/@benjamin.phillips22/simple-regression-with-neural-networks-in-pytorch-313f06910379
