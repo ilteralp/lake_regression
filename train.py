@@ -135,8 +135,8 @@ def plot(writer, tr_loss, val_loss, tr_scores, val_scores, e):
     writer.add_scalar("5_MAE/Val", np.mean(val_scores[e]['mae']), e)
     writer.add_scalar("6_RMSE/Train", np.mean(tr_scores[e]['rmse']), e)
     writer.add_scalar("6_RMSE/Val", np.mean(val_scores[e]['rmse']), e)
-    writer.add_scalar("7_MAE/Train", np.mean(tr_scores[e]['r2']), e)
-    writer.add_scalar("7_MAE/Val", np.mean(val_scores[e]['r2']), e)
+    writer.add_scalar("7_R2/Train", np.mean(tr_scores[e]['r2']), e)
+    writer.add_scalar("7_R2/Val", np.mean(val_scores[e]['r2']), e)
     
 """
 Takes model and validation set. Calculates metrics on validation set. 
