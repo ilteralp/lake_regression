@@ -241,13 +241,13 @@ def _train_labeled_only(model, train_loader, unlabeled_loader, args, metrics, lo
             _validate(model, val_loader, metrics, args, loss_fn_reg, loss_fn_class, val_loss, val_scores, e)
             if np.mean(val_loss[e]['total']) < best_val_loss:
                 best_val_loss = np.mean(val_loss[e]['total'])
-                torch.save(model.state_dict(), model_dir_path + 'best_val_loss.pth')
+                torch.save(model.state_dict(), osp.join(model_dir_path + 'best_val_loss.pth'))
             # print(get_msg(val_loss, val_scores, e, dataset='val'))              # Print validation set loss & score for each **epoch**. 
         
         """ Plot loss & scores """
         plot(writer=writer, tr_loss=tr_loss, val_loss=val_loss, tr_scores=tr_scores, val_scores=val_scores, e=e)
         
-    torch.save(model.state_dict(), model_dir_path + 'model_last_epoch.pth')     # Save model of last epoch.
+    torch.save(model.state_dict(), osp.join(model_dir_path, 'model_last_epoch.pth'))     # Save model of last epoch.
             
 """
 Trains model with labeled and unlabeled data. 
@@ -325,13 +325,13 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, loss_fn_reg, lo
             _validate(model, val_loader, metrics, args, loss_fn_reg, loss_fn_class, val_loss, val_scores, e)
             if np.mean(val_loss[e]['total']) < best_val_loss:
                 best_val_loss = np.mean(val_loss[e]['total'])
-                torch.save(model.state_dict(), model_dir_path + 'best_val_loss.pth')
+                torch.save(model.state_dict(), osp.join(model_dir_path, 'best_val_loss.pth'))
             # print(get_msg(val_loss, val_scores, e, dataset='val'))              # Print validation set loss & score for each **epoch**. 
           
         """ Plot loss & scores """
         plot(writer=writer, tr_loss=tr_loss, val_loss=val_loss, tr_scores=tr_scores, val_scores=val_scores, e=e)
         
-    torch.save(model.state_dict(), model_dir_path + 'model_last_epoch.pth')     # Save model of last epoch.
+    torch.save(model.state_dict(), osp.join(model_dir_path, 'model_last_epoch.pth'))     # Save model of last epoch.
     
     
     # X Re-init model as in https://discuss.pytorch.org/t/reinitializing-the-weights-after-each-cross-validation-fold/11034
