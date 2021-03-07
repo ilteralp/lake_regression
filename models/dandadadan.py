@@ -51,11 +51,11 @@ class DandadaDAN(nn.Module):
         
         """ Classification """
         self.classifier = nn.Sequential()
-        self.classifier.add_module('c_fc1', nn.Linear(in_features=50 * 3 * 3, out_features=100)) # (bs, 300) -> (bs, 100)
-        self.classifier.add_module('c_bn1', nn.BatchNorm1d(num_features=100))
+        self.classifier.add_module('c_fc1', nn.Linear(in_features=50 * 3 * 3, out_features=50)) # (bs, 300) -> (bs, 100)
+        self.classifier.add_module('c_bn1', nn.BatchNorm1d(num_features=50))
         self.classifier.add_module('c_tanh1', nn.Tanh())
         self.classifier.add_module('c_drop1', nn.Dropout())
-        self.classifier.add_module('c_fc2', nn.Linear(in_features=100, 
+        self.classifier.add_module('c_fc2', nn.Linear(in_features=50, 
                                                       out_features=self.num_classes))           # (bs, 100) -> (bs, num_class)
     
     def forward(self, x):
