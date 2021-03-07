@@ -241,7 +241,7 @@ def _train_labeled_only(model, train_loader, unlabeled_loader, args, metrics, lo
             _validate(model, val_loader, metrics, args, loss_fn_reg, loss_fn_class, val_loss, val_scores, e)
             if np.mean(val_loss[e]['total']) < best_val_loss:
                 best_val_loss = np.mean(val_loss[e]['total'])
-                torch.save(model.state_dict(), osp.join(model_dir_path + 'best_val_loss.pth'))
+                torch.save(model.state_dict(), osp.join(model_dir_path, 'best_val_loss.pth'))
             # print(get_msg(val_loss, val_scores, e, dataset='val'))              # Print validation set loss & score for each **epoch**. 
         
         """ Plot loss & scores """
