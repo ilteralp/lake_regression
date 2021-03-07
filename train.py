@@ -470,7 +470,7 @@ if __name__ == "__main__":
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
     args = {'num_folds': 3,
-            'max_epoch': 3,
+            'max_epoch': 10,
             'device': device,
             'seed': seed,
             'create_val': True,                                                 # Creates validation set
@@ -478,7 +478,7 @@ if __name__ == "__main__":
             'lr': 0.0001,                                                       # From EA's model, default is 1e-2.
             'patch_norm': True,                                                 # Normalizes patches
             'reg_norm': True,                                                   # Normalize regression values
-            'use_unlabeled_samples': False,
+            'use_unlabeled_samples': True,
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'val': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4},
