@@ -170,14 +170,16 @@ def _validate(model, val_loader, metrics, args, loss_fn_reg, loss_fn_class, val_
 """
 Trains model with labeled data only. 
 """
-def _train_labeled_only(model, train_loader, args, metrics, loss_fn_reg, loss_fn_class, fold, run_name, val_loader=None):
+def _train_labeled_only(model, train_loader, unlabeled_loader, args, metrics, loss_fn_reg, loss_fn_class, fold, run_name, writer, val_loader=None):
     model.apply(weight_reset)                                                   # Or save weights of the model first & load them.
     optimizer = RMSprop(params=model.parameters(), lr=args['lr'])               # EA uses RMSprop with lr=0.0001, I can try SGD or Adam as in [1, 2] or [3].
-    tr_loss = [{'l_reg_loss': [], 'l_class_loss' : []} for e in range(args['max_epoch'])]
-    val_loss = [{'l_reg_loss': [], 'l_class_loss' : []} for e in range(args['max_epoch'])]
+    tr_loss = [{'l_reg_loss': [], 'l_class_loss' : [], 'total' : []} for e in range(args['max_epoch'])]
+    val_loss = [{'l_reg_loss': [], 'l_class_loss' : [], 'total' : []} for e in range(args['max_epoch'])]
+    tr_scores = [{'r2' : [], 'mae' : [], 'rmse' : []} for e in range(args['max_epoch'])]
+    val_scores = [{'r2' : [], 'mae' : [], 'rmse' : []} for e in range(args['max_epoch'])]
     best_val_loss = float('inf')
-    fold_path = osp.join(C.MODEL_DIR_PATH, run_name, 'fold_' + str(fold))
-    os.mkdir(fold_path)
+    model_dir_path = osp.join(C.MODEL_DIR_PATH, run_name, 'fold_' + str(fold))
+    os.mkdir(model_dir_path)
     
     for e in range(args['max_epoch']):
         model.train()
@@ -193,6 +195,7 @@ def _train_labeled_only(model, train_loader, args, metrics, loss_fn_reg, loss_fn
             l_patches, l_date_types, l_reg_vals, (l_img_idxs, l_pxs, l_pys) = labeled_data
             l_patches, l_reg_vals, l_date_types = l_patches.to(args['device']), l_reg_vals.to(args['device']), l_date_types.to(args['device'])
             
+            """ Prediction on labeled data """
             l_reg_preds, l_class_preds = model(l_patches)
             reg_loss_labeled = loss_fn_reg(input=l_reg_preds, target=l_reg_vals)
             class_loss_labeled = loss_fn_class(input=l_class_preds, target=l_date_types)
@@ -201,25 +204,33 @@ def _train_labeled_only(model, train_loader, args, metrics, loss_fn_reg, loss_fn
             loss = reg_loss_labeled + class_loss_labeled
             loss.backward()
             optimizer.step()
-            print('Losses, Labeled, reg: {}, class: {}'.format(reg_loss_labeled.item(), class_loss_labeled.item()))
             
             """ Keep losses for plotting """
             tr_loss[e]['l_reg_loss'].append(reg_loss_labeled.item())
             tr_loss[e]['l_class_loss'].append(class_loss_labeled.item())
             tr_loss[e]['total'].append(loss.item())
+            
+            """ Keep scores for plotting """
+            score = metrics.eval_reg_batch_metrics(preds=l_reg_preds, targets=l_reg_vals)
+            tr_scores[e]['r2'].append(score['r2'])
+            tr_scores[e]['mae'].append(score['mae'])
+            tr_scores[e]['rmse'].append(score['rmse'])
             batch_id += 1
         
-        print(get_msg(tr_loss, e))                                              # Print epoch loss on train set. 
+        print(get_msg(tr_loss, tr_scores, e, dataset='train'))                  # Print train set loss & score for each **epoch**. 
         
         """ Validation """
         if val_loader is not None:
-            _validate(model, val_loader, metrics, args, loss_fn_reg, loss_fn_class, val_loss, e)
-            if np.mean(val_loss['total'] < best_val_loss):
-                best_val_loss = np.mean(val_loss['total'])
-                torch.save(model.state_dict(), fold_path + 'best_val_loss.pth')
-            print(get_msg(val_loss, e))                                         # Print epoch loss on validation set. 
+            _validate(model, val_loader, metrics, args, loss_fn_reg, loss_fn_class, val_loss, val_scores, e)
+            if np.mean(val_loss[e]['total']) < best_val_loss:
+                best_val_loss = np.mean(val_loss[e]['total'])
+                torch.save(model.state_dict(), model_dir_path + 'best_val_loss.pth')
+            # print(get_msg(val_loss, val_scores, e, dataset='val'))              # Print validation set loss & score for each **epoch**. 
         
-    torch.save(model.state_dict(), fold_path + 'model_last_epoch.pth')          # Save model of last epoch.
+        """ Plot loss & scores """
+        plot(writer=writer, tr_loss=tr_loss, val_loss=val_loss, tr_scores=tr_scores, val_scores=val_scores, e=e)
+        
+    torch.save(model.state_dict(), model_dir_path + 'model_last_epoch.pth')     # Save model of last epoch.
             
 """
 Trains model with labeled and unlabeled data. 
@@ -320,7 +331,7 @@ Takes a labeled dataset, a train function and arguments.
 Creates dataset's folds and applies train function.
 """
 def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, loss_fn_reg, args):
-    unlabeled_loader = DataLoader(unlabeled_dataset, **args['unlabeled'])
+    unlabeled_loader = DataLoader(unlabeled_dataset, **args['unlabeled']) if args['use_unlabeled_samples'] else None
     metrics = Metrics(num_folds=args['num_folds'], device=args['device'].type)
     indices = [*range(len(dataset))]                                                              # Sample indices
     np.random.shuffle(indices)
@@ -429,6 +440,7 @@ if __name__ == "__main__":
             'lr': 0.0001,                                                       # From EA's model, default is 1e-2.
             'patch_norm': True,                                                 # Normalizes patches
             'reg_norm': True,                                                   # Normalize regression values
+            'use_unlabeled_samples': True,
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'val': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4},
@@ -447,7 +459,8 @@ if __name__ == "__main__":
     loss_fn_class = torch.nn.CrossEntropyLoss().to(args['device'])             # Classification loss function 
     
     """ Train """
-    train_on_folds(model=model, dataset=labeled_set, unlabeled_dataset=unlabeled_set, train_fn=_train, 
+    train_fn = _train if args['use_unlabeled_samples'] else _train_labeled_only
+    train_on_folds(model=model, dataset=labeled_set, unlabeled_dataset=unlabeled_set, train_fn=train_fn, 
                    loss_fn_reg=loss_fn_reg, loss_fn_class=loss_fn_class, args=args)
 
 """
