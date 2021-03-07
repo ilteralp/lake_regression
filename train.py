@@ -460,7 +460,7 @@ if __name__ == "__main__":
         random.seed(seed)    
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    args = {'num_folds': None,
+    args = {'num_folds': 3,
             'max_epoch': 3,
             'device': device,
             'seed': seed,
