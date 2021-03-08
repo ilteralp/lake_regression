@@ -467,8 +467,8 @@ Runs model with given args.
 """        
 def run(args):
     """ Create labeled and unlabeled datasets. """
-    labeled_set = Lake2dDataset(learning='labeled', date_type='month')
-    unlabeled_set = Lake2dDataset(learning='unlabeled', date_type='month')
+    labeled_set = Lake2dDataset(learning='labeled', date_type=args['date_type'])
+    unlabeled_set = Lake2dDataset(learning='unlabeled', date_type=args['date_type'])
     
     """ Create model, regression and classification losses  """
     in_channels, num_classes = labeled_set[0][0].shape[0], C.NUM_CLASSES[labeled_set.date_type]
@@ -502,6 +502,7 @@ if __name__ == "__main__":
             'patch_norm': True,                                                 # Normalizes patches
             'reg_norm': True,                                                   # Normalize regression values
             'use_unlabeled_samples': True,
+            'date_type': 'month',
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'val': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4},
@@ -510,8 +511,10 @@ if __name__ == "__main__":
     verify_args(args)
     
     for use_unlabeled_samples in [True, False]:
-        args['use_unlabeled_samples'] = use_unlabeled_samples
-        run(args)
+        for date_type in ['month', 'season']:
+            args['use_unlabeled_samples'] = use_unlabeled_samples
+            args['date_type'] = date_type
+            run(args)
 
 
 """
