@@ -65,7 +65,7 @@ class BaseLakeDataset(Dataset):
             raise Exception('Only labeled samples have regression values!')
         with open(C.GT_PATH) as f:
             reader = csv.reader(f, delimiter='\t')
-            return np.array([float(row[3]) for row in reader])
+            return np.array([float(row[2]) for row in reader])
     
     """
     Returns regression value of for given indices. Only for labeled samples. 
