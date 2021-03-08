@@ -372,7 +372,7 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
     print('\nRun name: {}'.format(run_name))
     with open(osp.join(C.MODEL_DIR_PATH, run_name, 'args.txt'), 'w') as f:                        # Save args  
         f.write(str(args))
-    with open(osp.join('runs', run_name, 'args.txt'), 'w') as f:
+    with open(osp.join(os.getcwd(), 'runs', run_name, 'args.txt'), 'w') as f:
         f.write(str(args))
 
     """ Train & test with cross-validation """
