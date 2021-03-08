@@ -242,7 +242,8 @@ def _train_labeled_only(model, train_loader, unlabeled_loader, args, metrics, lo
             tr_scores[e]['rmse'].append(score['rmse'])
             batch_id += 1
         
-        # print(get_msg(tr_loss, tr_scores, e, dataset='train'))                  # Print train set loss & score for each **epoch**. 
+        if e % 10 == 0:
+            print(get_msg(tr_loss, tr_scores, e, dataset='train'))                  # Print train set loss & score for each **epoch**. 
         
         """ Validation """
         if val_loader is not None:
@@ -329,8 +330,9 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, loss_fn_reg, lo
             tr_scores[e]['mae'].append(score['mae'])
             tr_scores[e]['rmse'].append(score['rmse'])
             batch_id += 1
-                
-        # print(get_msg(tr_loss, tr_scores, e, dataset='train'))                  # Print train set loss & score for each **epoch**. 
+        
+        if e % 10 == 0:
+            print(get_msg(tr_loss, tr_scores, e, dataset='train'))                  # Print train set loss & score for each **epoch**. 
             
         """ Validation """
         if val_loader is not None:
