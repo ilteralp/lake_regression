@@ -202,7 +202,7 @@ def _train_labeled_only(model, train_loader, unlabeled_loader, args, metrics, lo
     tr_scores = [{'r2' : [], 'mae' : [], 'rmse' : []} for e in range(args['max_epoch'])]
     val_scores = [{'r2' : [], 'mae' : [], 'rmse' : []} for e in range(args['max_epoch'])]
     best_val_loss = float('inf')
-    best_val_r2_score = float('inf')
+    best_val_r2_score = -float('inf')
     model_dir_path = osp.join(C.MODEL_DIR_PATH, run_name, 'fold_' + str(fold))
     os.mkdir(model_dir_path)
     
@@ -271,7 +271,7 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, loss_fn_reg, lo
     tr_scores = [{'r2' : [], 'mae' : [], 'rmse' : []} for e in range(args['max_epoch'])]
     val_scores = [{'r2' : [], 'mae' : [], 'rmse' : []} for e in range(args['max_epoch'])]
     best_val_loss = float('inf')
-    best_val_r2_score = float('inf')
+    best_val_r2_score = -float('inf')
     model_dir_path = osp.join(C.MODEL_DIR_PATH, run_name, 'fold_' + str(fold))
     os.mkdir(model_dir_path)
     print('len loaders, train: {}, unlabeled: {}'.format(len(train_loader), len(unlabeled_loader)))
