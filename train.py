@@ -113,8 +113,8 @@ def get_msg(loss, score, e, dataset):
 Checks given args
 """
 def verify_args(args):
-    if args['num_folds'] is not None and args['num_folds'] < 3:
-        raise Exception('Number of folds should be at least 3 since validation and test set have the same size.')
+    if args['num_folds'] is not None and args['num_folds'] < 2:
+        raise Exception('Number of folds should be at least 2')
     if args['test_per'] >= 0.5:
         raise Exception('Test percent should be less than 0.5 since validation set has the same length with it.')
 
