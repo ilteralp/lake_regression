@@ -242,7 +242,7 @@ def _train_labeled_only(model, train_loader, unlabeled_loader, args, metrics, lo
             tr_scores[e]['rmse'].append(score['rmse'])
             batch_id += 1
         
-        print(get_msg(tr_loss, tr_scores, e, dataset='train'))                  # Print train set loss & score for each **epoch**. 
+        # print(get_msg(tr_loss, tr_scores, e, dataset='train'))                  # Print train set loss & score for each **epoch**. 
         
         """ Validation """
         if val_loader is not None:
@@ -330,7 +330,7 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, loss_fn_reg, lo
             tr_scores[e]['rmse'].append(score['rmse'])
             batch_id += 1
                 
-        print(get_msg(tr_loss, tr_scores, e, dataset='train'))                  # Print train set loss & score for each **epoch**. 
+        # print(get_msg(tr_loss, tr_scores, e, dataset='train'))                  # Print train set loss & score for each **epoch**. 
             
         """ Validation """
         if val_loader is not None:
@@ -528,7 +528,9 @@ if __name__ == "__main__":
         for patch_norm in [True, False]:
             args['patch_norm'] = patch_norm
             # args['use_unlabeled_samples'] = use_unlabeled_samples
+            print('reg_norm: {}, patch_norm: {}'.format(args['reg_norm'], args['patch_norm']))
             run(args)
+            print('+' * 72)
 
 
 """
