@@ -369,6 +369,7 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
     np.random.shuffle(indices)
     run_name = datetime.now().strftime("%Y_%m_%d__%H_%M_%S")
     os.mkdir(osp.join(C.MODEL_DIR_PATH, run_name))                                                # Create run folder.
+    print('\nRun name: {}'.format(run_name))
     with open(osp.join(C.MODEL_DIR_PATH, run_name, 'args.txt'), 'w') as f:                        # Save args  
         f.write(str(args))
 
@@ -501,7 +502,7 @@ if __name__ == "__main__":
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
     args = {'num_folds': None,
-            'max_epoch': 50,
+            'max_epoch': 5,
             'device': device,
             'seed': seed,
             'create_val': True,                                                 # Creates validation set
@@ -514,15 +515,13 @@ if __name__ == "__main__":
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'val': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4},
-            'unlabeled': {'batch_size': C.BATCH_SIZE * 16, 'shuffle': True, 'num_workers': 4},
+            'unlabeled': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'test': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4}}
     verify_args(args)
     
     for use_unlabeled_samples in [True, False]:
-        for date_type in ['month', 'season']:
-            args['use_unlabeled_samples'] = use_unlabeled_samples
-            args['date_type'] = date_type
-            run(args)
+        args['use_unlabeled_samples'] = use_unlabeled_samples
+        run(args)
 
 
 """
