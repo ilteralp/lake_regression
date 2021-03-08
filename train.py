@@ -518,13 +518,11 @@ if __name__ == "__main__":
             'test': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4}}
     verify_args(args)
     
-    run(args)
-    
-    # for use_unlabeled_samples in [True, False]:
-    #     for date_type in ['month', 'season']:
-    #         args['use_unlabeled_samples'] = use_unlabeled_samples
-    #         args['date_type'] = date_type
-    #         run(args)
+    for use_unlabeled_samples in [True, False]:
+        # for date_type in ['month', 'season']:
+        args['use_unlabeled_samples'] = use_unlabeled_samples
+        # args['date_type'] = date_type
+        run(args)
 
 
 """
