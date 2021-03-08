@@ -202,6 +202,7 @@ def _train_labeled_only(model, train_loader, unlabeled_loader, args, metrics, lo
     tr_scores = [{'r2' : [], 'mae' : [], 'rmse' : []} for e in range(args['max_epoch'])]
     val_scores = [{'r2' : [], 'mae' : [], 'rmse' : []} for e in range(args['max_epoch'])]
     best_val_loss = float('inf')
+    best_val_r2_score = 0.0
     model_dir_path = osp.join(C.MODEL_DIR_PATH, run_name, 'fold_' + str(fold))
     os.mkdir(model_dir_path)
     
@@ -249,6 +250,9 @@ def _train_labeled_only(model, train_loader, unlabeled_loader, args, metrics, lo
             if np.mean(val_loss[e]['total']) < best_val_loss:
                 best_val_loss = np.mean(val_loss[e]['total'])
                 torch.save(model.state_dict(), osp.join(model_dir_path, 'best_val_loss.pth'))
+            if np.mean(val_scores[e]['r2'] > best_val_r2_score):
+                best_val_r2_score = val_scores[e]['r2']
+                torch.save(model.state_dict(), osp.join(model_dir_path, 'best_val_r2_score.pth'))
             # print(get_msg(val_loss, val_scores, e, dataset='val'))              # Print validation set loss & score for each **epoch**. 
         
         """ Plot loss & scores """
@@ -267,6 +271,7 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, loss_fn_reg, lo
     tr_scores = [{'r2' : [], 'mae' : [], 'rmse' : []} for e in range(args['max_epoch'])]
     val_scores = [{'r2' : [], 'mae' : [], 'rmse' : []} for e in range(args['max_epoch'])]
     best_val_loss = float('inf')
+    best_val_r2_score = 0.0
     model_dir_path = osp.join(C.MODEL_DIR_PATH, run_name, 'fold_' + str(fold))
     os.mkdir(model_dir_path)
     print('len loaders, train: {}, unlabeled: {}'.format(len(train_loader), len(unlabeled_loader)))
@@ -333,6 +338,9 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, loss_fn_reg, lo
             if np.mean(val_loss[e]['total']) < best_val_loss:
                 best_val_loss = np.mean(val_loss[e]['total'])
                 torch.save(model.state_dict(), osp.join(model_dir_path, 'best_val_loss.pth'))
+            if np.mean(val_scores[e]['r2'] > best_val_r2_score):
+                best_val_r2_score = val_scores[e]['r2']
+                torch.save(model.state_dict(), osp.join(model_dir_path, 'best_val_r2_score.pth'))
             # print(get_msg(val_loss, val_scores, e, dataset='val'))              # Print validation set loss & score for each **epoch**. 
           
         """ Plot loss & scores """
@@ -408,7 +416,7 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
             print('\nTest')
             test_set = Subset(dataset, indices=test_index)
             in_channels, num_classes = dataset[0][0].shape[0], C.NUM_CLASSES[dataset.date_type]
-            for model_name in ['best_val_loss.pth', 'model_last_epoch.pth']:
+            for model_name in ['best_val_loss.pth', 'model_last_epoch.pth', 'best_val_r2_score.pth']:
                 _test(test_set=test_set, model_name=model_name, in_channels=in_channels, num_classes=num_classes, 
                       metrics=metrics, args=args, loss_fn_reg=loss_fn_reg, loss_fn_class=loss_fn_class, fold=fold, 
                       run_name=run_name)
@@ -457,7 +465,7 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
         print('\nTest')
         test_set = Subset(dataset, indices=test_index)
         in_channels, num_classes = dataset[0][0].shape[0], C.NUM_CLASSES[dataset.date_type]
-        for model_name in ['best_val_loss.pth', 'model_last_epoch.pth']:
+        for model_name in ['best_val_loss.pth', 'model_last_epoch.pth', 'best_val_r2_score.pth']:
             _test(test_set=test_set, model_name=model_name, in_channels=in_channels, num_classes=num_classes, 
                   metrics=metrics, args=args, loss_fn_reg=loss_fn_reg, loss_fn_class=loss_fn_class, fold=1, 
                   run_name=run_name)
