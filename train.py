@@ -368,7 +368,8 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
     indices = [*range(len(dataset))]                                                              # Sample indices
     np.random.shuffle(indices)
     run_name = datetime.now().strftime("%Y_%m_%d__%H_%M_%S")
-    os.mkdir(osp.join(C.MODEL_DIR_PATH, run_name))                                                # Create run folder.
+    os.mkdir(osp.join(C.MODEL_DIR_PATH, run_name))                                                # Create model_files\<run_name> folder.
+    os.mkdir(os.getcwd(), 'runs', run_name)                                                       # Create runs\<run_name> folder.   
     print('\nRun name: {}'.format(run_name))
     with open(osp.join(C.MODEL_DIR_PATH, run_name, 'args.txt'), 'w') as f:                        # Save args  
         f.write(str(args))
