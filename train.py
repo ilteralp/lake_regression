@@ -251,7 +251,7 @@ def _train_labeled_only(model, train_loader, unlabeled_loader, args, metrics, lo
                 best_val_loss = np.mean(val_loss[e]['total'])
                 torch.save(model.state_dict(), osp.join(model_dir_path, 'best_val_loss.pth'))
             if np.mean(val_scores[e]['r2']) > best_val_r2_score:
-                best_val_r2_score = val_scores[e]['r2']
+                best_val_r2_score = np.mean(val_scores[e]['r2'])
                 torch.save(model.state_dict(), osp.join(model_dir_path, 'best_val_r2_score.pth'))
             # print(get_msg(val_loss, val_scores, e, dataset='val'))              # Print validation set loss & score for each **epoch**. 
         
@@ -339,7 +339,7 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, loss_fn_reg, lo
                 best_val_loss = np.mean(val_loss[e]['total'])
                 torch.save(model.state_dict(), osp.join(model_dir_path, 'best_val_loss.pth'))
             if np.mean(val_scores[e]['r2']) > best_val_r2_score:
-                best_val_r2_score = val_scores[e]['r2']
+                best_val_r2_score = np.mean(val_scores[e]['r2'])
                 torch.save(model.state_dict(), osp.join(model_dir_path, 'best_val_r2_score.pth'))
             # print(get_msg(val_loss, val_scores, e, dataset='val'))              # Print validation set loss & score for each **epoch**. 
           
