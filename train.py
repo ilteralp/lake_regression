@@ -372,6 +372,8 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
     print('\nRun name: {}'.format(run_name))
     with open(osp.join(C.MODEL_DIR_PATH, run_name, 'args.txt'), 'w') as f:                        # Save args  
         f.write(str(args))
+    with open(osp.join('runs', run_name, 'args.txt'), 'w') as f:
+        f.write(str(args))
 
     """ Train & test with cross-validation """
     if args['num_folds'] is not None:
@@ -519,9 +521,13 @@ if __name__ == "__main__":
             'test': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4}}
     verify_args(args)
     
-    for use_unlabeled_samples in [True, False]:
-        args['use_unlabeled_samples'] = use_unlabeled_samples
-        run(args)
+    # for use_unlabeled_samples in [True, False]:
+    for reg_norm in [True, False]:
+        args['reg_norm'] = reg_norm
+        for patch_norm in [True, False]:
+            args['patch_norm'] = patch_norm
+            # args['use_unlabeled_samples'] = use_unlabeled_samples
+            run(args)
 
 
 """
