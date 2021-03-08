@@ -493,7 +493,7 @@ if __name__ == "__main__":
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
     args = {'num_folds': None,
-            'max_epoch': 100,
+            'max_epoch': 2,
             'device': device,
             'seed': seed,
             'create_val': True,                                                 # Creates validation set
@@ -510,11 +510,13 @@ if __name__ == "__main__":
             'test': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4}}
     verify_args(args)
     
-    for use_unlabeled_samples in [True, False]:
-        for date_type in ['month', 'season']:
-            args['use_unlabeled_samples'] = use_unlabeled_samples
-            args['date_type'] = date_type
-            run(args)
+    run(args)
+    
+    # for use_unlabeled_samples in [True, False]:
+    #     for date_type in ['month', 'season']:
+    #         args['use_unlabeled_samples'] = use_unlabeled_samples
+    #         args['date_type'] = date_type
+    #         run(args)
 
 
 """
