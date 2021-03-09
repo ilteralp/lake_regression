@@ -548,7 +548,7 @@ if __name__ == "__main__":
             'reg_norm': True,                                                   # Normalize regression values
             'use_unlabeled_samples': False,
             'date_type': 'month',
-            'pred_type': 'reg',                                                 # Prediction type, can be {'reg', 'class', 'reg+class'}
+            'pred_type': 'reg+class',                                           # Prediction type, can be {'reg', 'class', 'reg+class'}
             'model': 'dandadadan',                                              # Model name, can be {dandadadan, eanet}.
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
