@@ -17,10 +17,9 @@ sys.path.append("..")
 import constants as C
 
 class EANet(nn.Module):
-    def __init__(self, in_channels, num_classes):
+    def __init__(self, in_channels):
         super(EANet, self).__init__()
         self.in_channels = in_channels
-        self.num_classes = num_classes
         
         self.pad = nn.ReflectionPad2d(padding=1)
         self.act = nn.Tanh()
@@ -46,8 +45,8 @@ def weights_init(m):
         nn.init.xavier_uniform_(m.weight)
     
 if __name__ == "__main__":
-    in_channels, num_classes = 12, 4
-    net = EANet(in_channels=in_channels, num_classes=num_classes)
+    in_channels = 12
+    net = EANet(in_channels=in_channels)
     net.apply(weights_init)                                                     # Init weights
     
     inp = torch.randn(2, 12, 3, 3)
