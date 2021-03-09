@@ -19,7 +19,7 @@ from datetime import datetime
 import constants as C
 from datasets import Lake2dDataset
 from metrics import Metrics
-from models import DandadaDAN
+from models import DandadaDAN, EANet
 
 """
 Takes a dataset and splits it into train, test and validation sets. 
@@ -295,12 +295,6 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, loss_fn_reg, lo
             
             """ Prediction on labeled data """
             l_reg_preds, l_class_preds = model(l_patches)
-            # if e == 0:
-                # print('img#{}, ({}, {})'.format(l_img_idxs[0], l_pxs[0], l_pys[0]))
-                # print('input: {}'.format(l_reg_vals.view(1, -1)))
-                # print('preds: {}'.format(l_reg_preds.view(1, -1)))
-                # print('input, min: {:.4f}, max: {:.4f}, mean: {:.4f}, median: {:.4f}'.format(torch.min(l_reg_vals), torch.max(l_reg_vals), torch.mean(l_reg_vals), torch.median(l_reg_vals)))
-                # print('preds, min: {:.4f}, max: {:.4f}, mean: {:.4f}, median: {:.4f}'.format(torch.min(l_reg_preds), torch.max(l_reg_preds), torch.mean(l_reg_preds), torch.median(l_reg_preds)))
             reg_loss_labeled = loss_fn_reg(input=l_reg_preds, target=l_reg_vals)
             class_loss_labeled = loss_fn_class(input=l_class_preds, target=l_date_types)
             
