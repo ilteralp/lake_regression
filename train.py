@@ -8,6 +8,7 @@ Created on Wed Feb 24 16:56:33 2021
 import torch
 from torch.utils.data import Dataset, random_split, Subset, DataLoader
 from torch.optim import RMSprop
+import torch.nn as nn
 from torch.utils.tensorboard import SummaryWriter
 import numpy as np
 import random
@@ -94,6 +95,17 @@ def weight_reset(m):
     if callable(reset_parameters):
         m.reset_parameters()
         
+def weights_init(m):
+    if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):                    # glorot_uniform in Keras is xavier_uniform_  
+        nn.init.xavier_uniform_(m.weight)
+        
+def reset_model(m, args):
+    if args['model'] == 'eanet':
+        return m.apply(weights_init)
+    
+    elif args['model'] == 'dandadadan':
+        return m.apply(weight_reset)
+        
 """
 Returns verbose message with loss and score.
 """
@@ -117,6 +129,10 @@ def verify_args(args):
         raise Exception('Number of folds should be at least 2')
     if args['test_per'] >= 0.5:
         raise Exception('Test percent should be less than 0.5 since validation set has the same length with it.')
+    if args['pred_type'] not in ['reg', 'class', 'reg+class']:
+        raise Exception('Expected prediction type to be one of [\'reg\', \'class\', \'reg+class\']')
+    if args['model'] not in ['dandadadan', 'eanet']:
+        raise Exception('Model can be one of [\'dandadadan\', \'eanet\']')
 
 """
 Plots loss and scores to Tensorboard
@@ -144,7 +160,7 @@ def plot(writer, tr_loss, val_loss, tr_scores, val_scores, e):
 """
 Loads the model with given name and prints its results. 
 """
-def _test(test_set, model_name, in_channels, num_classes, metrics, args, loss_fn_reg, loss_fn_class, fold, run_name):
+def _test(test_set, model_name, in_channels, num_classes, metrics, args, fold, run_name):
     print('model: {} with fold: {}'.format(model_name, str(fold)))
     test_model = DandadaDAN(in_channels=in_channels, num_classes=num_classes).to(args['device'])
     model_dir_path = osp.join(C.MODEL_DIR_PATH, run_name, 'fold_' + str(fold))
@@ -152,8 +168,8 @@ def _test(test_set, model_name, in_channels, num_classes, metrics, args, loss_fn
     test_loader = DataLoader(test_set, **args['test'])
     test_loss = [{'l_reg_loss': [], 'l_class_loss' : [], 'total' : []}]
     test_scores = [{'r2' : [], 'mae' : [], 'rmse' : []}]
-    _validate(model=test_model, val_loader=test_loader, metrics=metrics, args=args, loss_fn_reg=loss_fn_reg,
-              loss_fn_class=loss_fn_class, val_loss=test_loss, val_scores=test_scores, epoch=0)
+    _validate(model=test_model, val_loader=test_loader, metrics=metrics, args=args,
+              val_loss=test_loss, val_scores=test_scores, epoch=0)
     
     """ Save result to file """
     msg = get_msg(test_loss, test_scores, e=0, dataset='test')
@@ -166,7 +182,7 @@ def _test(test_set, model_name, in_channels, num_classes, metrics, args, loss_fn
 Takes model and validation set. Calculates metrics on validation set. 
 Runs for each epoch. 
 """
-def _validate(model, val_loader, metrics, args, loss_fn_reg, loss_fn_class, val_loss, val_scores, epoch):
+def _validate(model, val_loader, metrics, args, val_loss, val_scores, epoch):
     model.eval()
     
     with torch.no_grad():
@@ -176,8 +192,8 @@ def _validate(model, val_loader, metrics, args, loss_fn_reg, loss_fn_class, val_
             
             """" Calculate loss """ 
             v_reg_preds, v_class_preds = model(v_patches)
-            reg_loss_val = loss_fn_reg(input=v_reg_preds, target=v_reg_vals)
-            reg_loss_class = loss_fn_class(input=v_class_preds, target=v_date_types)
+            reg_loss_val = args['loss_fn_reg'](input=v_reg_preds, target=v_reg_vals)
+            reg_loss_class = args['loss_fn_class'](input=v_class_preds, target=v_date_types)
             loss = reg_loss_val + reg_loss_class
             
             """ Keep loss """
@@ -194,7 +210,7 @@ def _validate(model, val_loader, metrics, args, loss_fn_reg, loss_fn_class, val_
 """
 Trains model with labeled data only. 
 """
-def _train_labeled_only(model, train_loader, unlabeled_loader, args, metrics, loss_fn_reg, loss_fn_class, fold, run_name, writer, val_loader=None):
+def _train_labeled_only(model, train_loader, unlabeled_loader, args, metrics, fold, run_name, writer, val_loader=None):
     model.apply(weight_reset)                                                   # Or save weights of the model first & load them.
     optimizer = RMSprop(params=model.parameters(), lr=args['lr'])               # EA uses RMSprop with lr=0.0001, I can try SGD or Adam as in [1, 2] or [3].
     tr_loss = [{'l_reg_loss': [], 'l_class_loss' : [], 'total' : []} for e in range(args['max_epoch'])]
@@ -222,8 +238,8 @@ def _train_labeled_only(model, train_loader, unlabeled_loader, args, metrics, lo
             
             """ Prediction on labeled data """
             l_reg_preds, l_class_preds = model(l_patches)
-            reg_loss_labeled = loss_fn_reg(input=l_reg_preds, target=l_reg_vals)
-            class_loss_labeled = loss_fn_class(input=l_class_preds, target=l_date_types)
+            reg_loss_labeled = args['loss_fn_reg'](input=l_reg_preds, target=l_reg_vals)
+            class_loss_labeled = args['loss_fn_class'](input=l_class_preds, target=l_date_types)
             
             """ Calculate loss """
             loss = reg_loss_labeled + class_loss_labeled
@@ -247,7 +263,7 @@ def _train_labeled_only(model, train_loader, unlabeled_loader, args, metrics, lo
         
         """ Validation """
         if val_loader is not None:
-            _validate(model, val_loader, metrics, args, loss_fn_reg, loss_fn_class, val_loss, val_scores, e)
+            _validate(model, val_loader, metrics, args, val_loss, val_scores, e)
             if np.mean(val_loss[e]['total']) < best_val_loss:
                 best_val_loss = np.mean(val_loss[e]['total'])
                 torch.save(model.state_dict(), osp.join(model_dir_path, 'best_val_loss.pth'))
@@ -260,11 +276,16 @@ def _train_labeled_only(model, train_loader, unlabeled_loader, args, metrics, lo
         plot(writer=writer, tr_loss=tr_loss, val_loss=val_loss, tr_scores=tr_scores, val_scores=val_scores, e=e)
         
     torch.save(model.state_dict(), osp.join(model_dir_path, 'model_last_epoch.pth'))     # Save model of last epoch.
-            
+       
+"""
+"""
+def pred_calc_loss(model, args):
+    pass
+    
 """
 Trains model with labeled and unlabeled data. 
 """
-def _train(model, train_loader, unlabeled_loader, args, metrics, loss_fn_reg, loss_fn_class, fold, run_name, writer, val_loader=None):
+def _train(model, train_loader, unlabeled_loader, args, metrics, fold, run_name, writer, val_loader=None):
     model.apply(weight_reset)                                                   # Or save weights of the model first & load them.
     optimizer = RMSprop(params=model.parameters(), lr=args['lr'])               # EA uses RMSprop with lr=0.0001, I can try SGD or Adam as in [1, 2] or [3].
     tr_loss = [{'l_reg_loss': [], 'l_class_loss' : [], 'u_class_loss' : [], 'total' : []} for e in range(args['max_epoch'])]
@@ -295,8 +316,8 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, loss_fn_reg, lo
             
             """ Prediction on labeled data """
             l_reg_preds, l_class_preds = model(l_patches)
-            reg_loss_labeled = loss_fn_reg(input=l_reg_preds, target=l_reg_vals)
-            class_loss_labeled = loss_fn_class(input=l_class_preds, target=l_date_types)
+            reg_loss_labeled = args['loss_fn_reg'](input=l_reg_preds, target=l_reg_vals)
+            class_loss_labeled = args['loss_fn_class'](input=l_class_preds, target=l_date_types)
             
             """ Unlabeled data """
             unlabeled_data = next(unlabeled_iter)
@@ -305,7 +326,7 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, loss_fn_reg, lo
             
             """ Prediction on unlabeled data """
             _, u_class_preds = model(u_patches)
-            class_loss_unlabeled = loss_fn_class(input=u_class_preds, target=u_date_types)
+            class_loss_unlabeled = args['loss_fn_class'](input=u_class_preds, target=u_date_types)
     
             """ Calculate loss """
             loss = reg_loss_labeled + class_loss_labeled + class_loss_unlabeled
@@ -330,7 +351,7 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, loss_fn_reg, lo
             
         """ Validation """
         if val_loader is not None:
-            _validate(model, val_loader, metrics, args, loss_fn_reg, loss_fn_class, val_loss, val_scores, e)
+            _validate(model, val_loader, metrics, args, val_loss, val_scores, e)
             if np.mean(val_loss[e]['total']) < best_val_loss:
                 best_val_loss = np.mean(val_loss[e]['total'])
                 torch.save(model.state_dict(), osp.join(model_dir_path, 'best_val_loss.pth'))
@@ -358,7 +379,7 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, loss_fn_reg, lo
 Takes a labeled dataset, a train function and arguments. 
 Creates dataset's folds and applies train function.
 """
-def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, loss_fn_reg, args):
+def train_on_folds(model, dataset, unlabeled_dataset, train_fn, args):
     unlabeled_loader = DataLoader(unlabeled_dataset, **args['unlabeled']) if args['use_unlabeled_samples'] else None
     metrics = Metrics(num_folds=args['num_folds'], device=args['device'].type)
     indices = [*range(len(dataset))]                                                              # Sample indices
@@ -408,8 +429,7 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
             """ Train & Validation """
             print('\nTrain & Validation')
             train_fn(model=model, train_loader=tr_loader, val_loader=val_loader, args=args, metrics=metrics, 
-                     unlabeled_loader=unlabeled_loader, loss_fn_reg=loss_fn_reg, loss_fn_class=loss_fn_class, 
-                     fold=fold, run_name=run_name, writer=writer)
+                     unlabeled_loader=unlabeled_loader, fold=fold, run_name=run_name, writer=writer)
             writer.close()
 
             """ Test """
@@ -418,8 +438,7 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
             in_channels, num_classes = dataset[0][0].shape[0], C.NUM_CLASSES[dataset.date_type]
             for model_name in ['best_val_loss.pth', 'model_last_epoch.pth', 'best_val_r2_score.pth']:
                 _test(test_set=test_set, model_name=model_name, in_channels=in_channels, num_classes=num_classes, 
-                      metrics=metrics, args=args, loss_fn_reg=loss_fn_reg, loss_fn_class=loss_fn_class, fold=fold, 
-                      run_name=run_name)
+                      metrics=metrics, args=args, fold=fold, run_name=run_name)
             
             
             # print('lens, tr: {}, val: {}, test: {}'.format(len(tr_set), len(val_set), len(test_set)))
@@ -456,8 +475,7 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
         """ Train & Validation """
         print('\nTrain & Validation')
         train_fn(model=model, train_loader=tr_loader, unlabeled_loader=unlabeled_loader, val_loader=val_loader, 
-                 args=args, metrics=metrics, loss_fn_reg=loss_fn_reg, loss_fn_class=loss_fn_class, fold=1,
-                 run_name=run_name, writer=writer)
+                 args=args, metrics=metrics, fold=1, run_name=run_name, writer=writer)
         
         writer.close()
         
@@ -467,9 +485,24 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, loss_fn_class, l
         in_channels, num_classes = dataset[0][0].shape[0], C.NUM_CLASSES[dataset.date_type]
         for model_name in ['best_val_loss.pth', 'model_last_epoch.pth', 'best_val_r2_score.pth']:
             _test(test_set=test_set, model_name=model_name, in_channels=in_channels, num_classes=num_classes, 
-                  metrics=metrics, args=args, loss_fn_reg=loss_fn_reg, loss_fn_class=loss_fn_class, fold=1, 
-                  run_name=run_name)
-
+                  metrics=metrics, args=args, fold=1, run_name=run_name)
+            
+"""
+Creates model.
+"""
+def create_model(dataset, args):
+    in_channels = dataset[0][0].shape[0]
+    if args['model'] == 'dandadadan':
+        num_classes = C.NUM_CLASSES[dataset.date_type]
+        model = DandadaDAN(in_channels=in_channels, num_classes=num_classes)
+    
+    elif args['model'] == 'eanet':
+        model = EANet(in_channels=in_channels)
+        model.apply(weights_init)
+    
+    return model.to(args['device'])
+        
+    
 """
 Runs model with given args. 
 """        
@@ -479,16 +512,20 @@ def run(args):
     unlabeled_set = Lake2dDataset(learning='unlabeled', date_type=args['date_type'])
     
     """ Create model, regression and classification losses  """
-    in_channels, num_classes = labeled_set[0][0].shape[0], C.NUM_CLASSES[labeled_set.date_type]
-    model = DandadaDAN(in_channels=in_channels, num_classes=num_classes)
-    model.to(args['device'])
-    loss_fn_reg = torch.nn.MSELoss().to(args['device'])                        # Regression loss function
-    loss_fn_class = torch.nn.CrossEntropyLoss().to(args['device'])             # Classification loss function 
+    model = create_model(dataset=labeled_set, args=args)
+    
+    if args['pred_type'] == 'reg' or args['pred_type'] == 'reg+class':
+        loss_fn_reg = torch.nn.MSELoss().to(args['device'])                     # Regression loss function
+        args['loss_fn_reg'] = loss_fn_reg
+
+    if args['pred_type'] == 'class' or args['pred_type'] == 'reg+class':
+        loss_fn_class = torch.nn.CrossEntropyLoss().to(args['device'])          # Classification loss function
+        args['loss_fn_class'] = loss_fn_class
     
     """ Train """
     train_fn = _train if args['use_unlabeled_samples'] else _train_labeled_only
-    train_on_folds(model=model, dataset=labeled_set, unlabeled_dataset=unlabeled_set, train_fn=train_fn, 
-                   loss_fn_reg=loss_fn_reg, loss_fn_class=loss_fn_class, args=args)
+    train_on_folds(model=model, dataset=labeled_set, unlabeled_dataset=unlabeled_set,  
+                   train_fn=train_fn, args=args)
     
     
 if __name__ == "__main__":
@@ -511,6 +548,8 @@ if __name__ == "__main__":
             'reg_norm': True,                                                   # Normalize regression values
             'use_unlabeled_samples': False,
             'date_type': 'month',
+            'pred_type': 'reg',                                                 # Prediction type, can be {'reg', 'class', 'reg+class'}
+            'model': 'dandadadan',                                              # Model name, can be {dandadadan, eanet}.
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'val': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4},
