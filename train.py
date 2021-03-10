@@ -148,8 +148,10 @@ def plot(writer, tr_loss, val_loss, tr_scores, val_scores, e):
     writer.add_scalar('1_Loss/val (total)', np.mean(val_loss[e]['total']), e)
     writer.add_scalar('2_Loss/train (labeled_reg)', np.mean(tr_loss[e]['l_reg_loss']), e)
     writer.add_scalar('2_Loss/val (labeled_reg)', np.mean(val_loss[e]['l_reg_loss']), e)
-    writer.add_scalar('3_Loss/train (labeled_class)', np.mean(tr_loss[e]['l_class_loss']), e)
-    writer.add_scalar('3_Loss/val (labeled_class)', np.mean(val_loss[e]['l_class_loss']), e)
+    if 'l_class_loss' in tr_loss[e]:
+        writer.add_scalar('3_Loss/train (labeled_class)', np.mean(tr_loss[e]['l_class_loss']), e)
+    if 'l_class_loss' in val_loss[e]:
+        writer.add_scalar('3_Loss/val (labeled_class)', np.mean(val_loss[e]['l_class_loss']), e)
     if 'u_class_loss' in tr_loss[e]:
         writer.add_scalar('4_Loss/train (unlabeled_class)', np.mean(tr_loss[e]['u_class_loss']), e)
     
