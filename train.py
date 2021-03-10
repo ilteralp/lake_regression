@@ -298,20 +298,20 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, run_name,
             # l_reg_preds, l_class_preds = model(l_patches)
             # reg_loss_labeled = args['loss_fn_reg'](input=l_reg_preds, target=l_reg_vals)
             # class_loss_labeled = args['loss_fn_class'](input=l_class_preds, target=l_date_types)
-            labeled_loss = calc_loss(model=model, patches=l_patches, args=args, loss_arr=tr_loss, score_arr=tr_scores, 
+            loss = calc_loss(model=model, patches=l_patches, args=args, loss_arr=tr_loss, score_arr=tr_scores, 
                                      e=e, target_regs=l_reg_vals, target_labels=l_date_types, metrics=metrics)
             
             # """ Unlabeled data """
-            # if args['use_unlabeled_samples']:
-            unlabeled_data = next(unlabeled_iter)
-            u_patches, u_date_types, _, (u_img_idxs, u_pxs, u_pys) = unlabeled_data
-            u_patches, u_date_types = u_patches.to(args['device']), u_date_types.to(args['device'])
-            
-            """ Prediction on unlabeled data """
-            _, u_class_preds = model(u_patches)
-            class_loss_unlabeled = args['loss_fn_class'](input=u_class_preds, target=u_date_types)
-            tr_loss[e]['u_class_loss'].append(class_loss_unlabeled.item())
-            loss = labeled_loss + class_loss_unlabeled
+            if args['use_unlabeled_samples']:
+                unlabeled_data = next(unlabeled_iter)
+                u_patches, u_date_types, _, (u_img_idxs, u_pxs, u_pys) = unlabeled_data
+                u_patches, u_date_types = u_patches.to(args['device']), u_date_types.to(args['device'])
+                
+                """ Prediction on unlabeled data """
+                _, u_class_preds = model(u_patches)
+                class_loss_unlabeled = args['loss_fn_class'](input=u_class_preds, target=u_date_types)
+                tr_loss[e]['u_class_loss'].append(class_loss_unlabeled.item())
+                loss = loss + class_loss_unlabeled
     
             """ Calculate loss """
             # loss = reg_loss_labeled + class_loss_labeled + class_loss_unlabeled
