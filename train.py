@@ -249,13 +249,14 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, run_name,
     best_val_r2_score = -float('inf')
     model_dir_path = osp.join(C.MODEL_DIR_PATH, run_name, 'fold_' + str(fold))
     os.mkdir(model_dir_path)
-    print('len loaders, train: {}, unlabeled: {}'.format(len(train_loader), len(unlabeled_loader)))
+    # print('len loaders, train: {}, unlabeled: {}'.format(len(train_loader), len(unlabeled_loader)))
     
     for e in range(args['max_epoch']):
         model.train()
-        len_loader = min(len(train_loader), len(unlabeled_loader))              # Update unlabeled batch size to use all its samples. 
+        if args['use_unlabeled_samples']:
+            len_loader = min(len(train_loader), len(unlabeled_loader))              # Update unlabeled batch size to use all its samples. 
+            unlabeled_iter = iter(unlabeled_loader)
         labeled_iter = iter(train_loader)
-        unlabeled_iter = iter(unlabeled_loader)
     
         """ Train """
         batch_id = 0
