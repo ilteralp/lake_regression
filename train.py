@@ -187,8 +187,9 @@ def _test(test_set, model_name, metrics, args, fold):
     msg = get_msg(test_loss, test_scores, e=0, dataset='test', args=args)
     with open(osp.join(model_dir_path, model_name + '.res'), 'w') as f:
         f.write(msg)
+    with open(osp.join(os.getcwd(), 'runs', args['run_name'], 'fold_' + str(fold) + '_' + model_name + '.res')) as f:
+        f.write(msg)
     print(msg)
-        
     
 """
 Takes model and validation set. Calculates metrics on validation set. 
