@@ -168,7 +168,10 @@ def _test(test_set, model_name, in_channels, num_classes, metrics, args, fold, r
     model_dir_path = osp.join(C.MODEL_DIR_PATH, run_name, 'fold_' + str(fold))
     test_model.load_state_dict(torch.load(osp.join(model_dir_path, model_name)))
     test_loader = DataLoader(test_set, **args['test'])
-    test_loss = [{'l_reg_loss': [], 'l_class_loss' : [], 'total' : []}]
+    if args['pred_type'] == 'reg+class':
+        test_loss = [{'l_reg_loss': [], 'l_class_loss' : [], 'total' : []}]
+    elif args['pred_type'] == 'reg':
+        test_loss = [{'l_reg_loss': [], 'total' : []}]
     test_scores = [{'r2' : [], 'mae' : [], 'rmse' : []}]
     _validate(model=test_model, val_loader=test_loader, metrics=metrics, args=args,
               val_loss=test_loss, val_scores=test_scores, epoch=0)
@@ -233,7 +236,21 @@ def calc_loss(model, patches, args, loss_arr, score_arr, e, target_regs, metrics
         loss_arr[e]['l_reg_loss'].append(reg_loss.item())
         loss_arr[e]['l_class_loss'].append(class_loss.item())
         add_scores(preds=reg_preds, targets=target_regs, e=e, score_arr=score_arr, metrics=metrics)
-        return reg_loss + class_loss	
+        return reg_loss + class_loss
+
+"""
+Creates arrays of losses and scores with given args. 
+"""
+def create_losses_scores(args):
+    if args['pred_type'] == 'reg':
+        losses = [{'l_reg_loss': [], 'total' : []} for e in range(args['max_epoch'])]
+    elif args['pred_type'] == 'reg+class':
+        if args['use_unlabeled_samples']:
+           losses = [{'l_reg_loss': [], 'l_class_loss' : [], 'u_class_loss' : [], 'total' : []} for e in range(args['max_epoch'])]
+        else:
+            losses = [{'l_reg_loss': [], 'l_class_loss' : [], 'total' : []} for e in range(args['max_epoch'])]
+    scores = [{'r2' : [], 'mae' : [], 'rmse' : []} for e in range(args['max_epoch'])]
+    return losses, scores
     
 """
 Trains model with labeled and unlabeled data. 
@@ -241,10 +258,12 @@ Trains model with labeled and unlabeled data.
 def _train(model, train_loader, unlabeled_loader, args, metrics, fold, run_name, writer, val_loader=None):
     model.apply(weight_reset)                                                   # Or save weights of the model first & load them.
     optimizer = RMSprop(params=model.parameters(), lr=args['lr'])               # EA uses RMSprop with lr=0.0001, I can try SGD or Adam as in [1, 2] or [3].
-    tr_loss = [{'l_reg_loss': [], 'l_class_loss' : [], 'u_class_loss' : [], 'total' : []} for e in range(args['max_epoch'])]
-    val_loss = [{'l_reg_loss': [], 'l_class_loss' : [], 'total' : []} for e in range(args['max_epoch'])]
-    tr_scores = [{'r2' : [], 'mae' : [], 'rmse' : []} for e in range(args['max_epoch'])]
-    val_scores = [{'r2' : [], 'mae' : [], 'rmse' : []} for e in range(args['max_epoch'])]
+    # tr_loss = [{'l_reg_loss': [], 'l_class_loss' : [], 'u_class_loss' : [], 'total' : []} for e in range(args['max_epoch'])]
+    # val_loss = [{'l_reg_loss': [], 'l_class_loss' : [], 'total' : []} for e in range(args['max_epoch'])]
+    # tr_scores = [{'r2' : [], 'mae' : [], 'rmse' : []} for e in range(args['max_epoch'])]
+    # val_scores = [{'r2' : [], 'mae' : [], 'rmse' : []} for e in range(args['max_epoch'])]
+    tr_loss, tr_scores = create_losses_scores(args)
+    val_loss, val_scores = create_losses_scores(args)
     best_val_loss = float('inf')
     best_val_r2_score = -float('inf')
     model_dir_path = osp.join(C.MODEL_DIR_PATH, run_name, 'fold_' + str(fold))
