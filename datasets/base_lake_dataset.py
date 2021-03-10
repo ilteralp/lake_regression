@@ -71,7 +71,7 @@ class BaseLakeDataset(Dataset):
     Returns regression value of for given indices. Only for labeled samples. 
     """
     def _get_regression_val(self, img_idx, px_idx):
-        ln = img_idx * len(C.LABELED_INDICES[0]) + px_idx
+        ln = 32 * px_idx + img_idx
         if(len(self.reg_vals) < ln):
             raise Exception('Accessing index#{} where total length is {} at {}'.format(ln, len(self.reg_vals), C.GT_PATH))
         return self.reg_vals[ln]
