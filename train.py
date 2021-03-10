@@ -473,11 +473,11 @@ def run(args):
     loss_fn_reg = torch.nn.MSELoss().to(args['device'])                         # Regression loss function
     args['loss_fn_reg'] = loss_fn_reg
     args['in_channels'] = labeled_set[0][0].shape[0]
+    args['num_classes'] = C.NUM_CLASSES[labeled_set.date_type]
 
     if args['pred_type'] == 'reg+class':
         loss_fn_class = torch.nn.CrossEntropyLoss().to(args['device'])          # Classification loss function
         args['loss_fn_class'] = loss_fn_class
-        args['num_classes'] = C.NUM_CLASSES[labeled_set.date_type]
     
     """ Create model """
     model = create_model(args=args)
