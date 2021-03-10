@@ -553,6 +553,7 @@ if __name__ == "__main__":
     for use_unlabeled_samples in [True, False]:
         args['use_unlabeled_samples'] = use_unlabeled_samples
         print('use_unlabeled_samples: {}'.format(args['use_unlabeled_samples']))
+        run(args)
         print('+' * 72)
  
     # for reg_norm in [True, False]:
