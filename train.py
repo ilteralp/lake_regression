@@ -109,7 +109,7 @@ def reset_model(m, args):
 """
 Returns verbose message with loss and score.
 """
-def get_msg(loss, score, e, dataset):
+def get_msg(loss, score, e, dataset, args):
     if args['pred_type'] == 'reg':
         sum_str = '(R)'    
     else:
@@ -184,7 +184,7 @@ def _test(test_set, model_name, in_channels, num_classes, metrics, args, fold, r
               val_loss=test_loss, val_scores=test_scores, epoch=0)
     
     """ Save result to file """
-    msg = get_msg(test_loss, test_scores, e=0, dataset='test')
+    msg = get_msg(test_loss, test_scores, e=0, dataset='test', args=args)
     with open(osp.join(model_dir_path, model_name + '.res'), 'w') as f:
         f.write(msg)
     print(msg)
@@ -313,7 +313,7 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, run_name,
             batch_id += 1
         
         if e % 10 == 0:
-            print(get_msg(tr_loss, tr_scores, e, dataset='train'))                  # Print train set loss & score for each **epoch**. 
+            print(get_msg(tr_loss, tr_scores, e, dataset='train', args=args))                  # Print train set loss & score for each **epoch**. 
             
         """ Validation """
         if val_loader is not None:
@@ -324,7 +324,7 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, run_name,
             if np.mean(val_scores[e]['r2']) > best_val_r2_score:
                 best_val_r2_score = np.mean(val_scores[e]['r2'])
                 torch.save(model.state_dict(), osp.join(model_dir_path, 'best_val_r2_score.pth'))
-            # print(get_msg(val_loss, val_scores, e, dataset='val'))              # Print validation set loss & score for each **epoch**. 
+            # print(get_msg(val_loss, val_scores, e, dataset='val', args=args))              # Print validation set loss & score for each **epoch**. 
           
         """ Plot loss & scores """
         plot(writer=writer, tr_loss=tr_loss, val_loss=val_loss, tr_scores=tr_scores, val_scores=val_scores, e=e)
