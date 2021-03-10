@@ -507,7 +507,7 @@ if __name__ == "__main__":
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
     args = {'num_folds': None,
-            'max_epoch': 10,
+            'max_epoch': 100,
             'device': device,
             'seed': seed,
             'create_val': True,                                                 # Creates validation set
