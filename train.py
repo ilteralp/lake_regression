@@ -202,12 +202,7 @@ def _validate(model, val_loader, metrics, args, val_loss, val_scores, epoch):
             v_patches, v_date_types, v_reg_vals, (v_img_idxs, v_pxs, v_pys) = val_data
             v_patches, v_date_types, v_reg_vals = v_patches.to(args['device']), v_date_types.to(args['device']), v_reg_vals.to(args['device'])
             
-            # """" Calculate loss """ 
-            # v_reg_preds, v_class_preds = model(v_patches)
-            # reg_loss_val = args['loss_fn_reg'](input=v_reg_preds, target=v_reg_vals)
-            # reg_loss_class = args['loss_fn_class'](input=v_class_preds, target=v_date_types)
-            # loss = reg_loss_val + reg_loss_class
-            
+            """ Calculate loss """
             loss = calc_loss(model=model, patches=v_patches, args=args, loss_arr=val_loss, score_arr=val_scores, 
                              e=epoch, target_regs=v_reg_vals, target_labels=v_date_types, metrics=metrics)
             
@@ -224,7 +219,7 @@ def add_scores(preds, targets, score_arr, metrics, e):
     score_arr[e]['rmse'].append(score['rmse'])
 
 """
-Calculates loss depending on prediction type
+Calculates loss(es) depending on prediction type
 """
 def calc_loss(model, patches, args, loss_arr, score_arr, e, target_regs, metrics, target_labels=None):
     if args['pred_type'] == 'reg':    
@@ -266,17 +261,12 @@ Trains model with labeled and unlabeled data.
 def _train(model, train_loader, unlabeled_loader, args, metrics, fold, run_name, writer, val_loader=None):
     model.apply(weight_reset)                                                   # Or save weights of the model first & load them.
     optimizer = RMSprop(params=model.parameters(), lr=args['lr'])               # EA uses RMSprop with lr=0.0001, I can try SGD or Adam as in [1, 2] or [3].
-    # tr_loss = [{'l_reg_loss': [], 'l_class_loss' : [], 'u_class_loss' : [], 'total' : []} for e in range(args['max_epoch'])]
-    # val_loss = [{'l_reg_loss': [], 'l_class_loss' : [], 'total' : []} for e in range(args['max_epoch'])]
-    # tr_scores = [{'r2' : [], 'mae' : [], 'rmse' : []} for e in range(args['max_epoch'])]
-    # val_scores = [{'r2' : [], 'mae' : [], 'rmse' : []} for e in range(args['max_epoch'])]
     tr_loss, tr_scores = create_losses_scores(args)
     val_loss, val_scores = create_losses_scores(args)
     best_val_loss = float('inf')
     best_val_r2_score = -float('inf')
     model_dir_path = osp.join(C.MODEL_DIR_PATH, run_name, 'fold_' + str(fold))
     os.mkdir(model_dir_path)
-    # print('len loaders, train: {}, unlabeled: {}'.format(len(train_loader), len(unlabeled_loader)))
     
     for e in range(args['max_epoch']):
         model.train()
@@ -297,14 +287,11 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, run_name,
             l_patches, l_date_types, l_reg_vals, (l_img_idxs, l_pxs, l_pys) = labeled_data
             l_patches, l_reg_vals, l_date_types = l_patches.to(args['device']), l_reg_vals.to(args['device']), l_date_types.to(args['device'])
             
-            # """ Prediction on labeled data """
-            # l_reg_preds, l_class_preds = model(l_patches)
-            # reg_loss_labeled = args['loss_fn_reg'](input=l_reg_preds, target=l_reg_vals)
-            # class_loss_labeled = args['loss_fn_class'](input=l_class_preds, target=l_date_types)
+            """ Prediction on labeled data """
             loss = calc_loss(model=model, patches=l_patches, args=args, loss_arr=tr_loss, score_arr=tr_scores, 
                                      e=e, target_regs=l_reg_vals, target_labels=l_date_types, metrics=metrics)
             
-            # """ Unlabeled data """
+            """ Unlabeled data """
             if args['use_unlabeled_samples']:
                 unlabeled_data = next(unlabeled_iter)
                 u_patches, u_date_types, _, (u_img_idxs, u_pxs, u_pys) = unlabeled_data
@@ -394,8 +381,6 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, args):
                 
             """ Normalize regression value on all datasets """
             if args['reg_norm']:
-                # _, _, reg_mean, reg_std = calc_mean_std(DataLoader(tr_set, **args['tr']))         # Calculate mean and std regression values on train set. 
-                # dataset.set_reg_mean_std(reg_mean=reg_mean, reg_std=reg_std)                      # Set train set's regression mean and std as dataset's. Updated with each new train set. 
                 reg_min, reg_max = get_reg_min_max(dataset.reg_vals[tr_index])
                 dataset.set_reg_min_max(reg_min=reg_min, reg_max=reg_max)
                 
@@ -418,10 +403,8 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, args):
             for model_name in ['best_val_loss.pth', 'model_last_epoch.pth', 'best_val_r2_score.pth']:
                 _test(test_set=test_set, model_name=model_name, in_channels=in_channels, num_classes=num_classes, 
                       metrics=metrics, args=args, fold=fold, run_name=run_name)
+            print('=' * 72)
             
-            
-            # print('lens, tr: {}, val: {}, test: {}'.format(len(tr_set), len(val_set), len(test_set)))
-            print('=' * 72)    
     # Train and test without cross-validation
     else:
         """ Create train, val and test sets """
@@ -441,10 +424,6 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, args):
         if args['reg_norm']:
             reg_min, reg_max = get_reg_min_max(dataset.reg_vals[tr_index])
             dataset.set_reg_min_max(reg_min=reg_min, reg_max=reg_max)
-            # reg_mean, reg_std = np.mean(tr_reg_vals), np.std(tr_reg_vals)
-            # _, _, reg_mean, reg_std = calc_mean_std(DataLoader(tr_set, **args['tr']))           # Calculate mean and std regression values on train set. 
-            # dataset.set_reg_mean_std(reg_mean=reg_mean, reg_std=reg_std)                       # Set train set's regression mean and std as dataset's. Updated with each new train set. 
-            # print('tr dataset, reg_mean: {:.2f}, reg_std: {:.2f}'.format(reg_mean, reg_std))
                 
         """ Load data """
         tr_loader = DataLoader(tr_set, **args['tr'])
