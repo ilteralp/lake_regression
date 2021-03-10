@@ -259,7 +259,8 @@ def create_losses_scores(args):
 Trains model with labeled and unlabeled data. 
 """
 def _train(model, train_loader, unlabeled_loader, args, metrics, fold, run_name, writer, val_loader=None):
-    model.apply(weight_reset)                                                   # Or save weights of the model first & load them.
+    # model.apply(weight_reset)                                                   # Or save weights of the model first & load them.
+    model = reset_model(model, args)
     optimizer = RMSprop(params=model.parameters(), lr=args['lr'])               # EA uses RMSprop with lr=0.0001, I can try SGD or Adam as in [1, 2] or [3].
     tr_loss, tr_scores = create_losses_scores(args)
     val_loss, val_scores = create_losses_scores(args)
