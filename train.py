@@ -466,9 +466,7 @@ def run(args):
     labeled_set = Lake2dDataset(learning='labeled', date_type=args['date_type'])
     unlabeled_set = Lake2dDataset(learning='unlabeled', date_type=args['date_type'])
     
-    """ Create model, regression and classification losses  """
-    model = create_model(args=args)
-    
+    """ Create regression (and classification) losses  """
     loss_fn_reg = torch.nn.MSELoss().to(args['device'])                         # Regression loss function
     args['loss_fn_reg'] = loss_fn_reg
     args['in_channels'] = labeled_set[0][0].shape[0]
@@ -478,6 +476,9 @@ def run(args):
         args['loss_fn_class'] = loss_fn_class
         args['num_classes'] = C.NUM_CLASSES[labeled_set.date_type]
     
+    """ Create model """
+    model = create_model(args=args)
+
     """ Train """
     # train_fn = _train if args['use_unlabeled_samples'] else _train_labeled_only
     train_fn = _train
