@@ -169,9 +169,9 @@ def plot(writer, tr_loss, val_loss, tr_scores, val_scores, e):
 """
 Loads the model with given name and prints its results. 
 """
-def _test(test_set, model_name, in_channels, num_classes, metrics, args, fold, run_name):
+def _test(test_set, model_name, metrics, args, fold, run_name):
     print('model: {} with fold: {}'.format(model_name, str(fold)))
-    test_model = DandadaDAN(in_channels=in_channels, num_classes=num_classes).to(args['device'])
+    test_model = create_model(args)                                             # Already places model to device. 
     model_dir_path = osp.join(C.MODEL_DIR_PATH, run_name, 'fold_' + str(fold))
     test_model.load_state_dict(torch.load(osp.join(model_dir_path, model_name)))
     test_loader = DataLoader(test_set, **args['test'])
@@ -400,10 +400,9 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, args):
             """ Test """
             print('\nTest')
             test_set = Subset(dataset, indices=test_index)
-            in_channels, num_classes = dataset[0][0].shape[0], C.NUM_CLASSES[dataset.date_type]
             for model_name in ['best_val_loss.pth', 'model_last_epoch.pth', 'best_val_r2_score.pth']:
-                _test(test_set=test_set, model_name=model_name, in_channels=in_channels, num_classes=num_classes, 
-                      metrics=metrics, args=args, fold=fold, run_name=run_name)
+                _test(test_set=test_set, model_name=model_name, metrics=metrics, 
+                      args=args, fold=fold, run_name=run_name)
             print('=' * 72)
             
     # Train and test without cross-validation
@@ -441,22 +440,19 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, args):
         """ Test """
         print('\nTest')
         test_set = Subset(dataset, indices=test_index)
-        in_channels, num_classes = dataset[0][0].shape[0], C.NUM_CLASSES[dataset.date_type]
         for model_name in ['best_val_loss.pth', 'model_last_epoch.pth', 'best_val_r2_score.pth']:
-            _test(test_set=test_set, model_name=model_name, in_channels=in_channels, num_classes=num_classes, 
+            _test(test_set=test_set, model_name=model_name, 
                   metrics=metrics, args=args, fold=1, run_name=run_name)
             
 """
 Creates model.
 """
-def create_model(dataset, args):
-    in_channels = dataset[0][0].shape[0]
+def create_model(args):
     if args['model'] == 'dandadadan':
-        num_classes = C.NUM_CLASSES[dataset.date_type]
-        model = DandadaDAN(in_channels=in_channels, num_classes=num_classes)
+        model = DandadaDAN(in_channels=args['in_channels'], num_classes=args['num_classes'])
     
     elif args['model'] == 'eanet':
-        model = EANet(in_channels=in_channels)
+        model = EANet(in_channels=args['in_channels'])
         model.apply(weights_init)
     
     return model.to(args['device'])
@@ -471,14 +467,16 @@ def run(args):
     unlabeled_set = Lake2dDataset(learning='unlabeled', date_type=args['date_type'])
     
     """ Create model, regression and classification losses  """
-    model = create_model(dataset=labeled_set, args=args)
+    model = create_model(args=args)
     
     loss_fn_reg = torch.nn.MSELoss().to(args['device'])                         # Regression loss function
     args['loss_fn_reg'] = loss_fn_reg
+    args['in_channels'] = labeled_set[0][0].shape[0]
 
     if args['pred_type'] == 'reg+class':
         loss_fn_class = torch.nn.CrossEntropyLoss().to(args['device'])          # Classification loss function
         args['loss_fn_class'] = loss_fn_class
+        args['num_classes'] = C.NUM_CLASSES[labeled_set.date_type]
     
     """ Train """
     # train_fn = _train if args['use_unlabeled_samples'] else _train_labeled_only
