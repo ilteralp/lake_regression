@@ -235,7 +235,7 @@ def calc_loss(model, patches, args, loss_arr, score_arr, e, target_regs, metrics
 
     elif args['pred_type'] == 'reg+class':
         reg_preds, class_preds = model(patches)
-        reg_loss = args['loss_fn_reg'](input=reg_preds, target=target_labels)
+        reg_loss = args['loss_fn_reg'](input=reg_preds, target=target_regs)
         class_loss = args['loss_fn_class'](input=class_preds, target=target_labels)
         loss_arr[e]['l_reg_loss'].append(reg_loss.item())
         loss_arr[e]['l_class_loss'].append(class_loss.item())
@@ -312,7 +312,6 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, run_name,
             class_loss_unlabeled = args['loss_fn_class'](input=u_class_preds, target=u_date_types)
             print('shapes, u_class_preds: {}, u_date_types: {}'.format(u_class_preds.shape, u_date_types.shape))
             tr_loss[e]['u_class_loss'].append(class_loss_unlabeled.item())
-            # print('dtypes, loss: {}, class_loss_unlabeled: {}'.format(loss.dtype, class_loss_unlabeled.dtype))
             loss = labeled_loss + class_loss_unlabeled
     
             """ Calculate loss """
