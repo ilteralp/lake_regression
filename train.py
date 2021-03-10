@@ -255,7 +255,8 @@ def create_losses_scores(args):
             losses = [{'l_reg_loss': [], 'l_class_loss' : [], 'total' : []} for e in range(args['max_epoch'])]
     scores = [{'r2' : [], 'mae' : [], 'rmse' : []} for e in range(args['max_epoch'])]
     return losses, scores
-    
+
+
 """
 Trains model with labeled and unlabeled data. 
 """
@@ -297,22 +298,22 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, run_name,
             # l_reg_preds, l_class_preds = model(l_patches)
             # reg_loss_labeled = args['loss_fn_reg'](input=l_reg_preds, target=l_reg_vals)
             # class_loss_labeled = args['loss_fn_class'](input=l_class_preds, target=l_date_types)
-            loss = calc_loss(model=model, patches=l_patches, args=args, loss_arr=tr_loss, score_arr=tr_scores, 
-                             e=e, target_regs=l_reg_vals, target_labels=l_date_types, metrics=metrics)
+            labeled_loss = calc_loss(model=model, patches=l_patches, args=args, loss_arr=tr_loss, score_arr=tr_scores, 
+                                     e=e, target_regs=l_reg_vals, target_labels=l_date_types, metrics=metrics)
             
-            """ Unlabeled data """
-            if args['use_unlabeled_samples']:
-                unlabeled_data = next(unlabeled_iter)
-                u_patches, u_date_types, _, (u_img_idxs, u_pxs, u_pys) = unlabeled_data
-                u_patches, u_date_types = u_patches.to(args['device']), u_date_types.to(args['device'])
-                
-                """ Prediction on unlabeled data """
-                _, u_class_preds = model(u_patches)
-                class_loss_unlabeled = args['loss_fn_class'](input=u_class_preds, target=u_date_types)
-                print('shapes, u_class_preds: {}, u_date_types: {}'.format(u_class_preds.shape, u_date_types.shape))
-                tr_loss[e]['u_class_loss'].append(class_loss_unlabeled.item())
-                print('dtypes, loss: {}, class_loss_unlabeled: {}'.format(loss.dtype, class_loss_unlabeled.dtype))
-                loss = loss + class_loss_unlabeled
+            # """ Unlabeled data """
+            # if args['use_unlabeled_samples']:
+            unlabeled_data = next(unlabeled_iter)
+            u_patches, u_date_types, _, (u_img_idxs, u_pxs, u_pys) = unlabeled_data
+            u_patches, u_date_types = u_patches.to(args['device']), u_date_types.to(args['device'])
+            
+            """ Prediction on unlabeled data """
+            _, u_class_preds = model(u_patches)
+            class_loss_unlabeled = args['loss_fn_class'](input=u_class_preds, target=u_date_types)
+            print('shapes, u_class_preds: {}, u_date_types: {}'.format(u_class_preds.shape, u_date_types.shape))
+            tr_loss[e]['u_class_loss'].append(class_loss_unlabeled.item())
+            # print('dtypes, loss: {}, class_loss_unlabeled: {}'.format(loss.dtype, class_loss_unlabeled.dtype))
+            loss = labeled_loss + class_loss_unlabeled
     
             """ Calculate loss """
             # loss = reg_loss_labeled + class_loss_labeled + class_loss_unlabeled
@@ -545,14 +546,14 @@ if __name__ == "__main__":
     #     args['use_unlabeled_samples'] = use_unlabeled_samples
     #     run(args)
     
-    print('\nOnly regression\n')
-    run(args)
-    print('+' * 72)
+    # print('\nOnly regression\n')
+    # run(args)
+    # print('+' * 72)
     
     
     args['pred_type'] = 'reg+class'
     print('\nreg+class\n')
-    for use_unlabeled_samples in [True, False]:
+    for use_unlabeled_samples in [True]:
         args['use_unlabeled_samples'] = use_unlabeled_samples
         print('use_unlabeled_samples: {}'.format(args['use_unlabeled_samples']))
         run(args)
