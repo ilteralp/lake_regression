@@ -515,7 +515,7 @@ if __name__ == "__main__":
             'use_unlabeled_samples': False,
             'date_type': 'month',
             'pred_type': 'reg',                                           # Prediction type, can be {'reg', 'class', 'reg+class'}
-            'model': 'dandadadan',                                              # Model name, can be {dandadadan, eanet}.
+            'model': 'eanet',                                              # Model name, can be {dandadadan, eanet}.
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'val': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4},
@@ -531,13 +531,13 @@ if __name__ == "__main__":
     run(args)
     print('+' * 72)
     
-    args['pred_type'] = 'reg+class'
-    print('\nreg+class\n')
-    for use_unlabeled_samples in [True, False]:
-        args['use_unlabeled_samples'] = use_unlabeled_samples
-        print('use_unlabeled_samples: {}'.format(args['use_unlabeled_samples']))
-        run(args)
-        print('+' * 72)
+    # args['pred_type'] = 'reg+class'
+    # print('\nreg+class\n')
+    # for use_unlabeled_samples in [True, False]:
+    #     args['use_unlabeled_samples'] = use_unlabeled_samples
+    #     print('use_unlabeled_samples: {}'.format(args['use_unlabeled_samples']))
+    #     run(args)
+    #     print('+' * 72)
  
     # for reg_norm in [True, False]:
     #     args['reg_norm'] = reg_norm
