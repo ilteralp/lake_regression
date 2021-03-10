@@ -223,7 +223,7 @@ def calc_loss(model, patches, args, loss_arr, score_arr, e, target_regs, metrics
             reg_preds, _ = reg_preds
         reg_loss = args['loss_fn_reg'](input=reg_preds, target=target_regs)
         loss_arr[e]['l_reg_loss'].append(reg_loss.item())
-        add_scores(preds=reg_preds, targets=target_regs, e=e, score_arr=score_arr)
+        add_scores(preds=reg_preds, targets=target_regs, e=e, score_arr=score_arr, metrics=metrics)
         return reg_loss
 
     elif args['pred_type'] == 'reg+class':
