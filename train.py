@@ -169,10 +169,10 @@ def plot(writer, tr_loss, val_loss, tr_scores, val_scores, e):
 """
 Loads the model with given name and prints its results. 
 """
-def _test(test_set, model_name, metrics, args, fold, run_name):
+def _test(test_set, model_name, metrics, args, fold):
     print('model: {} with fold: {}'.format(model_name, str(fold)))
     test_model = create_model(args)                                             # Already places model to device. 
-    model_dir_path = osp.join(C.MODEL_DIR_PATH, run_name, 'fold_' + str(fold))
+    model_dir_path = osp.join(C.MODEL_DIR_PATH, args['run_name'], 'fold_' + str(fold))
     test_model.load_state_dict(torch.load(osp.join(model_dir_path, model_name)))
     test_loader = DataLoader(test_set, **args['test'])
     if args['pred_type'] == 'reg+class':
@@ -258,7 +258,7 @@ def create_losses_scores(args):
 """
 Trains model with labeled and unlabeled data. 
 """
-def _train(model, train_loader, unlabeled_loader, args, metrics, fold, run_name, writer, val_loader=None):
+def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, val_loader=None):
     # model.apply(weight_reset)                                                   # Or save weights of the model first & load them.
     model = reset_model(model, args)                                            # Init weights before each fold. 
     optimizer = RMSprop(params=model.parameters(), lr=args['lr'])               # EA uses RMSprop with lr=0.0001, I can try SGD or Adam as in [1, 2] or [3].
@@ -266,7 +266,7 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, run_name,
     val_loss, val_scores = create_losses_scores(args)
     best_val_loss = float('inf')
     best_val_r2_score = -float('inf')
-    model_dir_path = osp.join(C.MODEL_DIR_PATH, run_name, 'fold_' + str(fold))
+    model_dir_path = osp.join(C.MODEL_DIR_PATH, args['run_name'], 'fold_' + str(fold))
     os.mkdir(model_dir_path)
     
     for e in range(args['max_epoch']):
@@ -351,13 +351,13 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, args):
     metrics = Metrics(num_folds=args['num_folds'], device=args['device'].type)
     indices = [*range(len(dataset))]                                                              # Sample indices
     np.random.shuffle(indices)
-    run_name = datetime.now().strftime("%Y_%m_%d__%H_%M_%S")
-    os.mkdir(osp.join(C.MODEL_DIR_PATH, run_name))                                                # Create model_files\<run_name> folder.
-    os.mkdir(osp.join(os.getcwd(), 'runs', run_name))                                             # Create runs\<run_name> folder.   
-    print('\nRun name: {}'.format(run_name))
-    with open(osp.join(C.MODEL_DIR_PATH, run_name, 'args.txt'), 'w') as f:                        # Save args  
+    args['run_name'] = datetime.now().strftime("%Y_%m_%d__%H_%M_%S")
+    os.mkdir(osp.join(C.MODEL_DIR_PATH, args['run_name']))                                        # Create model_files\<run_name> folder.
+    os.mkdir(osp.join(os.getcwd(), 'runs', args['run_name']))                                     # Create runs\<run_name> folder.   
+    print('\nRun name: {}'.format(args['run_name']))
+    with open(osp.join(C.MODEL_DIR_PATH, args['run_name'], 'args.txt'), 'w') as f:                # Save args  
         f.write(str(args))
-    with open(osp.join(os.getcwd(), 'runs', run_name, 'args.txt'), 'w') as f:
+    with open(osp.join(os.getcwd(), 'runs', args['run_name'], 'args.txt'), 'w') as f:
         f.write(str(args))
 
     """ Train & test with cross-validation """
@@ -389,12 +389,12 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, args):
             tr_loader = DataLoader(tr_set, **args['tr'])                                          # Loaders have to be after normalization. 
             if args['create_val']:
                 val_loader = DataLoader(val_set, **args['val'])
-            writer = SummaryWriter(osp.join('runs', run_name, 'fold_{}'.format(fold)))
+            writer = SummaryWriter(osp.join('runs', args['run_name'], 'fold_{}'.format(fold)))
             
             """ Train & Validation """
             print('\nTrain & Validation')
             train_fn(model=model, train_loader=tr_loader, val_loader=val_loader, args=args, metrics=metrics, 
-                     unlabeled_loader=unlabeled_loader, fold=fold, run_name=run_name, writer=writer)
+                     unlabeled_loader=unlabeled_loader, fold=fold, writer=writer)
             writer.close()
 
             """ Test """
@@ -402,7 +402,7 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, args):
             test_set = Subset(dataset, indices=test_index)
             for model_name in ['best_val_loss.pth', 'model_last_epoch.pth', 'best_val_r2_score.pth']:
                 _test(test_set=test_set, model_name=model_name, metrics=metrics, 
-                      args=args, fold=fold, run_name=run_name)
+                      args=args, fold=fold)
             print('=' * 72)
             
     # Train and test without cross-validation
@@ -428,12 +428,12 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, args):
         """ Load data """
         tr_loader = DataLoader(tr_set, **args['tr'])
         val_loader = DataLoader(val_set, **args['val'])
-        writer = SummaryWriter('runs/' + run_name)
+        writer = SummaryWriter('runs/' + args['run_name'])
         
         """ Train & Validation """
         print('\nTrain & Validation')
-        train_fn(model=model, train_loader=tr_loader, unlabeled_loader=unlabeled_loader, val_loader=val_loader, 
-                 args=args, metrics=metrics, fold=1, run_name=run_name, writer=writer)
+        train_fn(model=model, train_loader=tr_loader, unlabeled_loader=unlabeled_loader, 
+                 val_loader=val_loader, args=args, metrics=metrics, fold=1, writer=writer)
         
         writer.close()
         
@@ -442,7 +442,7 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, args):
         test_set = Subset(dataset, indices=test_index)
         for model_name in ['best_val_loss.pth', 'model_last_epoch.pth', 'best_val_r2_score.pth']:
             _test(test_set=test_set, model_name=model_name, 
-                  metrics=metrics, args=args, fold=1, run_name=run_name)
+                  metrics=metrics, args=args, fold=1)
             
 """
 Creates model.
@@ -464,7 +464,9 @@ Runs model with given args.
 def run(args):
     """ Create labeled and unlabeled datasets. """
     labeled_set = Lake2dDataset(learning='labeled', date_type=args['date_type'])
-    unlabeled_set = Lake2dDataset(learning='unlabeled', date_type=args['date_type'])
+    unlabeled_set = None
+    if args['use_unlabeled_samples']:
+        unlabeled_set = Lake2dDataset(learning='unlabeled', date_type=args['date_type'])
     
     """ Create regression (and classification) losses  """
     loss_fn_reg = torch.nn.MSELoss().to(args['device'])                         # Regression loss function
@@ -503,7 +505,7 @@ if __name__ == "__main__":
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
     args = {'num_folds': None,
-            'max_epoch': 500,
+            'max_epoch': 2,
             'device': device,
             'seed': seed,
             'create_val': True,                                                 # Creates validation set
