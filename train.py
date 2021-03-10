@@ -199,7 +199,7 @@ def _validate(model, val_loader, metrics, args, val_loss, val_scores, epoch):
             # loss = reg_loss_val + reg_loss_class
             
             loss = calc_loss(model=model, patches=v_patches, args=args, loss_arr=val_loss, score_arr=val_scores, 
-                             e=epoch, target_regs=v_reg_vals, target_labels=v_date_types)
+                             e=epoch, target_regs=v_reg_vals, target_labels=v_date_types, metrics=metrics)
             
             """ Keep loss """
             val_loss[epoch]['total'].append(loss.item())      
@@ -216,7 +216,7 @@ def add_scores(preds, targets, score_arr, metrics, e):
 """
 Calculates loss depending on prediction type
 """
-def calc_loss(model, patches, args, loss_arr, score_arr, e, target_regs, target_labels=None):
+def calc_loss(model, patches, args, loss_arr, score_arr, e, target_regs, metrics, target_labels=None):
     if args['pred_type'] == 'reg':    
         reg_preds = model(patches)
         if args['model'] == 'dandadadan':
@@ -232,7 +232,7 @@ def calc_loss(model, patches, args, loss_arr, score_arr, e, target_regs, target_
         class_loss = args['loss_fn_class'](input=class_preds, target=target_labels)
         loss_arr[e]['l_reg_loss'].append(reg_loss.item())
         loss_arr[e]['l_class_loss'].append(class_loss.item())
-        add_scores(preds=reg_preds, targets=target_regs, e=e, score_arr=score_arr)
+        add_scores(preds=reg_preds, targets=target_regs, e=e, score_arr=score_arr, metrics=metrics)
         return reg_loss + class_loss	
     
 """
@@ -275,7 +275,7 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, run_name,
             # reg_loss_labeled = args['loss_fn_reg'](input=l_reg_preds, target=l_reg_vals)
             # class_loss_labeled = args['loss_fn_class'](input=l_class_preds, target=l_date_types)
             loss = calc_loss(model=model, patches=l_patches, args=args, loss_arr=tr_loss, score_arr=tr_scores, 
-                             e=e, target_regs=l_reg_vals, target_labels=l_date_types)
+                             e=e, target_regs=l_reg_vals, target_labels=l_date_types, metrics=metrics)
             
             """ Unlabeled data """
             if args['use_unlabeled_samples']:
