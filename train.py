@@ -110,7 +110,10 @@ def reset_model(m, args):
 Returns verbose message with loss and score.
 """
 def get_msg(loss, score, e, dataset):
-    sum_str = '(R+C_L+C_U)' if 'u_class_loss' in loss[e] else '(R+C)'
+    if args['pred_type'] == 'reg':
+        sum_str = '(R)'    
+    else:
+        sum_str = '(R+C_L+C_U)' if 'u_class_loss' in loss[e] else '(R+C)'
     start_str = '' if dataset == 'test' else 'Epoch #{}, '.format(e) 
     msg = "{}Losses {}: {}, {:.2f} = {:.2f}".format(
         start_str, sum_str, dataset, np.mean(loss[e]['total']), np.mean(loss[e]['l_reg_loss']))
