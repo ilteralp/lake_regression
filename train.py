@@ -517,7 +517,7 @@ if __name__ == "__main__":
             'use_unlabeled_samples': False,
             'date_type': 'month',
             'pred_type': 'reg',                                           # Prediction type, can be {'reg', 'class', 'reg+class'}
-            'model': 'eanet',                                              # Model name, can be {dandadadan, eanet}.
+            'model': 'dandadadan',                                              # Model name, can be {dandadadan, eanet}.
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'val': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4},
