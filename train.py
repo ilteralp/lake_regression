@@ -309,7 +309,7 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, run_name,
                 """ Prediction on unlabeled data """
                 _, u_class_preds = model(u_patches)
                 class_loss_unlabeled = args['loss_fn_class'](input=u_class_preds, target=u_date_types)
-                print('shapes, u_class_preds: {}, u_date_types: {}'.format(u_class_preds, u_date_types))
+                print('shapes, u_class_preds: {}, u_date_types: {}'.format(u_class_preds.shape, u_date_types.shape))
                 tr_loss[e]['u_class_loss'].append(class_loss_unlabeled.item())
                 print('dtypes, loss: {}, class_loss_unlabeled: {}'.format(loss.dtype, class_loss_unlabeled.dtype))
                 loss = loss + class_loss_unlabeled
