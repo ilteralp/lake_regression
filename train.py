@@ -256,6 +256,8 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, run_name,
         if args['use_unlabeled_samples']:
             len_loader = min(len(train_loader), len(unlabeled_loader))              # Update unlabeled batch size to use all its samples. 
             unlabeled_iter = iter(unlabeled_loader)
+        else:
+            len_loader = len(train_loader)
         labeled_iter = iter(train_loader)
     
         """ Train """
