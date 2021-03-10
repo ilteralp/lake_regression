@@ -91,8 +91,7 @@ class Lake2dDataset(BaseLakeDataset):
                 if self.reg_min is not None and self.reg_max is not None:       # Normalize regression value. 
                     reg_val = 2 * (reg_val - self.reg_min) / (self.reg_max - self.reg_min) - 1
                 
-                # return patch, date_class, np.expand_dims(reg_val, axis=0).astype(np.float32), (img_idx, px, py)
-                return patch, date_class, reg_val.astype(np.float32), (img_idx, px, py)
+                return patch, date_class, np.expand_dims(reg_val, axis=0).astype(np.float32), (img_idx, px, py)
 
         else:
             raise Exception('Image not found on {}'.format(img_path))
