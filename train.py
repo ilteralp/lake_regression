@@ -173,14 +173,14 @@ def plot(writer, tr_loss, val_loss, tr_scores, val_scores, e):
         writer.add_scalar('4_Loss/train (unlabeled_class)', np.mean(tr_loss[e]['u_class_loss']), e)
     
     """ Scores """
-    if args['pred_type'] == 'class':
+    if args['pred_type'] == 'class' or args['pred_type'] == 'reg+class':
         writer.add_scalar("5_Kappa/Train", np.mean(tr_scores[e]['kappa']), e)
         writer.add_scalar("5_Kappa/Val", np.mean(val_scores[e]['kappa']), e)
         writer.add_scalar("6_F1/Train", np.mean(tr_scores[e]['f1']), e)
         writer.add_scalar("6_F1/Val", np.mean(val_scores[e]['f1']), e)
         writer.add_scalar("7_Accuracy/Train", np.mean(tr_scores[e]['acc']), e)
         writer.add_scalar("7_Accuracy/Val", np.mean(val_scores[e]['acc']), e)
-    else:
+    if args['pred_type'] == 'reg' or args['pred_type'] == 'reg+class':
         writer.add_scalar("5_MAE/Train", np.mean(tr_scores[e]['mae']), e)
         writer.add_scalar("5_MAE/Val", np.mean(val_scores[e]['mae']), e)
         writer.add_scalar("6_RMSE/Train", np.mean(tr_scores[e]['rmse']), e)
