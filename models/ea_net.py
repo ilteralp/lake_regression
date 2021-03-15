@@ -17,9 +17,10 @@ sys.path.append("..")
 import constants as C
 
 class EANet(nn.Module):
-    def __init__(self, in_channels):
+    def __init__(self, in_channels, num_classes=None):
         super(EANet, self).__init__()
         self.in_channels = in_channels
+        self.num_classes = num_classes
         
         self.pad = nn.ReflectionPad2d(padding=1)
         self.act = nn.Tanh()
@@ -27,8 +28,8 @@ class EANet(nn.Module):
         self.conv = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3)
         
         self.fc1 = nn.Linear(in_features=64 * 3 * 3, out_features=128)
-        self.fc2 = nn.Linear(in_features=128, out_features=1)
-        
+        out_features = 1 if self.num_classes is None else self.num_classes
+        self.fc2 = nn.Linear(in_features=128, out_features=out_features)
         
     def forward(self, x):
         x = self.act(self.conv_first(self.pad(x)))                              # (bs, 12, 3, 3) -> (bs, 64, 3, 3)
