@@ -576,7 +576,7 @@ if __name__ == "__main__":
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
     args = {'num_folds': None,
-            'max_epoch': 10,
+            'max_epoch': 2,
             'device': device,
             'seed': seed,
             'create_val': True,                                                 # Creates validation set
@@ -599,18 +599,18 @@ if __name__ == "__main__":
     #     args['use_unlabeled_samples'] = use_unlabeled_samples
     #     run(args)
     
-    print('\nOnly regression\n')
-    args['pred_type'] = 'reg'
-    run(args)
-    print('+' * 72)
+    # print('\nOnly regression\n')
+    # args['pred_type'] = 'reg'
+    # run(args)
+    # print('+' * 72)
     
-    args['pred_type'] = 'reg+class'
-    print('\nreg+class\n')
-    for use_unlabeled_samples in [True, False]:
-        args['use_unlabeled_samples'] = use_unlabeled_samples
-        print('use_unlabeled_samples: {}'.format(args['use_unlabeled_samples']))
-        run(args)
-        print('+' * 72)
+    # args['pred_type'] = 'reg+class'
+    # print('\nreg+class\n')
+    # for use_unlabeled_samples in [True, False]:
+    #     args['use_unlabeled_samples'] = use_unlabeled_samples
+    #     print('use_unlabeled_samples: {}'.format(args['use_unlabeled_samples']))
+    #     run(args)
+    #     print('+' * 72)
         
     print('\nclassification\n')
     args['pred_type'] = 'class'
