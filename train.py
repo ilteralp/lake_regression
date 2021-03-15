@@ -286,6 +286,7 @@ def calc_loss(model, patches, args, loss_arr, score_arr, e, target_regs, metrics
         loss_arr[e]['l_reg_loss'].append(reg_loss.item())
         loss_arr[e]['l_class_loss'].append(class_loss.item())
         add_scores(preds=reg_preds, targets=target_regs, e=e, score_arr=score_arr, metrics=metrics)
+        add_scores(preds=class_preds, targets=target_labels, e=e, score_arr=score_arr, metrics=metrics)
         return reg_loss + class_loss
 
 """
