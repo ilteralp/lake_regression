@@ -245,18 +245,29 @@ def _validate(model, val_loader, metrics, args, val_loss, val_scores, epoch):
 Updates scores. 
 """      
 def add_scores(preds, targets, score_arr, metrics, e):
-    if args['pred_type'] == 'reg' or args['pred_type'] == 'reg+class':
+    if args['pred_type'] == 'reg':
         score = metrics.eval_reg_batch_metrics(preds=preds, targets=targets)
         score_arr[e]['r2'].append(score['r2'])
         score_arr[e]['mae'].append(score['mae'])
         score_arr[e]['rmse'].append(score['rmse'])
         
-    elif args['pred_type'] == 'class' or args['pred_type'] == 'reg+class':
+    elif args['pred_type'] == 'class':
         score = metrics.eval_class_batch_metrics(preds=preds, targets=targets)
         score_arr[e]['kappa'].append(score['kappa'])
         score_arr[e]['f1'].append(score['f1'])
         score_arr[e]['acc'].append(score['acc'])
-
+        
+def add_scores_reg_class(reg_preds, target_regs, class_preds, target_labels, score_arr, metrics, e):
+    reg_score = metrics.eval_reg_batch_metrics(preds=reg_preds, targets=target_regs)
+    score_arr[e]['r2'].append(reg_score['r2'])
+    score_arr[e]['mae'].append(reg_score['mae'])
+    score_arr[e]['rmse'].append(reg_score['rmse'])
+    
+    class_score = metrics.eval_class_batch_metrics(preds=class_preds, targets=target_labels)
+    score_arr[e]['kappa'].append(class_score['kappa'])
+    score_arr[e]['f1'].append(class_score['f1'])
+    score_arr[e]['acc'].append(class_score['acc'])
+    
 """
 Calculates loss(es) depending on prediction type
 """
@@ -285,8 +296,8 @@ def calc_loss(model, patches, args, loss_arr, score_arr, e, target_regs, metrics
         class_loss = args['loss_fn_class'](input=class_preds, target=target_labels)
         loss_arr[e]['l_reg_loss'].append(reg_loss.item())
         loss_arr[e]['l_class_loss'].append(class_loss.item())
-        add_scores(preds=reg_preds, targets=target_regs, e=e, score_arr=score_arr, metrics=metrics)
-        add_scores(preds=class_preds, targets=target_labels, e=e, score_arr=score_arr, metrics=metrics)
+        add_scores_reg_class(reg_preds=reg_preds, target_regs=target_regs, class_preds=class_preds, 
+                             target_labels=target_labels, score_arr=score_arr, metrics=metrics, e=e)
         return reg_loss + class_loss
 
 """
