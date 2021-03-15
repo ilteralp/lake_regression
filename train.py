@@ -110,20 +110,31 @@ def reset_model(m, args):
 Returns verbose message with loss and score.
 """
 def get_msg(loss, score, e, dataset, args):
+    p_str = ''
     if args['pred_type'] == 'reg':
-        sum_str = '(R)'    
+        sum_str = '(R)'
+    elif args['pred_type'] == 'class':
+        sum_str = '(C)'
     else:
         sum_str = '(R+C_L+C_U)' if 'u_class_loss' in loss[e] else '(R+C)'
+        p_str = '+ '
     start_str = '' if dataset == 'test' else 'Epoch #{}, '.format(e) 
-    msg = "{}Losses {}: {}, {:.2f} = {:.2f}".format(
-        start_str, sum_str, dataset, np.mean(loss[e]['total']), np.mean(loss[e]['l_reg_loss']))
+    msg = "{}Losses {}: {}, {:.2f} = ".format(
+        start_str, sum_str, dataset, np.mean(loss[e]['total']))
+    if 'l_reg_loss' in loss[e]:
+        msg += "{:.2f}".format(np.mean(loss[e]['l_reg_loss']))
     if 'l_class_loss' in loss[e]:
-        msg += " + {:.2f}".format(np.mean(loss[e]['l_class_loss']))
+        msg += "{}{:.2f}".format(p_str, np.mean(loss[e]['l_class_loss']))
     if 'u_class_loss' in loss[e]:
         msg += " + {:.2f}".format(np.mean(loss[e]['u_class_loss']))
+    
     if dataset == 'test':
-        msg += "\t Scores, MAE: {:.2f}, R2: {:.2f}, RMSE: {:.2f}".format(
-            np.mean(score[e]['mae']), np.mean(score[e]['r2']), np.mean(score[e]['rmse']))
+        if args['pred_type'] == 'reg' or args['pred_type'] == 'reg+class':
+            msg += "\t Scores, MAE: {:.2f}, R2: {:.2f}, RMSE: {:.2f}".format(
+                np.mean(score[e]['mae']), np.mean(score[e]['r2']), np.mean(score[e]['rmse']))
+        else:
+            msg += "\t Scores, kappa: {:.2f}, f1: {:.2f}, acc: {:.2f}".format(
+                np.mean(score[e]['kappa']), np.mean(score[e]['f1']), np.mean(score[e]['acc']))
     return msg
 
 """
@@ -135,11 +146,13 @@ def verify_args(args):
     if args['test_per'] >= 0.5:
         raise Exception('Test percent should be less than 0.5 since validation set has the same length with it.')
     if args['pred_type'] not in ['reg', 'class', 'reg+class']:
-        raise Exception('Expected prediction type to be one of [\'reg\', \'reg+class\']')
+        raise Exception('Expected prediction type to be one of [\'reg\', \'class\', \'reg+class\']')
     if args['model'] not in ['dandadadan', 'eanet']:
         raise Exception('Model can be one of [\'dandadadan\', \'eanet\']')
     if args['use_unlabeled_samples'] and args['pred_type'] == 'reg':
         raise Exception('Unlabeled samples cannot be used with regression. They can only be used for reg+class.')
+    if args['pred_type'] == 'class' and args['model'] == 'eanet':
+        raise Exception('EANet only works for regression.')
 
 """
 Plots loss and scores to Tensorboard
@@ -149,8 +162,9 @@ def plot(writer, tr_loss, val_loss, tr_scores, val_scores, e):
     """ Losses """
     writer.add_scalar('1_Loss/train (total)', np.mean(tr_loss[e]['total']), e)
     writer.add_scalar('1_Loss/val (total)', np.mean(val_loss[e]['total']), e)
-    writer.add_scalar('2_Loss/train (labeled_reg)', np.mean(tr_loss[e]['l_reg_loss']), e)
-    writer.add_scalar('2_Loss/val (labeled_reg)', np.mean(val_loss[e]['l_reg_loss']), e)
+    if args['pred_type'] == 'reg' or args['pred_type'] == 'reg+class':
+        writer.add_scalar('2_Loss/train (labeled_reg)', np.mean(tr_loss[e]['l_reg_loss']), e)
+        writer.add_scalar('2_Loss/val (labeled_reg)', np.mean(val_loss[e]['l_reg_loss']), e)
     if 'l_class_loss' in tr_loss[e]:
         writer.add_scalar('3_Loss/train (labeled_class)', np.mean(tr_loss[e]['l_class_loss']), e)
     if 'l_class_loss' in val_loss[e]:
@@ -159,12 +173,20 @@ def plot(writer, tr_loss, val_loss, tr_scores, val_scores, e):
         writer.add_scalar('4_Loss/train (unlabeled_class)', np.mean(tr_loss[e]['u_class_loss']), e)
     
     """ Scores """
-    writer.add_scalar("5_MAE/Train", np.mean(tr_scores[e]['mae']), e)
-    writer.add_scalar("5_MAE/Val", np.mean(val_scores[e]['mae']), e)
-    writer.add_scalar("6_RMSE/Train", np.mean(tr_scores[e]['rmse']), e)
-    writer.add_scalar("6_RMSE/Val", np.mean(val_scores[e]['rmse']), e)
-    writer.add_scalar("7_R2/Train", np.mean(tr_scores[e]['r2']), e)
-    writer.add_scalar("7_R2/Val", np.mean(val_scores[e]['r2']), e)
+    if args['pred_type'] == 'class':
+        writer.add_scalar("5_Kappa/Train", np.mean(tr_scores[e]['kappa']), e)
+        writer.add_scalar("5_Kappa/Val", np.mean(val_scores[e]['kappa']), e)
+        writer.add_scalar("6_F1/Train", np.mean(tr_scores[e]['f1']), e)
+        writer.add_scalar("6_F1/Val", np.mean(val_scores[e]['f1']), e)
+        writer.add_scalar("7_Accuracy/Train", np.mean(tr_scores[e]['acc']), e)
+        writer.add_scalar("7_Accuracy/Val", np.mean(val_scores[e]['acc']), e)
+    else:
+        writer.add_scalar("5_MAE/Train", np.mean(tr_scores[e]['mae']), e)
+        writer.add_scalar("5_MAE/Val", np.mean(val_scores[e]['mae']), e)
+        writer.add_scalar("6_RMSE/Train", np.mean(tr_scores[e]['rmse']), e)
+        writer.add_scalar("6_RMSE/Val", np.mean(val_scores[e]['rmse']), e)
+        writer.add_scalar("7_R2/Train", np.mean(tr_scores[e]['r2']), e)
+        writer.add_scalar("7_R2/Val", np.mean(val_scores[e]['r2']), e)
     
 """
 Loads the model with given name and prints its results. 
@@ -175,11 +197,19 @@ def _test(test_set, model_name, metrics, args, fold):
     model_dir_path = osp.join(C.MODEL_DIR_PATH, args['run_name'], 'fold_' + str(fold))
     test_model.load_state_dict(torch.load(osp.join(model_dir_path, model_name)))
     test_loader = DataLoader(test_set, **args['test'])
+    
     if args['pred_type'] == 'reg+class':
         test_loss = [{'l_reg_loss': [], 'l_class_loss' : [], 'total' : []}]
+        test_scores = [{'r2' : [], 'mae' : [], 'rmse' : [], 'kappa' : [], 'f1' : [], 'acc' : []}]
+        
     elif args['pred_type'] == 'reg':
         test_loss = [{'l_reg_loss': [], 'total' : []}]
-    test_scores = [{'r2' : [], 'mae' : [], 'rmse' : []}]
+        test_scores = [{'r2' : [], 'mae' : [], 'rmse' : []}]
+        
+    elif args['pred_type'] == 'class':
+        test_loss = [{'l_class_loss': [], 'total' : []}]
+        test_scores = [{'kappa' : [], 'f1' : [], 'acc' : []}]
+    
     _validate(model=test_model, val_loader=test_loader, metrics=metrics, args=args,
               val_loss=test_loss, val_scores=test_scores, epoch=0)
     
@@ -215,10 +245,17 @@ def _validate(model, val_loader, metrics, args, val_loss, val_scores, epoch):
 Updates scores. 
 """      
 def add_scores(preds, targets, score_arr, metrics, e):
-    score = metrics.eval_reg_batch_metrics(preds=preds, targets=targets)
-    score_arr[e]['r2'].append(score['r2'])
-    score_arr[e]['mae'].append(score['mae'])
-    score_arr[e]['rmse'].append(score['rmse'])
+    if args['pred_type'] == 'reg' or args['pred_type'] == 'reg+class':
+        score = metrics.eval_reg_batch_metrics(preds=preds, targets=targets)
+        score_arr[e]['r2'].append(score['r2'])
+        score_arr[e]['mae'].append(score['mae'])
+        score_arr[e]['rmse'].append(score['rmse'])
+        
+    elif args['pred_type'] == 'class' or args['pred_type'] == 'reg+class':
+        score = metrics.eval_class_batch_metrics(preds=preds, targets=targets)
+        score_arr[e]['kappa'].append(score['kappa'])
+        score_arr[e]['f1'].append(score['f1'])
+        score_arr[e]['acc'].append(score['acc'])
 
 """
 Calculates loss(es) depending on prediction type
@@ -232,6 +269,15 @@ def calc_loss(model, patches, args, loss_arr, score_arr, e, target_regs, metrics
         loss_arr[e]['l_reg_loss'].append(reg_loss.item())
         add_scores(preds=reg_preds, targets=target_regs, e=e, score_arr=score_arr, metrics=metrics)
         return reg_loss
+    
+    elif args['pred_type'] == 'class':
+        class_preds = model(patches)
+        if args['model'] == 'dandadadan':
+            _, class_preds = class_preds                                                            # Be careful with the order.
+        class_loss = args['loss_fn_class'](input=class_preds, target=target_labels)
+        loss_arr[e]['l_class_loss'].append(class_loss.item())                                       # No more 'l_class_loss', all samples are labeled for classification case. 
+        add_scores(preds=class_preds, targets=target_labels, e=e, score_arr=score_arr, metrics=metrics)
+        return class_loss
 
     elif args['pred_type'] == 'reg+class':
         reg_preds, class_preds = model(patches)
@@ -248,14 +294,33 @@ Creates arrays of losses and scores with given args.
 def create_losses_scores(args):
     if args['pred_type'] == 'reg':
         losses = [{'l_reg_loss': [], 'total' : []} for e in range(args['max_epoch'])]
+        scores = [{'r2' : [], 'mae' : [], 'rmse' : []} for e in range(args['max_epoch'])]
+        
+    elif args['pred_type'] == 'class':
+        losses = [{'l_class_loss': [], 'total' : []} for e in range(args['max_epoch'])]
+        scores = [{'kappa' : [], 'f1' : [], 'acc' : []} for e in range(args['max_epoch'])]
+        
     elif args['pred_type'] == 'reg+class':
         if args['use_unlabeled_samples']:
            losses = [{'l_reg_loss': [], 'l_class_loss' : [], 'u_class_loss' : [], 'total' : []} for e in range(args['max_epoch'])]
         else:
             losses = [{'l_reg_loss': [], 'l_class_loss' : [], 'total' : []} for e in range(args['max_epoch'])]
-    scores = [{'r2' : [], 'mae' : [], 'rmse' : []} for e in range(args['max_epoch'])]
+        scores = [{'r2' : [], 'mae' : [], 'rmse' : [], 'kappa' : [], 'f1' : [], 'acc' : []} for e in range(args['max_epoch'])]
+            
     return losses, scores
 
+"""
+Inits best val score and loss depending on prediction type. 
+"""
+def init_best_val_score_loss(args):
+    if args['pred_type'] == 'reg' or args['pred_type'] == 'reg+class':          # R2 score for reg and reg+class
+        score_name = 'r2'
+        best_val_score = -float('inf') 
+    elif args['pred_type'] == 'class':                                          # Kappa for classification. 
+        score_name = 'kappa'
+        best_val_score = -1
+    best_val_loss = float('inf')
+    return score_name, best_val_score, best_val_loss
 
 """
 Trains model with labeled and unlabeled data. 
@@ -266,8 +331,7 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, v
     optimizer = RMSprop(params=model.parameters(), lr=args['lr'])               # EA uses RMSprop with lr=0.0001, I can try SGD or Adam as in [1, 2] or [3].
     tr_loss, tr_scores = create_losses_scores(args)
     val_loss, val_scores = create_losses_scores(args)
-    best_val_loss = float('inf')
-    best_val_r2_score = -float('inf')
+    score_name, best_val_score, best_val_loss = init_best_val_score_loss(args)  # Init best val score and loss.
     model_dir_path = osp.join(C.MODEL_DIR_PATH, args['run_name'], 'fold_' + str(fold))
     os.mkdir(model_dir_path)
     
@@ -292,7 +356,7 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, v
             
             """ Prediction on labeled data """
             loss = calc_loss(model=model, patches=l_patches, args=args, loss_arr=tr_loss, score_arr=tr_scores, 
-                                     e=e, target_regs=l_reg_vals, target_labels=l_date_types, metrics=metrics)
+                             e=e, target_regs=l_reg_vals, target_labels=l_date_types, metrics=metrics)
             
             """ Unlabeled data """
             if args['use_unlabeled_samples']:
@@ -301,7 +365,10 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, v
                 u_patches, u_date_types = u_patches.to(args['device']), u_date_types.to(args['device'])
                 
                 """ Prediction on unlabeled data """
-                _, u_class_preds = model(u_patches)
+                # _, u_class_preds = model(u_patches)
+                u_class_preds = model(u_patches)
+                if args['model'] == 'dandadadan':
+                    _, u_class_preds = u_class_preds
                 class_loss_unlabeled = args['loss_fn_class'](input=u_class_preds, target=u_date_types)
                 tr_loss[e]['u_class_loss'].append(class_loss_unlabeled.item())
                 loss = loss + class_loss_unlabeled
@@ -324,9 +391,9 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, v
             if np.mean(val_loss[e]['total']) < best_val_loss:
                 best_val_loss = np.mean(val_loss[e]['total'])
                 torch.save(model.state_dict(), osp.join(model_dir_path, 'best_val_loss.pth'))
-            if np.mean(val_scores[e]['r2']) > best_val_r2_score:
-                best_val_r2_score = np.mean(val_scores[e]['r2'])
-                torch.save(model.state_dict(), osp.join(model_dir_path, 'best_val_r2_score.pth'))
+            if np.mean(val_scores[e][score_name]) > best_val_score:
+                best_val_score = np.mean(val_scores[e][score_name])
+                torch.save(model.state_dict(), osp.join(model_dir_path, 'best_val_score.pth'))
             # print(get_msg(val_loss, val_scores, e, dataset='val', args=args))              # Print validation set loss & score for each **epoch**. 
           
         """ Plot loss & scores """
@@ -402,7 +469,7 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, args):
             """ Test """
             print('\nTest')
             test_set = Subset(dataset, indices=test_index)
-            for model_name in ['best_val_loss.pth', 'model_last_epoch.pth', 'best_val_r2_score.pth']:
+            for model_name in ['best_val_loss.pth', 'model_last_epoch.pth', 'best_val_score.pth']:
                 _test(test_set=test_set, model_name=model_name, metrics=metrics, 
                       args=args, fold=fold)
             print('=' * 72)
@@ -442,7 +509,7 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, args):
         """ Test """
         print('\nTest')
         test_set = Subset(dataset, indices=test_index)
-        for model_name in ['best_val_loss.pth', 'model_last_epoch.pth', 'best_val_r2_score.pth']:
+        for model_name in ['best_val_loss.pth', 'model_last_epoch.pth', 'best_val_score.pth']:
             _test(test_set=test_set, model_name=model_name, 
                   metrics=metrics, args=args, fold=1)
             
@@ -469,14 +536,16 @@ def run(args):
     unlabeled_set = None
     if args['use_unlabeled_samples']:
         unlabeled_set = Lake2dDataset(learning='unlabeled', date_type=args['date_type'])
-    
+   
     """ Create regression (and classification) losses  """
-    loss_fn_reg = torch.nn.MSELoss().to(args['device'])                         # Regression loss function
-    args['loss_fn_reg'] = loss_fn_reg
     args['in_channels'] = labeled_set[0][0].shape[0]
     args['num_classes'] = C.NUM_CLASSES[labeled_set.date_type]
+    
+    if args['pred_type'] == 'reg' or args['pred_type'] == 'reg+class':
+        loss_fn_reg = torch.nn.MSELoss().to(args['device'])                     # Regression loss function
+        args['loss_fn_reg'] = loss_fn_reg
 
-    if args['pred_type'] == 'reg+class':
+    if args['pred_type'] == 'class' or args['pred_type'] == 'reg+class':
         loss_fn_class = torch.nn.CrossEntropyLoss().to(args['device'])          # Classification loss function
         args['loss_fn_class'] = loss_fn_class
     
@@ -507,7 +576,7 @@ if __name__ == "__main__":
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
     args = {'num_folds': None,
-            'max_epoch': 500,
+            'max_epoch': 2,
             'device': device,
             'seed': seed,
             'create_val': True,                                                 # Creates validation set
@@ -531,16 +600,22 @@ if __name__ == "__main__":
     #     run(args)
     
     print('\nOnly regression\n')
+    args['pred_type'] = 'reg'
     run(args)
     print('+' * 72)
     
-    args['pred_type'] = 'reg+class'
-    print('\nreg+class\n')
-    for use_unlabeled_samples in [True, False]:
-        args['use_unlabeled_samples'] = use_unlabeled_samples
-        print('use_unlabeled_samples: {}'.format(args['use_unlabeled_samples']))
-        run(args)
-        print('+' * 72)
+    # args['pred_type'] = 'reg+class'
+    # print('\nreg+class\n')
+    # for use_unlabeled_samples in [True, False]:
+    #     args['use_unlabeled_samples'] = use_unlabeled_samples
+    #     print('use_unlabeled_samples: {}'.format(args['use_unlabeled_samples']))
+    #     run(args)
+    #     print('+' * 72)
+        
+    print('\nclassification\n')
+    args['pred_type'] = 'class'
+    run(args)
+    print('+' * 72)
  
     # for reg_norm in [True, False]:
     #     args['reg_norm'] = reg_norm
