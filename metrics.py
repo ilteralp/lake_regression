@@ -8,7 +8,7 @@ Created on Mon Mar  1 21:40:07 2021
 """
 
 import torch
-from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
+from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error, cohen_kappa_score, f1_score, accuracy_score
 import numpy as np
 import constants as C
 
@@ -51,10 +51,17 @@ class Metrics:
     Calculates classification metrics for given batch.
     """
     def eval_class_batch_metrics(self, preds, targets):
-        pass
+        preds = torch.argmax(preds, 1)
+        if self.device != 'cpu':
+            preds, targets = preds.cpu(), targets.cpu()
+        preds, targets = preds.detach().numpy().flatten(), targets.detach().numpy().flatten()
+        kappa = cohen_kappa_score(preds, targets)
+        f1 = f1_score(y_true=targets, y_pred=preds, average='macro')
+        acc = accuracy_score(y_true=targets, y_pred=preds)
+        return {'kappa' : kappa, 'f1' : f1, 'acc' : acc}
     
 """
 Ideas:
-1. Implement scores in Pytorch. 
+1. Implement regression and classification scores in Pytorch. 
 """
     
