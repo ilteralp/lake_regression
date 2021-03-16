@@ -15,6 +15,7 @@ import time
 import sys
 sys.path.append("..")
 import constants as C
+from verbose_execution import VerboseExecution
 
 class EANet(nn.Module):
     def __init__(self, in_channels, num_classes=None):
@@ -31,6 +32,9 @@ class EANet(nn.Module):
         out_features = 1 if self.num_classes is None else self.num_classes
         self.fc2 = nn.Linear(in_features=128, out_features=out_features)
         
+        """ Init weights """
+        self._init_weights()
+        
     def forward(self, x):
         x = self.act(self.conv_first(self.pad(x)))                              # (bs, 12, 3, 3) -> (bs, 64, 3, 3)
         x = self.act(self.conv(self.pad(x)))                                    # (bs, 64, 3, 3) -> (bs, 64, 3, 3)
@@ -41,18 +45,44 @@ class EANet(nn.Module):
         x = self.fc2(x)                                                         # (bs, 128) -> (bs, 1)
         return x
     
-def weights_init(m):
-    if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):                    # glorot_uniform in Keras is xavier_uniform_  
-        nn.init.xavier_uniform_(m.weight)
+    def _init_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):            # glorot_uniform in Keras is xavier_uniform_  
+                nn.init.xavier_uniform_(m.weight)
+    
+# def _init_weights(m):
+#     if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):                    
+#         nn.init.xavier_uniform_(m.weight)
+        
+# def hook_fn(m, i, o):
+#   # visualisation[m] = o
+#   print(m._get_name())
+
+# def get_all_layers(net):
+#   for name, layer in net._modules.items():
+#     #If it is a sequential, don't register a hook on it
+#     # but recursively register hook on all it's module children
+#     if isinstance(layer, nn.Sequential):
+#         get_all_layers(layer)
+#     else:
+#         # it's a non sequential. Register a hook
+#         layer.register_forward_hook(hook_fn)
     
 if __name__ == "__main__":
     in_channels = 12
     net = EANet(in_channels=in_channels)
-    net.apply(weights_init)                                                     # Init weights
+    verbose_net = VerboseExecution(net)
+    # net.apply(weights_init)                                                     # Init weights
     
     inp = torch.randn(2, 12, 3, 3)
-    outp = net(inp)
-    print(outp.shape)
+    _ = verbose_net(inp)
+    # outp = net(inp)
+    # print(outp.shape)
+    
+    # visualisation = {}
+    # get_all_layers(net)
+    # outp = net(inp)
+    ## print(visusalisation.keys())
     
 """
 1. Add inits. 
