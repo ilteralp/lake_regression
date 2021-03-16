@@ -151,8 +151,6 @@ def verify_args(args):
         raise Exception('Model can be one of [\'dandadadan\', \'eanet\']')
     if args['use_unlabeled_samples'] and args['pred_type'] == 'reg':
         raise Exception('Unlabeled samples cannot be used with regression. They can only be used for reg+class.')
-    if args['pred_type'] == 'class' and args['model'] == 'eanet':
-        raise Exception('EANet only works for regression.')
 
 """
 Plots loss and scores to Tensorboard
@@ -574,8 +572,8 @@ def run(args):
 Help with params in case you need it. 
 """
 def help():
-    print('\'dandadan\' works with \'use_unlabeled_samples\'=[True, False], \'pred_type\'=[\'reg\', \'reg+class\'] and \'date_type\'=[\'month\', \'season\', \'year\'].\n')
-    print('\'eanet\' works with \'use_unlabeled_samples\'=False, \'pred_type\'=\'reg\' and does not take \'date_type\'.\n')
+    print('\'dandadan\' works with \'use_unlabeled_samples\'=[True, False], \'pred_type\'=[\'reg\', \'reg+class\', \'class\'] and \'date_type\'=[\'month\', \'season\', \'year\'].\n')
+    print('\'eanet\' works with \'use_unlabeled_samples\'=False, \'pred_type\'=[\'reg\', \'class\'] and does not take \'date_type\'.\n')
     print('With \'date_type\'=\'year\', validation set cannot be created.')
     
     
@@ -588,7 +586,7 @@ if __name__ == "__main__":
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
     args = {'num_folds': None,
-            'max_epoch': 100,
+            'max_epoch': 10,
             'device': device,
             'seed': seed,
             'create_val': True,                                                 # Creates validation set
