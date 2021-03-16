@@ -20,7 +20,7 @@ from datetime import datetime
 import constants as C
 from datasets import Lake2dDataset
 from metrics import Metrics
-from models import DandadaDAN, EANet
+from models import DandadaDAN, EANet, EADAN
 
 """
 Takes a dataset and splits it into train, test and validation sets. 
@@ -105,7 +105,9 @@ def reset_model(m, args):
     
     elif args['model'] == 'dandadadan':
         return m.apply(weight_reset)
-        
+    
+    elif args['model'] == 'eadan':
+        return m.apply(weights_init)
 """
 Returns verbose message with loss and score.
 """
@@ -147,8 +149,8 @@ def verify_args(args):
         raise Exception('Test percent should be less than 0.5 since validation set has the same length with it.')
     if args['pred_type'] not in ['reg', 'class', 'reg+class']:
         raise Exception('Expected prediction type to be one of [\'reg\', \'class\', \'reg+class\']')
-    if args['model'] not in ['dandadadan', 'eanet']:
-        raise Exception('Model can be one of [\'dandadadan\', \'eanet\']')
+    if args['model'] not in ['dandadadan', 'eanet', 'eadan']:
+        raise Exception('Model can be one of [\'dandadadan\', \'eanet\', \'eadan\']')
     if args['use_unlabeled_samples'] and args['pred_type'] == 'reg':
         raise Exception('Unlabeled samples cannot be used with regression. They can only be used for reg+class.')
 
@@ -537,6 +539,12 @@ def create_model(args):
             model = EANet(in_channels=args['in_channels'], num_classes=args['num_classes'])
         else:
             raise Exception('EANet only works with pred_type=[reg, class]. Given: {}'.format(args['pred_type']))
+            
+    elif args['model'] == 'eadan':
+        if args['pred_type'] == 'reg':
+            model = EADAN(in_channels=args['in_channels'])
+        elif args['pred_type'] == 'class':
+            model = EADAN(in_channels=args['in_channels'], num_classes=args['num_classes'])
     
     return model.to(args['device'])
         
@@ -590,7 +598,7 @@ if __name__ == "__main__":
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
     args = {'num_folds': None,
-            'max_epoch': 100,
+            'max_epoch': 2,
             'device': device,
             'seed': seed,
             'create_val': True,                                                 # Creates validation set
@@ -613,10 +621,11 @@ if __name__ == "__main__":
     #     args['use_unlabeled_samples'] = use_unlabeled_samples
     #     run(args)
     
-    # print('\nOnly regression\n')
-    # args['pred_type'] = 'reg'
-    # run(args)
-    # print('+' * 72)
+    print('\nOnly regression\n')
+    args['model'] = 'eadan'
+    args['pred_type'] = 'reg'
+    run(args)
+    print('+' * 72)
     
     # args['pred_type'] = 'reg+class'
     # print('\nreg+class\n')
@@ -627,6 +636,7 @@ if __name__ == "__main__":
     #     print('+' * 72)
         
     print('\nclassification\n')
+    args['model'] = 'eadan'
     args['pred_type'] = 'class'
     run(args)
     print('+' * 72)
