@@ -15,6 +15,7 @@ import time
 import sys
 sys.path.append("..")
 import constants as C
+from models import VerboseExecution
 
 class EANet(nn.Module):
     def __init__(self, in_channels, num_classes=None):
@@ -40,7 +41,8 @@ class EANet(nn.Module):
         x = self.act(self.conv(self.pad(x)))                                    # (bs, 64, 3, 3) -> (bs, 64, 3, 3)
         x = self.act(self.conv(self.pad(x)))                                    # (bs, 64, 3, 3) -> (bs, 64, 3, 3)
         
-        x = self.act(self.fc1(x.view(x.shape[0], -1)))                          # (bs, 64 * 3 * 3) -> (bs, 128)
+        # x = self.act(self.fc1(x.view(x.shape[0], -1)))                          # (bs, 64 * 3 * 3) -> (bs, 128)
+        x = self.act(self.fc1(torch.flatten(x, start_dim=1)))
         x = self.fc2(x)                                                         # (bs, 128) -> (bs, 1)
         return x
     
