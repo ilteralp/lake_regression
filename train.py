@@ -531,7 +531,12 @@ def create_model(args):
         model = DandadaDAN(in_channels=args['in_channels'], num_classes=args['num_classes'])
     
     elif args['model'] == 'eanet':
-        model = EANet(in_channels=args['in_channels'])
+        if args['pred_type'] == 'reg':
+            model = EANet(in_channels=args['in_channels'])
+        elif args['pred_type'] == 'class':
+            model = EANet(in_channels=args['in_channels'], num_classes=args['num_classes'])
+        else:
+            raise Exception('EANet only works with pred_type=[reg, class]. Given: {}'.format(args['pred_type']))
     
     return model.to(args['device'])
         
@@ -596,7 +601,7 @@ if __name__ == "__main__":
             'use_unlabeled_samples': False,
             'date_type': 'month',
             'pred_type': 'reg',                                           # Prediction type, can be {'reg', 'class', 'reg+class'}
-            'model': 'dandadadan',                                              # Model name, can be {dandadadan, eanet}.
+            'model': 'eanet',                                              # Model name, can be {dandadadan, eanet}.
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'val': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4},
@@ -608,10 +613,10 @@ if __name__ == "__main__":
     #     args['use_unlabeled_samples'] = use_unlabeled_samples
     #     run(args)
     
-    # print('\nOnly regression\n')
-    # args['pred_type'] = 'reg'
-    # run(args)
-    # print('+' * 72)
+    print('\nOnly regression\n')
+    args['pred_type'] = 'reg'
+    run(args)
+    print('+' * 72)
     
     # args['pred_type'] = 'reg+class'
     # print('\nreg+class\n')
