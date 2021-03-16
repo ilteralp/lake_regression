@@ -622,7 +622,7 @@ if __name__ == "__main__":
     #     run(args)
     
     print('\nOnly regression\n')
-    args['model'] = 'eadan'
+    # args['model'] = 'eadan'
     args['pred_type'] = 'reg'
     run(args)
     print('+' * 72)
@@ -636,7 +636,7 @@ if __name__ == "__main__":
     #     print('+' * 72)
         
     print('\nclassification\n')
-    args['model'] = 'eadan'
+    # args['model'] = 'eadan'
     args['pred_type'] = 'class'
     run(args)
     print('+' * 72)
