@@ -532,7 +532,6 @@ def create_model(args):
     
     elif args['model'] == 'eanet':
         model = EANet(in_channels=args['in_channels'])
-        model.apply(weights_init)
     
     return model.to(args['device'])
         
