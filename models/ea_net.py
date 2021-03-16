@@ -15,7 +15,6 @@ import time
 import sys
 sys.path.append("..")
 import constants as C
-from verbose_execution import VerboseExecution
 
 class EANet(nn.Module):
     def __init__(self, in_channels, num_classes=None):
@@ -71,18 +70,18 @@ class EANet(nn.Module):
 if __name__ == "__main__":
     in_channels = 12
     net = EANet(in_channels=in_channels)
-    verbose_net = VerboseExecution(net)
-    # net.apply(weights_init)                                                     # Init weights
+    # verbose_net = VerboseExecution(net)
+    # # net.apply(weights_init)                                                     # Init weights
     
-    inp = torch.randn(2, 12, 3, 3)
-    _ = verbose_net(inp)
-    # outp = net(inp)
-    # print(outp.shape)
+    # inp = torch.randn(2, 12, 3, 3)
+    # _ = verbose_net(inp)
+    # # outp = net(inp)
+    # # print(outp.shape)
     
-    # visualisation = {}
-    # get_all_layers(net)
-    # outp = net(inp)
-    ## print(visusalisation.keys())
+    # # visualisation = {}
+    # # get_all_layers(net)
+    # # outp = net(inp)
+    # ## print(visusalisation.keys())
     
 """
 1. Add inits. 
