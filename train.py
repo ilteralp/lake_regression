@@ -131,11 +131,12 @@ def get_msg(loss, score, e, dataset, args):
         msg += " + {:.2f}".format(np.mean(loss[e]['u_class_loss']))
     
     if dataset == 'test':
+        msg += "\t Scores,"
         if args['pred_type'] == 'reg' or args['pred_type'] == 'reg+class':
-            msg += "\t Scores, MAE: {:.2f}, R2: {:.2f}, RMSE: {:.2f}".format(
+            msg += " MAE: {:.2f}, R2: {:.2f}, RMSE: {:.2f}".format(
                 np.mean(score[e]['mae']), np.mean(score[e]['r2']), np.mean(score[e]['rmse']))
-        else:
-            msg += "\t Scores, kappa: {:.2f}, f1: {:.2f}, acc: {:.2f}".format(
+        if args['pred_type'] == 'class' or args['pred_type'] == 'reg+class':
+            msg += " kappa: {:.2f}, f1: {:.2f}, acc: {:.2f}".format(
                 np.mean(score[e]['kappa']), np.mean(score[e]['f1']), np.mean(score[e]['acc']))
     return msg
 
