@@ -274,7 +274,7 @@ Calculates loss(es) depending on prediction type
 def calc_loss(model, patches, args, loss_arr, score_arr, e, target_regs, metrics, target_labels=None):
     if args['pred_type'] == 'reg':    
         reg_preds = model(patches)
-        if args['pred_type'] == 'reg+class':
+        if args['model'] in C.DAN_MODELS:
             reg_preds, _ = reg_preds
         reg_loss = args['loss_fn_reg'](input=reg_preds, target=target_regs)
         loss_arr[e]['l_reg_loss'].append(reg_loss.item())
@@ -283,7 +283,7 @@ def calc_loss(model, patches, args, loss_arr, score_arr, e, target_regs, metrics
     
     elif args['pred_type'] == 'class':
         class_preds = model(patches)
-        if args['pred_type'] == 'reg+class':    
+        if args['model'] in C.DAN_MODELS:
             _, class_preds = class_preds                                                            # Be careful with the order.
         class_loss = args['loss_fn_class'](input=class_preds, target=target_labels)
         loss_arr[e]['l_class_loss'].append(class_loss.item())                                       # No more 'l_class_loss', all samples are labeled for classification case. 
@@ -641,7 +641,7 @@ if __name__ == "__main__":
     args['model'] = 'eadan'
     args['split_layer'] = 4
     for pred_type in ['reg', 'class', 'reg+class']:
-        print('\nreg+class\n')
+        print('\n{}\n'.format(pred_type))
         args['pred_type'] = pred_type
         run(args)
         print('+' * 72)
