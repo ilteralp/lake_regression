@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Thu Mar 11 16:14:08 2021
+Created on Wed Mar 17 15:42:09 2021
 
 @author: melike
 """
-
 import numpy
 import torch
 import torch.nn as nn
@@ -15,74 +14,58 @@ import time
 import sys
 sys.path.append("..")
 import constants as C
-from models import EANet, VerboseExecution
-
-cfg = [64, 64, 64, 64]
+from models import EASeq
 
 class EADAN(nn.Module):
-    def __init__(self, in_channels, num_classes=None):
+    """
+    
+    Args:
+        in_channels (int): Number of channels of a sample.
+        num_classes (int): Number of classes within the dataset. Used in classifier part.
+        split_layer (int): Index of the layer that will be used to create shared feature extractor 
+        starting from the beginning.
+    """
+    def __init__(self, in_channels, num_classes, split_layer):
         super(EADAN, self).__init__()
+        self._verify(split_layer)
         self.in_channels = in_channels
         self.num_classes = num_classes
-        # self.eanet = EANet(in_channels=in_channels)
+        self.split_layer = split_layer
         
-        self.conv1 = self.make_layer(in_channels=self.in_channels, out_channels=64)
-        self.conv2 = self.make_layer(in_channels=64, out_channels=64)
-        self.conv3 = self.make_layer(in_channels=64, out_channels=64)
-        self.conv4 = self.make_layer(in_channels=64, out_channels=64)
-        
-        self.fc1 = nn.Sequential(nn.Flatten(start_dim=1),
-                                 nn.Linear(in_features=64 * 3 * 3, out_features=128),
-                                 nn.Tanh())
-        
-        out_features = 1 if self.num_classes is None else self.num_classes
-        self.fc2 = nn.Linear(in_features=128, out_features=out_features)
+        """ Feature extractor """
+        self.feature = self._create_model(start=0, end=self.split_layer)
         
         """ Regressor """
-        # self.convs = self.make_layers(cfg=cfg)
+        self.regressor = self._create_model(start=self.split_layer, end=None)
         
         """ Classifier """
+        self.classifier = self._create_model(start=self.split_layer, end=None, 
+                                             num_classes=self.num_classes)
         
-        
-        """ Init weights """
-        self._init_weights()
-
-        
-    def make_layers(self, cfg):
-        layers = []
-        in_channels = self.in_channels
-        for out_channels in cfg:
-            conv2d = nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=3, stride=1)
-            layers += [nn.ReflectionPad2d(padding=1), conv2d, nn.Tanh()]
-            in_channels = out_channels
-        return nn.Sequential(*layers)
+        # No need to init weights since they are already init within EASeq.
     
-    def make_layer(self, in_channels, out_channels):
-        conv2d = nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=3, stride=1)
-        return nn.Sequential(*[nn.ReflectionPad2d(padding=1), conv2d, nn.Tanh()])
-        
     def forward(self, x):
-        x = self.conv1(x)
-        x = self.conv2(x)
-        x = self.conv3(x)
-        x = self.conv4(x)
-        x = self.fc1(x)
-        x = self.fc2(x)
-        return x
-        # return self.convs(x)
-        # return self.eanet(x)
-
-    def _init_weights(self):
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):            # glorot_uniform in Keras is xavier_uniform_  
-                nn.init.xavier_uniform_(m.weight)
+        x = self.feature(x)
+        reg_out = self.regressor(x)
+        class_out = self.classifier(x)
+        return reg_out, class_out
     
+    """
+    Creates model
+    """
+    def _create_model(self, start, end, num_classes=None):
+        return nn.Sequential(*list(EASeq(in_channels=self.in_channels, 
+                                         num_classes=num_classes).children())[start:end])
+        
+    """
+    Checks split layer is valid
+    """
+    def _verify(self, split_layer):
+        len_easeq = len([*EASeq(in_channels=12).children()])
+        if split_layer > len_easeq - 1 or split_layer < 1:
+            raise Exception("EASeq has {} layers, therefore split layer can be in [1, {}]".format(len_easeq, len_easeq - 1))
+            
 if __name__ == "__main__":
-    # in_channels, num_classes = 12, 4
-    in_channels = 12
-    model = EADAN(in_channels=in_channels)
-    
-    # inp = torch.randn(2, in_channels, 3, 3)
-    # verbose_model = VerboseExecution(model=model)
-    # _ = verbose_model(inp)
-    # # print(model(inp).shape)
+    in_channels, num_classes = 12, 4
+    split_layer = 1
+    model = EADAN(in_channels=in_channels, num_classes=num_classes, split_layer=split_layer)
