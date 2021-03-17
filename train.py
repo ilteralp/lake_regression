@@ -119,7 +119,7 @@ def get_msg(loss, score, e, dataset, args):
         sum_str = '(C)'
     else:
         sum_str = '(R+C_L+C_U)' if 'u_class_loss' in loss[e] else '(R+C)'
-        p_str = '+ '
+        p_str = ' + '
     start_str = '' if dataset == 'test' else 'Epoch #{}, '.format(e) 
     msg = "{}Losses {}: {}, {:.2f} = ".format(
         start_str, sum_str, dataset, np.mean(loss[e]['total']))
@@ -638,12 +638,13 @@ if __name__ == "__main__":
     # run(args)
     # print('+' * 72)
     
-    print('\nreg+class\n')
-    args['pred_type'] = 'reg+class'
     args['model'] = 'eadan'
     args['split_layer'] = 4
-    run(args)
-    print('+' * 72)
+    for pred_type in ['reg', 'class', 'reg+class']:
+        print('\nreg+class\n')
+        args['pred_type'] = pred_type
+        run(args)
+        print('+' * 72)
  
     # for reg_norm in [True, False]:
     #     args['reg_norm'] = reg_norm
