@@ -274,7 +274,7 @@ Calculates loss(es) depending on prediction type
 def calc_loss(model, patches, args, loss_arr, score_arr, e, target_regs, metrics, target_labels=None):
     if args['pred_type'] == 'reg':    
         reg_preds = model(patches)
-        if args['model'] == 'dandadadan':
+        if args['pred_type'] == 'reg+class':
             reg_preds, _ = reg_preds
         reg_loss = args['loss_fn_reg'](input=reg_preds, target=target_regs)
         loss_arr[e]['l_reg_loss'].append(reg_loss.item())
@@ -283,7 +283,7 @@ def calc_loss(model, patches, args, loss_arr, score_arr, e, target_regs, metrics
     
     elif args['pred_type'] == 'class':
         class_preds = model(patches)
-        if args['model'] == 'dandadadan':
+        if args['pred_type'] == 'reg+class':    
             _, class_preds = class_preds                                                            # Be careful with the order.
         class_loss = args['loss_fn_class'](input=class_preds, target=target_labels)
         loss_arr[e]['l_class_loss'].append(class_loss.item())                                       # No more 'l_class_loss', all samples are labeled for classification case. 
@@ -379,7 +379,7 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, v
                 """ Prediction on unlabeled data """
                 # _, u_class_preds = model(u_patches)
                 u_class_preds = model(u_patches)
-                if args['model'] == 'dandadadan':
+                if args['pred_type'] == 'reg+class':
                     _, u_class_preds = u_class_preds
                 class_loss_unlabeled = args['loss_fn_class'](input=u_class_preds, target=u_date_types)
                 tr_loss[e]['u_class_loss'].append(class_loss_unlabeled.item())
@@ -539,12 +539,9 @@ def create_model(args):
             model = EANet(in_channels=args['in_channels'], num_classes=args['num_classes'])
         else:
             raise Exception('EANet only works with pred_type=[reg, class]. Given: {}'.format(args['pred_type']))
-            
+
     elif args['model'] == 'eadan':
-        if args['pred_type'] == 'reg':
-            model = EADAN(in_channels=args['in_channels'])
-        elif args['pred_type'] == 'class':
-            model = EADAN(in_channels=args['in_channels'], num_classes=args['num_classes'])
+        model = EADAN(in_channels=args['in_channels'], num_classes=args['num_classes'], split_layer=args['split_layer'])
     
     return model.to(args['device'])
         
@@ -584,8 +581,8 @@ def run(args):
 Help with params in case you need it. 
 """
 def help():
-    print('\'dandadan\' works with \'use_unlabeled_samples\'=[True, False], \'pred_type\'=[\'reg\', \'reg+class\', \'class\'] and \'date_type\'=[\'month\', \'season\', \'year\'].\n')
-    print('\'eanet\' works with \'use_unlabeled_samples\'=False, \'pred_type\'=[\'reg\', \'class\'] and does not take \'date_type\'.\n')
+    print('\'dandadan\' and \'eadan\' work with \'use_unlabeled_samples\'=[True, False], \'pred_type\'=[\'reg\', \'reg+class\', \'class\'] and \'date_type\'=[\'month\', \'season\', \'year\'].\n')
+    print('\'eanet\' (and \'easeq\') works with \'use_unlabeled_samples\'=False, \'pred_type\'=[\'reg\', \'class\'] and does not take \'date_type\'.\n')
     print('With \'date_type\'=\'year\', validation set cannot be created.')
     
     
@@ -609,7 +606,7 @@ if __name__ == "__main__":
             'use_unlabeled_samples': False,
             'date_type': 'month',
             'pred_type': 'reg',                                           # Prediction type, can be {'reg', 'class', 'reg+class'}
-            'model': 'eanet',                                              # Model name, can be {dandadadan, eanet}.
+            'model': 'eanet',                                              # Model name, can be {dandadadan, eanet, eadan}.
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'val': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4},
@@ -638,6 +635,13 @@ if __name__ == "__main__":
     print('\nclassification\n')
     # args['model'] = 'eadan'
     args['pred_type'] = 'class'
+    run(args)
+    print('+' * 72)
+    
+    print('\nreg+class\n')
+    args['pred_type'] = 'reg+class'
+    args['model'] = 'eadan'
+    args['split_layer'] = 4
     run(args)
     print('+' * 72)
  
