@@ -21,6 +21,7 @@ import constants as C
 from datasets import Lake2dDataset
 from metrics import Metrics
 from models import DandadaDAN, EANet, EADAN
+# from losses import AutomaticWeightedLoss
 
 """
 Takes a dataset and splits it into train, test and validation sets. 
@@ -342,6 +343,11 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, v
     # model.apply(weight_reset)                                                   # Or save weights of the model first & load them.
     model = reset_model(model, args)                                            # Init weights before each fold. 
     optimizer = RMSprop(params=model.parameters(), lr=args['lr'])               # EA uses RMSprop with lr=0.0001, I can try SGD or Adam as in [1, 2] or [3].
+    # awl = AutomaticWeightedLoss(num=2)
+    # optimizer = RMSprop([
+    #                 {'params': model.parameters(), 'lr': args['lr']},
+    #                 {'params': awl.parameters(), 'weight_decay': 0}
+    #             ])
     tr_loss, tr_scores = create_losses_scores(args)
     val_loss, val_scores = create_losses_scores(args)
     score_name, best_val_score, best_val_loss = init_best_val_score_loss(args)  # Init best val score and loss.
@@ -588,7 +594,7 @@ def help():
     
     
 if __name__ == "__main__":
-    seed = None
+    seed = 42
     if seed is not None:
         torch.manual_seed(seed)
         np.random.seed(seed)
@@ -603,7 +609,7 @@ if __name__ == "__main__":
             'test_per': 0.1,
             'lr': 0.0001,                                                       # From EA's model, default is 1e-2.
             'patch_norm': False,                                                 # Normalizes patches
-            'reg_norm': False,                                                   # Normalize regression values
+            'reg_norm': True,                                                   # Normalize regression values
             'use_unlabeled_samples': False,
             'date_type': 'month',
             'pred_type': 'reg',                                           # Prediction type, can be {'reg', 'class', 'reg+class'}
