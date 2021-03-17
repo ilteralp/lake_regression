@@ -588,7 +588,7 @@ def help():
     
     
 if __name__ == "__main__":
-    seed = 42
+    seed = None
     if seed is not None:
         torch.manual_seed(seed)
         np.random.seed(seed)
@@ -596,7 +596,7 @@ if __name__ == "__main__":
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
     args = {'num_folds': None,
-            'max_epoch': 2,
+            'max_epoch': 10,
             'device': device,
             'seed': seed,
             'create_val': True,                                                 # Creates validation set
@@ -642,11 +642,11 @@ if __name__ == "__main__":
     args['model'] = 'eadan'
     args['use_unlabeled_samples'] = False
     args['pred_type'] = 'reg+class'
-    # for split_layer in range(1, 6):
-    args['split_layer'] = 1
-    print('\nsplit_layer:{}\n'.format(args['split_layer']))
-    run(args)
-    print('+' * 72)
+    for split_layer in range(1, 6):
+        args['split_layer'] = split_layer
+        print('\nsplit_layer:{}\n'.format(args['split_layer']))
+        run(args)
+        print('+' * 72)
  
     # for reg_norm in [True, False]:
     #     args['reg_norm'] = reg_norm
