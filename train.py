@@ -639,12 +639,13 @@ if __name__ == "__main__":
     # print('+' * 72)
     
     args['model'] = 'eadan'
-    args['split_layer'] = 4
-    args['use_unlabeled_samples'] = True
+    args['use_unlabeled_samples'] = False
     args['pred_type'] = 'reg+class'
-    print('\n{}\n'.format(args['pred_type']))
-    run(args)
-    print('+' * 72)
+    for split_layer in range(1, 6):
+        args['split_layer'] = split_layer
+        print('\nsplit_layer:{}\n'.format(args['split_layer']))
+        run(args)
+        print('+' * 72)
  
     # for reg_norm in [True, False]:
     #     args['reg_norm'] = reg_norm
