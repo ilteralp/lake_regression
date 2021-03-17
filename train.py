@@ -618,25 +618,25 @@ if __name__ == "__main__":
     #     args['use_unlabeled_samples'] = use_unlabeled_samples
     #     run(args)
     
-    print('\nOnly regression\n')
-    # args['model'] = 'eadan'
-    args['pred_type'] = 'reg'
-    run(args)
-    print('+' * 72)
+    # print('\nOnly regression\n')
+    # # args['model'] = 'eadan'
+    # args['pred_type'] = 'reg'
+    # run(args)
+    # print('+' * 72)
     
-    # args['pred_type'] = 'reg+class'
-    # print('\nreg+class\n')
-    # for use_unlabeled_samples in [True, False]:
-    #     args['use_unlabeled_samples'] = use_unlabeled_samples
-    #     print('use_unlabeled_samples: {}'.format(args['use_unlabeled_samples']))
-    #     run(args)
-    #     print('+' * 72)
+    # # args['pred_type'] = 'reg+class'
+    # # print('\nreg+class\n')
+    # # for use_unlabeled_samples in [True, False]:
+    # #     args['use_unlabeled_samples'] = use_unlabeled_samples
+    # #     print('use_unlabeled_samples: {}'.format(args['use_unlabeled_samples']))
+    # #     run(args)
+    # #     print('+' * 72)
         
-    print('\nclassification\n')
-    # args['model'] = 'eadan'
-    args['pred_type'] = 'class'
-    run(args)
-    print('+' * 72)
+    # print('\nclassification\n')
+    # # args['model'] = 'eadan'
+    # args['pred_type'] = 'class'
+    # run(args)
+    # print('+' * 72)
     
     print('\nreg+class\n')
     args['pred_type'] = 'reg+class'
