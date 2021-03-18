@@ -632,6 +632,7 @@ if __name__ == "__main__":
             'unlabeled': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'test': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4}}
     verify_args(args)
+    run(args)
     
     # for use_unlabeled_samples in [True, False]:
     #     args['use_unlabeled_samples'] = use_unlabeled_samples
