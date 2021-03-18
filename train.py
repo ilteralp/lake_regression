@@ -336,6 +336,22 @@ def init_best_val_score_loss(args):
     best_val_loss = float('inf')
     return score_name, best_val_score, best_val_loss
 
+
+# """
+# Creates optimizer and weighted loss depending on args. 
+# """
+# def create_optimizer_loss(model, args):
+#     if args['pred_type'] == 'reg+class' and args['use_awl']:
+#             awl = AutomaticWeightedLoss(num=2)
+#             optimizer = RMSprop([
+#                 {'params': model.parameters(), 'lr': args['lr']},
+#                 {'params': awl.parameters(), 'weight_decay': 0}
+#             ])
+#             return optimizer, awl
+#     else:
+#         optimizer = RMSprop(params=model.parameters(), lr=args['lr'])
+#         return optimizer, None
+
 """
 Trains model with labeled and unlabeled data. 
 """
@@ -343,11 +359,7 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, v
     # model.apply(weight_reset)                                                   # Or save weights of the model first & load them.
     model = reset_model(model, args)                                            # Init weights before each fold. 
     optimizer = RMSprop(params=model.parameters(), lr=args['lr'])               # EA uses RMSprop with lr=0.0001, I can try SGD or Adam as in [1, 2] or [3].
-    # awl = AutomaticWeightedLoss(num=2)
-    # optimizer = RMSprop([
-    #                 {'params': model.parameters(), 'lr': args['lr']},
-    #                 {'params': awl.parameters(), 'weight_decay': 0}
-    #             ])
+    # optimizer, awl = create_optimizer_loss(model=model, args=args) 
     tr_loss, tr_scores = create_losses_scores(args)
     val_loss, val_scores = create_losses_scores(args)
     score_name, best_val_score, best_val_loss = init_best_val_score_loss(args)  # Init best val score and loss.
@@ -608,12 +620,12 @@ if __name__ == "__main__":
             'create_val': True,                                                 # Creates validation set
             'test_per': 0.1,
             'lr': 0.0001,                                                       # From EA's model, default is 1e-2.
-            'patch_norm': True,                                                 # Normalizes patches
+            'patch_norm': False,                                                 # Normalizes patches
             'reg_norm': True,                                                   # Normalize regression values
             'use_unlabeled_samples': False,
             'date_type': 'month',
-            'pred_type': 'reg',                                           # Prediction type, can be {'reg', 'class', 'reg+class'}
-            'model': 'eanet',                                              # Model name, can be {dandadadan, eanet, eadan}.
+            'pred_type': 'class',                                           # Prediction type, can be {'reg', 'class', 'reg+class'}
+            'model': 'dandadadan',                                              # Model name, can be {dandadadan, eanet, eadan}.
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'val': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4},
@@ -645,14 +657,14 @@ if __name__ == "__main__":
     # run(args)
     # print('+' * 72)
     
-    args['model'] = 'eadan'
-    args['use_unlabeled_samples'] = False
-    args['pred_type'] = 'reg+class'
-    for split_layer in range(1, 6):
-        args['split_layer'] = split_layer
-        print('\nsplit_layer:{}\n'.format(args['split_layer']))
-        run(args)
-        print('+' * 72)
+    # args['model'] = 'eadan'
+    # args['use_unlabeled_samples'] = False
+    # args['pred_type'] = 'reg+class'
+    # for split_layer in range(1, 6):
+    #     args['split_layer'] = split_layer
+    #     print('\nsplit_layer:{}\n'.format(args['split_layer']))
+    #     run(args)
+    #     print('+' * 72)
  
     # for reg_norm in [True, False]:
     #     args['reg_norm'] = reg_norm
