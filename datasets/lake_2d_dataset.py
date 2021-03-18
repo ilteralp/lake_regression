@@ -90,6 +90,9 @@ class Lake2dDataset(BaseLakeDataset):
                 
                 if self.reg_min is not None and self.reg_max is not None:       # Normalize regression value. 
                     reg_val = 2 * (reg_val - self.reg_min) / (self.reg_max - self.reg_min) - 1
+                    if reg_val > 1.0:    reg_val = 1.0
+                    elif reg_val < -1.0: reg_val = -1.0
+                    
                 
                 return patch, date_class, np.expand_dims(reg_val, axis=0).astype(np.float32), (img_idx, px, py)
 
