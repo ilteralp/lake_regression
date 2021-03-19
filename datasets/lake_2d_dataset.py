@@ -88,15 +88,21 @@ class Lake2dDataset(BaseLakeDataset):
                 #     reg_val = (reg_val - self.reg_mean) / self.reg_std
                 
                 if self.reg_min is not None and self.reg_max is not None:       # Normalize regression value. 
-                    reg_val = 2 * (reg_val - self.reg_min) / (self.reg_max - self.reg_min) - 1
-                    if reg_val > 1.0:    reg_val = 1.0
-                    elif reg_val < -1.0: reg_val = -1.0
-                    
+                    reg_val = self.normalize_reg(reg_val)                    
                 
                 return patch, date_class, np.expand_dims(reg_val, axis=0).astype(np.float32), (img_idx, px, py)
 
         else:
             raise Exception('Image not found on {}'.format(img_path))
+        
+    """
+    Normalizes given regression value to [-1, 1] range. 
+    """
+    def normalize_reg(self, reg_val):
+        reg_val = 2 * (reg_val - self.reg_min) / (self.reg_max - self.reg_min) - 1
+        if reg_val > 1.0:    reg_val = 1.0
+        elif reg_val < -1.0: reg_val = -1.0
+        return reg_val
             
 if __name__ == "__main__":
     # filepath = osp.join(C.ROOT_DIR, 'balik', '2', 'level2a.h5')
