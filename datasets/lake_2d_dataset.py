@@ -46,6 +46,10 @@ class Lake2dDataset(BaseLakeDataset):
     """
     def __getitem__(self, index):
         img_idx, px_idx = index % 32, index // 32
+        return self._get_sample(img_idx=img_idx, px_idx=px_idx)
+
+    
+    def _get_sample(self, img_idx, px_idx):
         img_path = osp.join(C.IMG_DIR_PATH, self.img_names[img_idx], 'level2a.h5')
         if osp.exists(img_path):
             with h5py.File(img_path, 'r') as img:
@@ -61,7 +65,7 @@ class Lake2dDataset(BaseLakeDataset):
                 #         self.unlabeled_mask = np.pad(self.unlabeled_mask, ((0, 0), (pad, pad), (pad, pad)), mode='symmetric')
                 #         print('Padded, unlabeled_mask.shape:', self.unlabeled_mask.shape)
                 # If you decide back to padding, don't forget to add pad value to each pixel. 
-                data = torch.from_numpy(data.astype(np.float32))       # Pytorch cannot convert uint16
+                data = torch.from_numpy(data.astype(np.float32))                # Pytorch cannot convert uint16
                 pad = self.patch_size // 2
                 reg_val = 1.0
                 if self.learning == 'unlabeled':
