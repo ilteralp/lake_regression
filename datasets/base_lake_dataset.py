@@ -90,11 +90,11 @@ class BaseLakeDataset(Dataset):
     """
     def _load_unlabeled_mask(self):
         mask = np.all(io.imread(C.MASK_PATH) == (255, 0, 255), axis=-1)         # Lake mask, 650x650
-        print('before', mask[C.LABELED_INDICES])
-        print('before, sum of mask pixels:', np.sum(mask))
+        # print('before', mask[C.LABELED_INDICES])
+        # print('before, sum of mask pixels:', np.sum(mask))
         mask[C.LABELED_INDICES] = False                                         # Set labeled indices to false.  
         self.num_samples = np.sum(mask)
-        print('after removing labeled samples, number of unlabeled samples:', self.num_samples)
+        # print('after removing labeled samples, number of unlabeled samples:', self.num_samples)
         return mask
     
     """
