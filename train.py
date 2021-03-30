@@ -21,6 +21,7 @@ import constants as C
 from datasets import Lake2dDataset, Lake2dFoldDataset
 from metrics import Metrics
 from models import DandadaDAN, EANet, EADAN
+from report import Report
 # from losses import AutomaticWeightedLoss
 
 """
@@ -152,7 +153,7 @@ def get_msg(loss, score, e, dataset, args):
                 np.mean(score[e]['mae']), np.mean(score[e]['r2']), np.mean(score[e]['rmse']))
         if args['pred_type'] == 'class' or args['pred_type'] == 'reg+class':
             msg += " kappa: {:.2f}, f1: {:.2f}, acc: {:.2f}".format(
-                np.mean(score[e]['kappa']), np.mean(score[e]['f1']), np.mean(score[e]['acc']))
+                np.nanmean(score[e]['kappa']), np.mean(score[e]['f1']), np.mean(score[e]['acc']))
     return msg
 
 """
@@ -247,6 +248,9 @@ def _test(test_set, model_name, metrics, args, fold):
     with open(run_path, 'w') as f:
         f.write(msg)
     print(msg)
+    
+    """ Keep score of this fold """
+    metrics.add_fold_score(fold_score=test_scores, model_name=model_name)
     
 """
 Takes model and validation set. Calculates metrics on validation set. 
@@ -446,8 +450,8 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, v
             if np.mean(val_loss[e]['total']) < best_val_loss:
                 best_val_loss = np.mean(val_loss[e]['total'])
                 torch.save(model.state_dict(), osp.join(model_dir_path, 'best_val_loss.pth'))
-            if np.mean(val_scores[e][score_name]) > best_val_score:
-                best_val_score = np.mean(val_scores[e][score_name])
+            if np.nanmean(val_scores[e][score_name]) > best_val_score:                         # Due to kappa returning NaN in some cases, nanmean is used.      
+                best_val_score = np.nanmean(val_scores[e][score_name])
                 torch.save(model.state_dict(), osp.join(model_dir_path, 'best_val_score.pth'))
             # print(get_msg(val_loss, val_scores, e, dataset='val', args=args))              # Print validation set loss & score for each **epoch**. 
           
@@ -485,7 +489,7 @@ Creates dataset's folds and applies train function.
 """
 def train_random_on_folds(model, dataset, unlabeled_dataset, train_fn, args):
     unlabeled_loader = DataLoader(unlabeled_dataset, **args['unlabeled']) if args['use_unlabeled_samples'] else None
-    metrics = Metrics(num_folds=args['num_folds'], device=args['device'].type)
+    metrics = Metrics(num_folds=args['num_folds'], device=args['device'].type, pred_type=args['pred_type'])
     indices = [*range(len(dataset))]                                                              # Sample indices
     np.random.shuffle(indices)
     create_run_folder(args=args)
@@ -589,7 +593,7 @@ def get_fold_ids(args):
 
 """
 """
-def _init_train_on_folds(ids, tr_ids, test_ids, model, fold, metrics):
+def _base_train_on_folds(ids, tr_ids, test_ids, model, fold, metrics):
     np.random.shuffle(tr_ids)
     labeled_dataset_dict = {'learning': 'labeled', 
                             'date_type': args['date_type'],
@@ -659,14 +663,15 @@ def train_on_folds(args):
     ids = np.array(get_fold_ids(args=args))                                                      # Returns ids of selected fold_setup.
     args = create_model_params(args=args)                                                        # Create regression and/or classification losses and model params.
     model = create_model(args=args)                                                              # Create model.
-    metrics = Metrics(num_folds=args['num_folds'], device=args['device'].type)
+    metrics = Metrics(num_folds=args['num_folds'], device=args['device'].type, 
+                      pred_type=args['pred_type'])
 
     """ Train & test with cross-validation """
     if args['num_folds'] is not None:
         kf = KFold(n_splits=args['num_folds'], shuffle=True, random_state=args['seed'])
         for fold, (tr_index, test_index) in enumerate(kf.split(ids)):
             print('\nFold#{}'.format(fold))
-            _init_train_on_folds(ids=ids, tr_ids=ids[tr_index], test_ids=ids[test_index], 
+            _base_train_on_folds(ids=ids, tr_ids=ids[tr_index], test_ids=ids[test_index], 
                                  model=model, fold=fold, metrics=metrics)
     
     # Train and test without cross-validation
@@ -674,8 +679,13 @@ def train_on_folds(args):
         test_len = len(ids) // C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]                        # Ensure that test set has the same size as the ones trained with folds.
         np.random.shuffle(ids)                                                                   # Shuffle ids, so that test_ids does not always become the samples with greatest ids. 
         tr_ids, test_ids = ids[:-test_len], ids[-test_len:]
-        _init_train_on_folds(ids=ids, tr_ids=tr_ids, test_ids=test_ids, model=model,
+        _base_train_on_folds(ids=ids, tr_ids=tr_ids, test_ids=test_ids, model=model,
                              fold=1, metrics=metrics)
+    
+    """ Save experiment results to the report """
+    report = Report()
+    report.add(args=args, metrics=metrics)
+    report.save()
 
 """
 Creates model.
@@ -690,7 +700,7 @@ def create_model(args):
         elif args['pred_type'] == 'class':
             model = EANet(in_channels=args['in_channels'], num_classes=args['num_classes'])
         else:
-            raise Exception('EANet only works with pred_type=[reg, class]. Given: {}'.format(args['pred_type']))
+            raise Exception('EANet only works with pred_type=[\'reg\', \'class\']. Given: \'{}\'.'.format(args['pred_type']))
 
     elif args['model'] == 'eadan':
         model = EADAN(in_channels=args['in_channels'], num_classes=args['num_classes'], split_layer=args['split_layer'])
@@ -752,22 +762,23 @@ if __name__ == "__main__":
         random.seed(seed)    
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    fold_setup = 'temporal_year'
-    args = {'num_folds': None,
-    # args = {'num_folds': C.FOLD_SETUP_NUM_FOLDS[fold_setup],
+    fold_setup = 'spatial'
+    # args = {'num_folds': None,
+    args = {'num_folds': C.FOLD_SETUP_NUM_FOLDS[fold_setup],
             'max_epoch': 2,
             'device': device,
             'seed': seed,
-            'create_val': False,                                                 # Creates validation set
+            'create_val': True,                                                 # Creates validation set
             'test_per': 0.1,
             'lr': 0.0001,                                                       # From EA's model, default is 1e-2.
             'patch_norm': True,                                                 # Normalizes patches
             'reg_norm': True,                                                   # Normalize regression values
             'use_unlabeled_samples': False,
             'date_type': 'month',
-            'pred_type': 'reg',                                           # Prediction type, can be {'reg', 'class', 'reg+class'}
+            'pred_type': 'class',                                           # Prediction type, can be {'reg', 'class', 'reg+class'}
             'model': 'eanet',                                              # Model name, can be {dandadadan, eanet, eadan}.
             'fold_setup': fold_setup,
+            'split_layer': 1,
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'val': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4},
