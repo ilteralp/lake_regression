@@ -26,6 +26,7 @@ MASK_PATH = osp.join(ROOT_DIR, 'lake_mask.png')
 IMG_DIR_PATH = osp.join(ROOT_DIR, 'balik')
 GT_PATH = osp.join(ROOT_DIR, 'ground_truth32.txt')
 DATE_LABELS_PATH = osp.join(ROOT_DIR, 'date_labels.txt')
+REPORT_PATH = osp.join(ROOT_DIR, 'reports')
 LABELED_INDICES = ([537, 427, 340, 263, 165, 107, 172, 249, 337, 447],
                     [235, 280, 325, 345, 398, 342, 298, 262, 225, 197])          # Or maybe vice versa ?    
 IMG_SHAPE = [12, 650, 650]
