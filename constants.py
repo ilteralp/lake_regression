@@ -37,6 +37,9 @@ DAN_MODELS = ['dandadadan', 'eadan']
 YEAR_IMG_ID = {0: [1, 2, 3, 4, 5, 6, 7],                                  # 2017, Careful this is year-img_name mapping, not year-img_id
                1: [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21], # 2018, mapping. So it's *NOT* continuous in [0, 31] range and 
                2: [24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34]}           # 2019, can *NOT* be used to index img_names list. 
+FOLD_SETUP_NUM_FOLDS = {'spatial': 10,
+                        'temporal_day': 16,
+                        'temporal_year': 3}
 
 """ ===================== Model params ===================== """
 BATCH_SIZE = 32
