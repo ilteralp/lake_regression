@@ -18,7 +18,7 @@ import os.path as osp
 from sklearn.model_selection import KFold
 from datetime import datetime
 import constants as C
-from datasets import Lake2dDataset
+from datasets import Lake2dDataset, Lake2dFoldDataset
 from metrics import Metrics
 from models import DandadaDAN, EANet, EADAN
 # from losses import AutomaticWeightedLoss
@@ -76,6 +76,20 @@ def calc_mean_std(train_loader):
     # regs_std = (regs_squared_sum / num_batches - regs_mean ** 2) ** 0.5
     return patches_mean, patches_std
 
+"""
+Takes a train set loader and returns its min and max regression values.
+"""
+def load_reg_min_max(train_loader):
+    reg_min, reg_max = float('inf'), 0.0
+    for data in train_loader:
+        _, _, reg_vals, (_, _, _) = data
+        temp_min, temp_max = torch.min(reg_vals), torch.max(reg_vals)
+        if temp_min < reg_min:
+            reg_min = temp_min
+        if temp_max > reg_max:
+            reg_max = temp_max
+    print('Regression values, min: {}, max: {}'.format(reg_min, reg_max))
+    return reg_min, reg_max
 """
 Returns min and max of given train set regression values.
 """
@@ -155,6 +169,12 @@ def verify_args(args):
         raise Exception('Model can be one of [\'dandadadan\', \'eanet\', \'eadan\']')
     if args['use_unlabeled_samples'] and args['pred_type'] == 'reg':
         raise Exception('Unlabeled samples cannot be used with regression. They can only be used for reg+class.')
+    if args['num_folds'] is not None and args['fold_setup'] not in ['spatial', 'temporal_day', 'temporal_year', 'random']:
+        raise Exception('Expected fold_type to be one of [\'spatial\', \'temporal_day\', \'temporal_year\', \'random\'].')
+    if args['num_folds'] is not None and args['num_folds'] < 3 and args['create_val']:
+        raise Exception('Number of folds should be at least 3 in order to create validation set.')
+    if args['fold_setup'] == 'temporal_year' and args['create_val']:
+        raise Exception('Validation set cannot be created for fold_setup=\'temporal_year\'. Reason: Has only 3 ids.')
 
 """
 Plots loss and scores to Tensorboard
@@ -441,16 +461,11 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, v
     # X Save each fold's model to its folder under 'models\{run_name}'.
     # X Save train result to metrics. 
     # Test'te sadece regresyon sonucunu al, DAN oyle yapiyor. 
-
+    
 """
-Takes a labeled dataset, a train function and arguments. 
-Creates dataset's folds and applies train function.
+Creates run folder and files for saving experiment results. 
 """
-def train_on_folds(model, dataset, unlabeled_dataset, train_fn, args):
-    unlabeled_loader = DataLoader(unlabeled_dataset, **args['unlabeled']) if args['use_unlabeled_samples'] else None
-    metrics = Metrics(num_folds=args['num_folds'], device=args['device'].type)
-    indices = [*range(len(dataset))]                                                              # Sample indices
-    np.random.shuffle(indices)
+def create_run_folder(args):
     args['run_name'] = datetime.now().strftime("%Y_%m_%d__%H_%M_%S")
     os.mkdir(osp.join(C.MODEL_DIR_PATH, args['run_name']))                                        # Create model_files\<run_name> folder.
     os.mkdir(osp.join(os.getcwd(), 'runs', args['run_name']))                                     # Create runs\<run_name> folder.   
@@ -459,6 +474,17 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, args):
         f.write(str(args))
     with open(osp.join(os.getcwd(), 'runs', args['run_name'], 'args.txt'), 'w') as f:
         f.write(str(args))
+
+"""
+Takes a labeled dataset, a train function and arguments. 
+Creates dataset's folds and applies train function.
+"""
+def train_random_on_folds(model, dataset, unlabeled_dataset, train_fn, args):
+    unlabeled_loader = DataLoader(unlabeled_dataset, **args['unlabeled']) if args['use_unlabeled_samples'] else None
+    metrics = Metrics(num_folds=args['num_folds'], device=args['device'].type)
+    indices = [*range(len(dataset))]                                                              # Sample indices
+    np.random.shuffle(indices)
+    create_run_folder(args=args)
 
     """ Train & test with cross-validation """
     if args['num_folds'] is not None:
@@ -545,6 +571,81 @@ def train_on_folds(model, dataset, unlabeled_dataset, train_fn, args):
                   metrics=metrics, args=args, fold=1)
             
 """
+Returns ids (pixel, image or year) of that fold setup that will be used to 
+create train, test and validation sets. 
+"""
+def get_fold_ids(args):
+    if args['fold_setup'] == 'spatial':                                                          # Spatial is labeled pixels, [0, 9].
+        return [*range(10)]
+    elif args['fold_setup'] == 'temporal_day':                                                   # Temporal_day is days, [1, 34] skips [22, 23].
+        return [*range(1, 22)] + [*range(24, 35)]
+    elif args['fold_setup'] == 'temporal_year':                                                  # Temporal_year is years, [0, 1, 2].
+        return [*range(3)]
+    
+
+"""
+"""
+def _init_train_on_folds(ids, tr_ids, test_ids, model):
+    
+    """ Create train and validation set """
+    np.random.shuffle(tr_ids)
+    labeled_dataset_dict = {'learning': 'labeled', 
+                            'date_type': args['date_type'],
+                            'fold_setup': args['fold_setup']}
+    val_set = None
+    if args['create_val']:
+        val_len = len(test_ids)
+        tr_ids, val_ids = tr_ids[:-val_len], tr_ids[-val_len:]
+        val_set = Lake2dFoldDataset(**labeled_dataset_dict, ids=val_ids)                         # Validation set is created only with labeled samples.
+        print('\tTrain: {}\n\tVal: {}\n\tTest: {}'.format(tr_ids, val_ids, test_ids))
+    else:
+        print('\tTrain: {}\n\tTest: {}'.format(tr_ids, test_ids))
+        
+    train_set_labeled = Lake2dFoldDataset(**labeled_dataset_dict, ids=tr_ids)
+    test_set = Lake2dFoldDataset(**labeled_dataset_dict, ids=test_ids)                           # Test set is created only with labeled samples.
+    
+    """ Normalize patches on all datasets """
+    if args['patch_norm']:
+        patches_mean, patches_std = calc_mean_std(DataLoader(train_set_labeled, **args['tr']))
+        for d in [train_set_labeled, val_set, test_set]:
+            if d is not None:
+                d.set_patch_mean_std(means=patches_mean, stds=patches_std)
+    
+    """ Normalize regression value on all datasets """
+    if args['reg_norm']:
+        reg_min, reg_max = load_reg_min_max(DataLoader(train_set_labeled, **args['tr']))
+        for d, name in zip([train_set_labeled, val_set, test_set], ['train_set_labeled', 'val_set', 'test_set']):
+            if d is not None:
+                print(name, ', len: ', len(d))
+                d.set_reg_min_max(reg_min=reg_min, reg_max=reg_max)
+    
+"""
+Takes arguments. Creates a model and trains it with the given dataset with folds
+or not depending on args.
+"""
+def train_on_folds(args):
+    create_run_folder(args=args)                                                                 # Creates run folder and files for keeping experiment results.
+    ids = np.array(get_fold_ids(args=args))                                                      # Returns ids of selected fold_setup.
+    args = create_model_params(args=args)                                                        # Create regression and/or classification losses and model params.
+    model = create_model(args=args)                                                              # Create model.
+
+    """ Train & test with cross-validation """
+    if args['num_folds'] is not None:
+        kf = KFold(n_splits=args['num_folds'], shuffle=True, random_state=args['seed'])
+        for fold, (tr_index, test_index) in enumerate(kf.split(ids)):
+            print('\nFold#{}'.format(fold))
+            _init_train_on_folds(ids=ids, tr_ids=ids[tr_index], 
+                                 test_ids=ids[test_index], model=model)
+                
+    
+    # Train and test without cross-validation
+    else:
+        test_len = len(ids) // C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]                        # Ensure that test set has the same size as the ones trained with folds.
+        np.random.shuffle(ids)                                                                   # Shuffle ids, so that test_ids does not always become the samples with greatest ids. 
+        tr_ids, test_ids = ids[:-test_len], ids[-test_len:]
+        _init_train_on_folds(ids=ids, tr_ids=tr_ids, test_ids=test_ids, model=model)
+
+"""
 Creates model.
 """
 def create_model(args):
@@ -563,7 +664,22 @@ def create_model(args):
         model = EADAN(in_channels=args['in_channels'], num_classes=args['num_classes'], split_layer=args['split_layer'])
     
     return model.to(args['device'])
-        
+
+"""
+Creates loss functions depending on prediction type and adds model params.
+"""
+def create_model_params(args):
+    args['in_channels'] = 12
+    args['num_classes'] = C.NUM_CLASSES[args['date_type']]
+    
+    if args['pred_type'] == 'reg' or args['pred_type'] == 'reg+class':
+        loss_fn_reg = torch.nn.MSELoss().to(args['device'])                     # Regression loss function
+        args['loss_fn_reg'] = loss_fn_reg
+
+    if args['pred_type'] == 'class' or args['pred_type'] == 'reg+class':
+        loss_fn_class = torch.nn.CrossEntropyLoss().to(args['device'])          # Classification loss function
+        args['loss_fn_class'] = loss_fn_class
+    return args
     
 """
 Runs model with given args. 
@@ -575,26 +691,17 @@ def run(args):
     if args['use_unlabeled_samples']:
         unlabeled_set = Lake2dDataset(learning='unlabeled', date_type=args['date_type'])
    
-    """ Create regression (and classification) losses  """
-    args['in_channels'] = labeled_set[0][0].shape[0]
-    args['num_classes'] = C.NUM_CLASSES[labeled_set.date_type]
-    
-    if args['pred_type'] == 'reg' or args['pred_type'] == 'reg+class':
-        loss_fn_reg = torch.nn.MSELoss().to(args['device'])                     # Regression loss function
-        args['loss_fn_reg'] = loss_fn_reg
+    """ Create regression and/or classification losses and model params. """
+    args = create_model_params(args=args)
 
-    if args['pred_type'] == 'class' or args['pred_type'] == 'reg+class':
-        loss_fn_class = torch.nn.CrossEntropyLoss().to(args['device'])          # Classification loss function
-        args['loss_fn_class'] = loss_fn_class
-    
     """ Create model """
     model = create_model(args=args)
 
     """ Train """
     # train_fn = _train if args['use_unlabeled_samples'] else _train_labeled_only
     train_fn = _train
-    train_on_folds(model=model, dataset=labeled_set, unlabeled_dataset=unlabeled_set,  
-                   train_fn=train_fn, args=args)
+    train_random_on_folds(model=model, dataset=labeled_set, unlabeled_dataset=unlabeled_set,  
+                          train_fn=train_fn, args=args)
 
 """
 Help with params in case you need it. 
@@ -613,26 +720,37 @@ if __name__ == "__main__":
         random.seed(seed)    
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
+    fold_setup = 'temporal_day'
     args = {'num_folds': None,
+    # args = {'num_folds': C.FOLD_SETUP_NUM_FOLDS[fold_setup],
             'max_epoch': 100,
             'device': device,
             'seed': seed,
             'create_val': True,                                                 # Creates validation set
             'test_per': 0.1,
             'lr': 0.0001,                                                       # From EA's model, default is 1e-2.
-            'patch_norm': False,                                                 # Normalizes patches
+            'patch_norm': True,                                                 # Normalizes patches
             'reg_norm': True,                                                   # Normalize regression values
             'use_unlabeled_samples': False,
             'date_type': 'month',
             'pred_type': 'reg',                                           # Prediction type, can be {'reg', 'class', 'reg+class'}
             'model': 'eanet',                                              # Model name, can be {dandadadan, eanet, eadan}.
+            'fold_setup': fold_setup,
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'val': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4},
             'unlabeled': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'test': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4}}
     verify_args(args)
-    run(args)
+    
+    """ Random train setup with Lake2dDataset """
+    print('Setup', args['fold_setup'])
+    if args['fold_setup'] == 'random':
+        run(args)
+        
+    # Train setup with Lake2dFoldDataset
+    else:
+        train_on_folds(args=args)
     
     # for use_unlabeled_samples in [True, False]:
     #     args['use_unlabeled_samples'] = use_unlabeled_samples
