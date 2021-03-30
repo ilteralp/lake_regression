@@ -174,7 +174,7 @@ def verify_args(args):
     if args['num_folds'] is not None and args['num_folds'] < 3 and args['create_val']:
         raise Exception('Number of folds should be at least 3 in order to create validation set.')
     if args['fold_setup'] == 'temporal_year' and args['create_val']:
-        raise Exception('Validation set cannot be created for fold_setup=\'temporal_year\'. Reason: Has only 3 ids.')
+        raise Exception('Validation set cannot be created for fold_setup=\'temporal_year\'. Reason: Has only 3 years.')
 
 """
 Plots loss and scores to Tensorboard
@@ -183,13 +183,15 @@ def plot(writer, tr_loss, val_loss, tr_scores, val_scores, e):
     
     """ Losses """
     writer.add_scalar('1_Loss/train (total)', np.mean(tr_loss[e]['total']), e)
-    writer.add_scalar('1_Loss/val (total)', np.mean(val_loss[e]['total']), e)
+    if val_loss is not None:
+        writer.add_scalar('1_Loss/val (total)', np.mean(val_loss[e]['total']), e)
     if args['pred_type'] == 'reg' or args['pred_type'] == 'reg+class':
         writer.add_scalar('2_Loss/train (labeled_reg)', np.mean(tr_loss[e]['l_reg_loss']), e)
-        writer.add_scalar('2_Loss/val (labeled_reg)', np.mean(val_loss[e]['l_reg_loss']), e)
+        if val_loss is not None: 
+            writer.add_scalar('2_Loss/val (labeled_reg)', np.mean(val_loss[e]['l_reg_loss']), e)
     if 'l_class_loss' in tr_loss[e]:
         writer.add_scalar('3_Loss/train (labeled_class)', np.mean(tr_loss[e]['l_class_loss']), e)
-    if 'l_class_loss' in val_loss[e]:
+    if val_loss is not None and 'l_class_loss' in val_loss[e]:
         writer.add_scalar('3_Loss/val (labeled_class)', np.mean(val_loss[e]['l_class_loss']), e)
     if 'u_class_loss' in tr_loss[e]:
         writer.add_scalar('4_Loss/train (unlabeled_class)', np.mean(tr_loss[e]['u_class_loss']), e)
@@ -197,18 +199,20 @@ def plot(writer, tr_loss, val_loss, tr_scores, val_scores, e):
     """ Scores """
     if args['pred_type'] == 'class' or args['pred_type'] == 'reg+class':
         writer.add_scalar("5_Kappa/Train", np.mean(tr_scores[e]['kappa']), e)
-        writer.add_scalar("5_Kappa/Val", np.mean(val_scores[e]['kappa']), e)
         writer.add_scalar("6_F1/Train", np.mean(tr_scores[e]['f1']), e)
-        writer.add_scalar("6_F1/Val", np.mean(val_scores[e]['f1']), e)
         writer.add_scalar("7_Accuracy/Train", np.mean(tr_scores[e]['acc']), e)
-        writer.add_scalar("7_Accuracy/Val", np.mean(val_scores[e]['acc']), e)
+        if val_scores is not None:
+            writer.add_scalar("5_Kappa/Val", np.mean(val_scores[e]['kappa']), e)
+            writer.add_scalar("6_F1/Val", np.mean(val_scores[e]['f1']), e)
+            writer.add_scalar("7_Accuracy/Val", np.mean(val_scores[e]['acc']), e)
     if args['pred_type'] == 'reg' or args['pred_type'] == 'reg+class':
         writer.add_scalar("5_MAE/Train", np.mean(tr_scores[e]['mae']), e)
-        writer.add_scalar("5_MAE/Val", np.mean(val_scores[e]['mae']), e)
         writer.add_scalar("6_RMSE/Train", np.mean(tr_scores[e]['rmse']), e)
-        writer.add_scalar("6_RMSE/Val", np.mean(val_scores[e]['rmse']), e)
         writer.add_scalar("7_R2/Train", np.mean(tr_scores[e]['r2']), e)
-        writer.add_scalar("7_R2/Val", np.mean(val_scores[e]['r2']), e)
+        if val_scores is not None:
+            writer.add_scalar("5_MAE/Val", np.mean(val_scores[e]['mae']), e)
+            writer.add_scalar("6_RMSE/Val", np.mean(val_scores[e]['rmse']), e)
+            writer.add_scalar("7_R2/Val", np.mean(val_scores[e]['r2']), e)
     
 """
 Loads the model with given name and prints its results. 
@@ -585,14 +589,14 @@ def get_fold_ids(args):
 
 """
 """
-def _init_train_on_folds(ids, tr_ids, test_ids, model):
-    
-    """ Create train and validation set """
+def _init_train_on_folds(ids, tr_ids, test_ids, model, fold, metrics):
     np.random.shuffle(tr_ids)
     labeled_dataset_dict = {'learning': 'labeled', 
                             'date_type': args['date_type'],
                             'fold_setup': args['fold_setup']}
-    val_set = None
+    
+    """ Create validation set """
+    val_set, val_loader = None, None
     if args['create_val']:
         val_len = len(test_ids)
         tr_ids, val_ids = tr_ids[:-val_len], tr_ids[-val_len:]
@@ -601,23 +605,50 @@ def _init_train_on_folds(ids, tr_ids, test_ids, model):
     else:
         print('\tTrain: {}\n\tTest: {}'.format(tr_ids, test_ids))
         
+    """ Create train and test sets """
     train_set_labeled = Lake2dFoldDataset(**labeled_dataset_dict, ids=tr_ids)
     test_set = Lake2dFoldDataset(**labeled_dataset_dict, ids=test_ids)                           # Test set is created only with labeled samples.
+    
+    """ Create unlabeled set """
+    unlabeled_set, unlabeled_loader = None, None
+    if args['use_unlabeled_samples']:
+        unlabeled_set = Lake2dFoldDataset(learning='unlabeled', date_type=args['date_type'],
+                                          fold_setup=args['fold_setup'])
     
     """ Normalize patches on all datasets """
     if args['patch_norm']:
         patches_mean, patches_std = calc_mean_std(DataLoader(train_set_labeled, **args['tr']))
-        for d in [train_set_labeled, val_set, test_set]:
+        for d in [train_set_labeled, val_set, test_set, unlabeled_set]:
             if d is not None:
                 d.set_patch_mean_std(means=patches_mean, stds=patches_std)
     
     """ Normalize regression value on all datasets """
     if args['reg_norm']:
         reg_min, reg_max = load_reg_min_max(DataLoader(train_set_labeled, **args['tr']))
-        for d, name in zip([train_set_labeled, val_set, test_set], ['train_set_labeled', 'val_set', 'test_set']):
+        for d in [train_set_labeled, val_set, test_set]:
             if d is not None:
-                print(name, ', len: ', len(d))
                 d.set_reg_min_max(reg_min=reg_min, reg_max=reg_max)
+                
+    """ Load data """
+    tr_loader = DataLoader(train_set_labeled, **args['tr'])
+    if val_set is not None:                                                                      # Load validation set        
+        val_loader = DataLoader(val_set, **args['val'])
+    if unlabeled_set is not None:                                                                # Load unlabeled set
+        unlabeled_loader = DataLoader(unlabeled_set, **args['unlabeled'])
+    
+    """ Train & Validation """
+    print('\nTrain (& Validation)')
+    writer = SummaryWriter(osp.join('runs', args['run_name'], 'fold_{}'.format(fold)))
+    _train(model=model, train_loader=tr_loader, unlabeled_loader=unlabeled_loader,
+           args=args, metrics=metrics, fold=fold, writer=writer, val_loader=val_loader)
+    writer.close()
+    
+    """ Test """
+    print('\nTest')
+    model_names = ['model_last_epoch.pth']
+    if args['create_val']: model_names += ['best_val_loss.pth', 'best_val_score.pth']
+    for model_name in model_names:
+        _test(test_set=test_set, model_name=model_name, metrics=metrics, args=args, fold=fold)
     
 """
 Takes arguments. Creates a model and trains it with the given dataset with folds
@@ -628,22 +659,23 @@ def train_on_folds(args):
     ids = np.array(get_fold_ids(args=args))                                                      # Returns ids of selected fold_setup.
     args = create_model_params(args=args)                                                        # Create regression and/or classification losses and model params.
     model = create_model(args=args)                                                              # Create model.
+    metrics = Metrics(num_folds=args['num_folds'], device=args['device'].type)
 
     """ Train & test with cross-validation """
     if args['num_folds'] is not None:
         kf = KFold(n_splits=args['num_folds'], shuffle=True, random_state=args['seed'])
         for fold, (tr_index, test_index) in enumerate(kf.split(ids)):
             print('\nFold#{}'.format(fold))
-            _init_train_on_folds(ids=ids, tr_ids=ids[tr_index], 
-                                 test_ids=ids[test_index], model=model)
-                
+            _init_train_on_folds(ids=ids, tr_ids=ids[tr_index], test_ids=ids[test_index], 
+                                 model=model, fold=fold, metrics=metrics)
     
     # Train and test without cross-validation
     else:
         test_len = len(ids) // C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]                        # Ensure that test set has the same size as the ones trained with folds.
         np.random.shuffle(ids)                                                                   # Shuffle ids, so that test_ids does not always become the samples with greatest ids. 
         tr_ids, test_ids = ids[:-test_len], ids[-test_len:]
-        _init_train_on_folds(ids=ids, tr_ids=tr_ids, test_ids=test_ids, model=model)
+        _init_train_on_folds(ids=ids, tr_ids=tr_ids, test_ids=test_ids, model=model,
+                             fold=1, metrics=metrics)
 
 """
 Creates model.
@@ -720,7 +752,7 @@ if __name__ == "__main__":
         random.seed(seed)    
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    fold_setup = 'temporal_day'
+    fold_setup = 'spatial'
     args = {'num_folds': None,
     # args = {'num_folds': C.FOLD_SETUP_NUM_FOLDS[fold_setup],
             'max_epoch': 100,
