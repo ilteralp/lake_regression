@@ -385,7 +385,7 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, v
     optimizer = RMSprop(params=model.parameters(), lr=args['lr'])               # EA uses RMSprop with lr=0.0001, I can try SGD or Adam as in [1, 2] or [3].
     # optimizer, awl = create_optimizer_loss(model=model, args=args) 
     tr_loss, tr_scores = create_losses_scores(args)
-    val_loss, val_scores = create_losses_scores(args)
+    val_loss, val_scores = create_losses_scores(args) if args['create_val'] else (None, None)
     score_name, best_val_score, best_val_loss = init_best_val_score_loss(args)  # Init best val score and loss.
     model_dir_path = osp.join(C.MODEL_DIR_PATH, args['run_name'], 'fold_' + str(fold))
     os.mkdir(model_dir_path)
@@ -752,13 +752,13 @@ if __name__ == "__main__":
         random.seed(seed)    
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    fold_setup = 'spatial'
+    fold_setup = 'temporal_year'
     args = {'num_folds': None,
     # args = {'num_folds': C.FOLD_SETUP_NUM_FOLDS[fold_setup],
-            'max_epoch': 100,
+            'max_epoch': 2,
             'device': device,
             'seed': seed,
-            'create_val': True,                                                 # Creates validation set
+            'create_val': False,                                                 # Creates validation set
             'test_per': 0.1,
             'lr': 0.0001,                                                       # From EA's model, default is 1e-2.
             'patch_norm': True,                                                 # Normalizes patches
