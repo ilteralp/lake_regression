@@ -35,9 +35,9 @@ class Lake2dFoldDataset(Lake2dDataset):
         Lake2dDataset.__init__(self, learning=learning, date_type=date_type, patch_size=patch_size)
         self.verify(fold_setup, ids)
         self.fold_setup = fold_setup.lower()
-        self.ids = ids
-        self.img_ids = self._init_image_ids()
-        self.glob_img_id_dict = self._init_global_image_id_dict()
+        self.ids = ids                                                          # Can be pixel ids, image ids or year ids depending on setup.
+        self.img_ids = self._init_image_ids()                                   # self.ids may not correspond to image ids so img_ids (img_names in int format) are created depending on setup.
+        self.glob_img_id_dict = self._init_global_image_id_dict()               # Mapping between image name and its id. 
     
     """
     Checks given params. 
@@ -70,9 +70,10 @@ class Lake2dFoldDataset(Lake2dDataset):
     Returns ids of images. Image names are not kept due to accessing it with global indices. 
     """
     def _init_image_ids(self):
-        if self.fold_setup == 'spatial':                                        # Image ids are [0, 31]
-            return [*range(len(self.img_names))]
-        elif self.fold_setup == 'temporal_day':                                 # Image ids correspond to ids for temporal_day. 
+        if self.fold_setup == 'spatial':                                        # Image ids are [1, 34] with skipping [22, 23s]
+            # return [*range(len(self.img_names))]
+            return [*range(1, 22)] + [*range(24, 35)]
+        elif self.fold_setup == 'temporal_day':                                 # Image ids correspond to self.ids for temporal_day. 
             return self.ids
         elif self.fold_setup == 'temporal_year':
             return [n for i in self.ids for n in C.YEAR_IMG_ID[i]]              # Concat list of image ids for each year id. 
@@ -99,10 +100,9 @@ class Lake2dFoldDataset(Lake2dDataset):
             if self.learning == 'labeled':
                 px_idx = self.ids[px_idx]                                       # px_idx returns [0, len) but self.ids are not continuous, so get that px_id from self.ids
         else:
-            img_idx = self.img_ids[img_idx]                                     # img_idx are in [0, len(img_ids)) but self.img_ids are not contigous, so get that img_idx from self.img_ids
-            img_idx = self.glob_img_id_dict[img_idx]                            # Get global image index.
-        print('px_idx: {}, img_idx: {}'.format(px_idx, img_idx))
-        return self._get_sample(img_idx=img_idx, px_idx=px_idx)
+            img_idx = self.img_ids[img_idx]                                     # img_idx are in [0, len(img_ids)) but self.img_ids are not contigous and may not be in that range, so get that img_idx from self.img_ids
+            img_idx = self.glob_img_id_dict[img_idx]                            # Get global index of that img_id/img_name.
+        return self._get_sample(img_idx=img_idx, px_idx=px_idx)                 # Uses image's index, not name, to access it on image_name list
             
     
 if __name__ == "__main__":
