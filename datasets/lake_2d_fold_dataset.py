@@ -57,10 +57,10 @@ class Lake2dFoldDataset(Lake2dDataset):
         if fold_setup.lower() == 'temporal_day':
             if len(ids) > 32:
                 raise Exception('Expected at most 32 ids for temporal_day setup. Given {} ids.'.format(len(ids)))
-            if ids in [22, 23]:
+            if np.any([i in [22, 23] for i in ids]):
                 raise Exception('Image ids [22, 23] are invalid.')
-            if not np.all([i in range(0, 32) for i in ids]):
-                raise Exception('Ids are expected to be in [0-31] range for the temporal_day setup. Given {}'.format(ids))
+            if not np.all([i in range(1, 35) for i in ids]):
+                raise Exception('Ids are expected to be in [1-34] range for the temporal_day setup. Given {}'.format(ids))
         if fold_setup.lower() == 'temporal_year':
             if len(ids) > 3:
                 raise Exception('Expected at most 3 ids for temporal_day setup. Given {} ids.'.format(len(ids)))     
@@ -106,14 +106,18 @@ class Lake2dFoldDataset(Lake2dDataset):
             
     
 if __name__ == "__main__":
-    fold_setups = ['temporal_day', 'temporal_year']
+    fold_setups = ['spatial', 'temporal_day', 'temporal_year']
     learnings = ['labeled', 'unlabeled']
     for f in fold_setups:
         for l in learnings:
             ids = None if f == 'spatial' and l == 'unlabeled' else [2, 1]
+            dataset_dict = {'learning': l,
+                            'date_type': 'month',
+                            'fold_setup': f}
             dataset = Lake2dFoldDataset(learning=l, date_type='month', fold_setup=f, ids=ids)
+            # dataset = Lake2dFoldDataset(**dataset_dict, ids=ids)
             print('learning: {}, setup: {}, len: {}'.format(l, f, len(dataset)))
-            patch, date_type, reg_val, (img_idx, px, py) = dataset[19]
+            patch, date_type, reg_val, (img_idx, px, py) = dataset[2]
             
     # dataset = Lake2dFoldDataset(learning='labeled', date_type='month', fold_setup='spatial', ids=[0, 1, 2])
     # print('len:', len(dataset))
