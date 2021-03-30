@@ -95,7 +95,7 @@ class Lake2dFoldDataset(Lake2dDataset):
         return num_pixels * len(self.img_ids)
     
     def __getitem__(self, index):
-        img_idx, px_idx = index % len(self.img_ids), index // len(self.img_ids)
+        img_idx, px_idx = index % len(self.img_ids), index // len(self.img_ids) # img_idx and px_idx may *NOT* be in global range [0, 319]. len(img_ids) may be 
         if self.fold_setup == 'spatial':
             if self.learning == 'labeled':
                 px_idx = self.ids[px_idx]                                       # px_idx returns [0, len) but self.ids are not continuous, so get that px_id from self.ids
