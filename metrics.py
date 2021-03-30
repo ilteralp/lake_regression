@@ -21,10 +21,52 @@ class Metrics:
         cross-validation or an int >0 for training with cross-validation. 
     """
     
-    def __init__(self, num_folds, device):
+    def __init__(self, num_folds, device, pred_type):
         self.num_folds = num_folds
         self.device = device
+        self.pred_type = pred_type
+        self.test_score_names = self._init_test_score_names()
+        self.test_scores = self._init_test_scores()
         
+    def _init_test_score_names(self):
+        if self.pred_type == 'reg':
+            return ['r2']
+        elif self.pred_type == 'class':
+            return ['kappa']
+        elif self.pred_type == 'reg+class':
+            return ['kappa', 'r2']
+    
+    """
+    Create score dict to keep test scores of all folds.
+    """
+    def _init_test_scores(self):
+        scores = {}
+        for score_name in self.test_score_names:
+            scores[score_name] = {'model_last_epoch.pth': [],                   # Last epoch model
+                                  'best_val_loss.pth': [],                      # Best validation loss model
+                                  'best_val_score.pth': []}                     # Best validation score model
+        return scores
+            
+    """
+    Adds one fold score to test scores. 
+    """
+    def add_fold_score(self, fold_score, model_name):
+        for score_name in self.test_score_names:
+            s = np.nanmean(fold_score[0][score_name])                           # Has result of each batch, so take mean of it. Kappa may return NaN, so nanmean is used. 
+            self.test_scores[score_name][model_name].append(s)
+            
+    """
+    Returns dict of mean and std for each model and score. 
+    """
+    def get_mean_std_test_results(self):
+        result = {}
+        for score_name in self.test_score_names:
+            for model_name, all_fold_scores in self.test_scores[score_name].items():
+                result[score_name][model_name]['mean'] = np.mean(all_fold_scores)
+                result[score_name][model_name]['std'] = np.std(all_fold_scores)
+        return result
+                
+            
     # def _root_mean_squared_error(self, x, y):
     #     return torch.sqrt(torch.mean(torch.pow(x-y, 2.0)))
     
