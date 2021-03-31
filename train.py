@@ -89,7 +89,7 @@ def load_reg_min_max(train_loader):
             reg_min = temp_min
         if temp_max > reg_max:
             reg_max = temp_max
-    print('Regression values, min: {}, max: {}'.format(reg_min, reg_max))
+    # print('Regression values, min: {}, max: {}'.format(reg_min, reg_max))
     return reg_min, reg_max
 """
 Returns min and max of given train set regression values.
@@ -176,6 +176,8 @@ def verify_args(args):
         raise Exception('Number of folds should be at least 3 in order to create validation set.')
     if args['fold_setup'] == 'temporal_year' and args['create_val']:
         raise Exception('Validation set cannot be created for fold_setup=\'temporal_year\'. Reason: Has only 3 years.')
+    if args['date_type'] == 'year' and args['fold_setup'] == 'temporal_year':
+        raise Exception('Cannot use as year as classification label since one of the years is used as test set and model has not seen all the year samples.')
 
 """
 Plots loss and scores to Tensorboard
@@ -673,6 +675,7 @@ def train_on_folds(args, report):
             print('\nFold#{}'.format(fold))
             _base_train_on_folds(ids=ids, tr_ids=ids[tr_index], test_ids=ids[test_index], 
                                  model=model, fold=fold, metrics=metrics)
+            print('=' * 72)
     
     # Train and test without cross-validation
     else:
@@ -686,7 +689,7 @@ def train_on_folds(args, report):
     test_result = metrics.get_mean_std_test_results()
     report.add(args=args, test_result=test_result)
     with open(osp.join(os.getcwd(), 'runs', args['run_name'], 'fold_test_results.txt'), 'w') as f:
-        f.write(str(metrics.scores))
+        f.write(str(metrics.test_scores))
 
 """
 Creates model.
@@ -766,15 +769,15 @@ if __name__ == "__main__":
     fold_setup = 'spatial'
     # args = {'num_folds': None,
     args = {'num_folds': C.FOLD_SETUP_NUM_FOLDS[fold_setup],
-            'max_epoch': 2,
+            'max_epoch': 10,
             'device': device,
             'seed': seed,
-            'create_val': False,                                                 # Creates validation set
+            'create_val': True,                                                 # Creates validation set
             'test_per': 0.1,
             'lr': 0.0001,                                                       # From EA's model, default is 1e-2.
-            'patch_norm': True,                                                 # Normalizes patches
+            'patch_norm': False,                                                 # Normalizes patches
             'reg_norm': True,                                                   # Normalize regression values
-            'use_unlabeled_samples': False,
+            'use_unlabeled_samples': True,
             'date_type': 'month',
             'pred_type': 'reg',                                           # Prediction type, can be {'reg', 'class', 'reg+class'}
             'model': 'eadan',                                              # Model name, can be {dandadadan, eanet, eadan}.
@@ -796,9 +799,9 @@ if __name__ == "__main__":
     else:
         """ Create & save report """
         report = Report()
-        # for patch_norm in [True, False]:
-            # args['patch_norm'] = patch_norm
-        train_on_folds(args=args, report=report)
+        for patch_norm in [True, False]:
+            args['patch_norm'] = patch_norm
+            train_on_folds(args=args, report=report)
         report.save()
     
     # for use_unlabeled_samples in [True, False]:
