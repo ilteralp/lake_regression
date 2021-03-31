@@ -91,9 +91,7 @@ class Report:
         self.sheet.write(rid, 10, '' if args['pred_type'] == 'reg' else args['date_type'])
         self.sheet.write(rid, 11, args['model'])
         self.sheet.write(rid, 12, args['split_layer'] if args['model'] == 'eadan' else '')
-        print(test_result)
         idx = self._test_result_to_sheet(test_result=test_result, rid=rid, idx=13)
-        print('Returned idx:', idx)
         
     """
     Returns current report's id. 
