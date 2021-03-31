@@ -658,7 +658,7 @@ def _base_train_on_folds(ids, tr_ids, test_ids, model, fold, metrics):
 Takes arguments. Creates a model and trains it with the given dataset with folds
 or not depending on args.
 """
-def train_on_folds(args):
+def train_on_folds(args, report):
     create_run_folder(args=args)                                                                 # Creates run folder and files for keeping experiment results.
     ids = np.array(get_fold_ids(args=args))                                                      # Returns ids of selected fold_setup.
     args = create_model_params(args=args)                                                        # Create regression and/or classification losses and model params.
@@ -683,9 +683,7 @@ def train_on_folds(args):
                              fold=1, metrics=metrics)
     
     """ Save experiment results to the report """
-    report = Report()
     report.add(args=args, metrics=metrics)
-    report.save()
 
 """
 Creates model.
@@ -762,21 +760,21 @@ if __name__ == "__main__":
         random.seed(seed)    
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    fold_setup = 'spatial'
+    fold_setup = 'temporal_year'
     # args = {'num_folds': None,
     args = {'num_folds': C.FOLD_SETUP_NUM_FOLDS[fold_setup],
             'max_epoch': 2,
             'device': device,
             'seed': seed,
-            'create_val': True,                                                 # Creates validation set
+            'create_val': False,                                                 # Creates validation set
             'test_per': 0.1,
             'lr': 0.0001,                                                       # From EA's model, default is 1e-2.
             'patch_norm': True,                                                 # Normalizes patches
             'reg_norm': True,                                                   # Normalize regression values
             'use_unlabeled_samples': False,
             'date_type': 'month',
-            'pred_type': 'class',                                           # Prediction type, can be {'reg', 'class', 'reg+class'}
-            'model': 'eanet',                                              # Model name, can be {dandadadan, eanet, eadan}.
+            'pred_type': 'reg',                                           # Prediction type, can be {'reg', 'class', 'reg+class'}
+            'model': 'eadan',                                              # Model name, can be {dandadadan, eanet, eadan}.
             'fold_setup': fold_setup,
             'split_layer': 1,
             
@@ -793,7 +791,12 @@ if __name__ == "__main__":
         
     # Train setup with Lake2dFoldDataset
     else:
-        train_on_folds(args=args)
+        """ Create & save report """
+        report = Report()
+        for patch_norm in [True, False]:
+            args['patch_norm'] = patch_norm
+            train_on_folds(args=args, report=report)
+        report.save()
     
     # for use_unlabeled_samples in [True, False]:
     #     args['use_unlabeled_samples'] = use_unlabeled_samples
