@@ -800,9 +800,16 @@ if __name__ == "__main__":
     else:
         """ Create & save report """
         report = Report()
-        # for patch_norm in [True, False]:
-            # args['patch_norm'] = patch_norm
-        train_on_folds(args=args, report=report)
+        for fold_setup in ['random', 'spatial', 'temporal_day', 'temporal_year']:
+            print('Fold_setup:', fold_setup)
+            args['fold_setup'] = fold_setup
+            args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
+            
+            if args['fold_setup'] == 'random':
+                run(args)
+            else:
+                train_on_folds(args=args, report=report)
+            print('*' * 72)
         report.save()
     
     # for use_unlabeled_samples in [True, False]:
