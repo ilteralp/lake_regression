@@ -63,8 +63,9 @@ class Metrics:
         result = collections.defaultdict(lambda : collections.defaultdict(dict))
         for score_name in self.test_score_names:
             for model_name, all_fold_scores in self.test_scores[score_name].items():
-                result[score_name][model_name]['mean'] = np.mean(all_fold_scores)
-                result[score_name][model_name]['std'] = np.std(all_fold_scores)
+                if all_fold_scores:                                                     # Check list is empty. 
+                    result[score_name][model_name]['mean'] = np.mean(all_fold_scores)
+                    result[score_name][model_name]['std'] = np.std(all_fold_scores)
         return result
                 
             
