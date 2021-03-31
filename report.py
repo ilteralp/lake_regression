@@ -60,12 +60,12 @@ class Report:
     """
     def add(self, args, metrics):
         rid = len(self.sheet._Worksheet__rows)
-        test_result = metrics.get_mean_std_test_result()
+        test_result = metrics.get_mean_std_test_results()
         self.sheet.write(rid, 0, args['run_name'])
         self.sheet.write(rid, 1, args['fold_setup'])
         self.sheet.write(rid, 2, args['num_folds'])                             # Check for None. 
         self.sheet.write(rid, 3, args['pred_type'])
-        self.sheet.write(rid, 4, args['num_epoch'])
+        self.sheet.write(rid, 4, args['max_epoch'])
         self.sheet.write(rid, 5, args['create_val'])
         self.sheet.write(rid, 6, args['use_unlabeled_samples'])
         self.sheet.write(rid, 7, args['seed'])
@@ -79,13 +79,14 @@ class Report:
     Returns current report's id. 
     """
     def _get_report_id(self):
-        return len([name for name in os.listdir(C.REPORT_PATH) if osp.isfile(os.path.join(C.REPORT_PATH, name))])
+        report_dir_path = osp.join(os.getcwd(), 'reports')
+        return len([name for name in os.listdir(report_dir_path) if osp.isfile(os.path.join(report_dir_path, name))])
     
     """
     Saves the report. 
     """
     def save(self):
-        path = osp.join(C.REPORT_PATH, str(self._get_report_id()) + '.xls')
+        path = osp.join(osp.join(os.getcwd(), 'reports'), str(self._get_report_id()) + '.xls')
         self.wb.save(path)
         print('Report saved to', path)
     
