@@ -473,6 +473,15 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, v
     # Test'te sadece regresyon sonucunu al, DAN oyle yapiyor. 
     
 """
+Saves args in order to compare model params. 
+"""
+def save_args(args):
+    with open(osp.join(C.MODEL_DIR_PATH, args['run_name'], 'args.txt'), 'w') as f:                # Save args  
+        f.write(str(args))
+    with open(osp.join(os.getcwd(), 'runs', args['run_name'], 'args.txt'), 'w') as f:
+        f.write(str(args))
+    
+"""
 Creates run folder and files for saving experiment results. 
 """
 def create_run_folder(args):
@@ -480,10 +489,6 @@ def create_run_folder(args):
     os.mkdir(osp.join(C.MODEL_DIR_PATH, args['run_name']))                                        # Create model_files\<run_name> folder.
     os.mkdir(osp.join(os.getcwd(), 'runs', args['run_name']))                                     # Create runs\<run_name> folder.   
     print('\nRun name: {}'.format(args['run_name']))
-    with open(osp.join(C.MODEL_DIR_PATH, args['run_name'], 'args.txt'), 'w') as f:                # Save args  
-        f.write(str(args))
-    with open(osp.join(os.getcwd(), 'runs', args['run_name'], 'args.txt'), 'w') as f:
-        f.write(str(args))
 
 """
 Takes a labeled dataset, a train function and arguments. 
@@ -580,6 +585,9 @@ def train_random_on_folds(model, dataset, unlabeled_dataset, train_fn, args):
             _test(test_set=test_set, model_name=model_name, 
                   metrics=metrics, args=args, fold=1)
             
+    """ Save args """
+    save_args(args)
+            
 """
 Returns ids (pixel, image or year) of that fold setup that will be used to 
 create train, test and validation sets. 
@@ -594,6 +602,9 @@ def get_fold_ids(args):
     
 
 """
+Base method that trains and tests model with given ids. Can be used with and 
+without folds. Applicable to [spatial, temporal_day, temporal_year] setups. 
+Returns size of train and test sets. 
 """
 def _base_train_on_folds(ids, tr_ids, test_ids, model, fold, metrics):
     np.random.shuffle(tr_ids)
@@ -655,6 +666,8 @@ def _base_train_on_folds(ids, tr_ids, test_ids, model, fold, metrics):
     if args['create_val']: model_names += ['best_val_loss.pth', 'best_val_score.pth']
     for model_name in model_names:
         _test(test_set=test_set, model_name=model_name, metrics=metrics, args=args, fold=fold)
+        
+    return len(train_set_labeled), len(test_set), len(val_set) if val_set else None
     
 """
 Takes arguments. Creates a model and trains it with the given dataset with folds
@@ -673,8 +686,11 @@ def train_on_folds(args, report):
         kf = KFold(n_splits=args['num_folds'], shuffle=True, random_state=args['seed'])
         for fold, (tr_index, test_index) in enumerate(kf.split(ids)):
             print('\nFold#{}'.format(fold))
-            _base_train_on_folds(ids=ids, tr_ids=ids[tr_index], test_ids=ids[test_index], 
-                                 model=model, fold=fold, metrics=metrics)
+            len_tr, len_test, len_val = _base_train_on_folds(ids=ids, 
+                                                             tr_ids=ids[tr_index], 
+                                                             test_ids=ids[test_index], 
+                                                             model=model, fold=fold, 
+                                                             metrics=metrics)
             print('=' * 72)
     
     # Train and test without cross-validation
@@ -682,15 +698,17 @@ def train_on_folds(args, report):
         test_len = len(ids) // C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]                        # Ensure that test set has the same size as the ones trained with folds.
         np.random.shuffle(ids)                                                                   # Shuffle ids, so that test_ids does not always become the samples with greatest ids. 
         tr_ids, test_ids = ids[:-test_len], ids[-test_len:]
-        _base_train_on_folds(ids=ids, tr_ids=tr_ids, test_ids=test_ids, model=model,
-                             fold=1, metrics=metrics)
+        len_tr, len_test, len_val = _base_train_on_folds(ids=ids, tr_ids=tr_ids, 
+                                                         test_ids=test_ids, model=model, 
+                                                         fold=1, metrics=metrics)
     
     """ Save experiment results to the report and its file. """
-    args['train_size'], args['test_size'] = len(tr_ids), len(test_ids)
+    args['train_size'], args['test_size'], args['val_size'] = len_tr, len_test, len_val
     test_result = metrics.get_mean_std_test_results()
     report.add(args=args, test_result=test_result)
     with open(osp.join(os.getcwd(), 'runs', args['run_name'], 'fold_test_results.txt'), 'w') as f:
         f.write(str(metrics.test_scores))
+    save_args(args)
 
 """
 Creates model.
@@ -791,26 +809,20 @@ if __name__ == "__main__":
             'test': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4}}
     verify_args(args)
     
-    """ Random train setup with Lake2dDataset """
-    print('Setup', args['fold_setup'])
-    if args['fold_setup'] == 'random':
-        run(args)
+    """ Create & save report """
+    report = Report()
+    # for fold_setup in ['random', 'spatial', 'temporal_day', 'temporal_year']:
+    for fold_setup in ['spatial']:
+        print('Fold_setup:', fold_setup)
+        args['fold_setup'] = fold_setup
+        args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
         
-    # Train setup with Lake2dFoldDataset
-    else:
-        """ Create & save report """
-        report = Report()
-        for fold_setup in ['random', 'spatial', 'temporal_day', 'temporal_year']:
-            print('Fold_setup:', fold_setup)
-            args['fold_setup'] = fold_setup
-            args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
-            
-            if args['fold_setup'] == 'random':
-                run(args)
-            else:
-                train_on_folds(args=args, report=report)
-            print('*' * 72)
-        report.save()
+        if args['fold_setup'] == 'random':
+            run(args)
+        else:
+            train_on_folds(args=args, report=report)
+        print('*' * 72)
+    report.save()
     
     # for use_unlabeled_samples in [True, False]:
     #     args['use_unlabeled_samples'] = use_unlabeled_samples
