@@ -10,6 +10,7 @@ Created on Mon Mar  1 21:40:07 2021
 import torch
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error, cohen_kappa_score, f1_score, accuracy_score
 import numpy as np
+import collections
 import constants as C
 
 class Metrics:
@@ -59,7 +60,7 @@ class Metrics:
     Returns dict of mean and std for each model and score. 
     """
     def get_mean_std_test_results(self):
-        result = {}
+        result = collections.defaultdict(lambda : collections.defaultdict(dict))
         for score_name in self.test_score_names:
             for model_name, all_fold_scores in self.test_scores[score_name].items():
                 result[score_name][model_name]['mean'] = np.mean(all_fold_scores)
