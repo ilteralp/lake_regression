@@ -37,7 +37,7 @@ class Report:
         self.sheet.write(0, 7, 'Seed', self.header)
         self.sheet.write(0, 8, 'PatchNorm', self.header)
         self.sheet.write(0, 9, 'RegNorm', self.header)
-        self.sheet.write(0, 10, 'DateType', self.header)                         # Only meaningful in case of class and reg+class.
+        self.sheet.write(0, 10, 'DateType', self.header)                        # Only meaningful in case of class and reg+class.
         self.sheet.write(0, 11, 'Model', self.header)
         self.sheet.write(0, 12, 'ModelSplitLayer', self.header)
         self.sheet.write(0, 13, 'ScoreName', self.header)
@@ -69,9 +69,9 @@ class Report:
                     if not math.isnan(val):                                     # Leave NaN values are blank in column
                         self.sheet.write(rid, idx, '{:.4f}'.format(val))
                     idx = idx + 1
-        if len(test_result) == 1:                                               # There are two score_names in the table, so don't return idx of next score_name. 
-            idx = idx + idx - init_idx
-        return idx
+            if len(test_result[score_name]) == 1:                               # Has only one model, no val set. So, skip val score columns. 
+                idx = idx + 4
+        return init_idx + 14                                                    # 7x2=14 columns for results.    
         
     """
     Adds given dataset, its score and model name to the report. 
