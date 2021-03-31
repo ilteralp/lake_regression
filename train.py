@@ -682,8 +682,11 @@ def train_on_folds(args, report):
         _base_train_on_folds(ids=ids, tr_ids=tr_ids, test_ids=test_ids, model=model,
                              fold=1, metrics=metrics)
     
-    """ Save experiment results to the report """
-    report.add(args=args, metrics=metrics)
+    """ Save experiment results to the report and its file. """
+    test_result = metrics.get_mean_std_test_results()
+    report.add(args=args, test_result=test_result)
+    with open(osp.join(os.getcwd(), 'runs', args['run_name'], 'fold_test_results.txt'), 'w') as f:
+        f.write(str(metrics.scores))
 
 """
 Creates model.
@@ -760,7 +763,7 @@ if __name__ == "__main__":
         random.seed(seed)    
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    fold_setup = 'temporal_year'
+    fold_setup = 'spatial'
     # args = {'num_folds': None,
     args = {'num_folds': C.FOLD_SETUP_NUM_FOLDS[fold_setup],
             'max_epoch': 2,
@@ -793,9 +796,9 @@ if __name__ == "__main__":
     else:
         """ Create & save report """
         report = Report()
-        for patch_norm in [True, False]:
-            args['patch_norm'] = patch_norm
-            train_on_folds(args=args, report=report)
+        # for patch_norm in [True, False]:
+            # args['patch_norm'] = patch_norm
+        train_on_folds(args=args, report=report)
         report.save()
     
     # for use_unlabeled_samples in [True, False]:
