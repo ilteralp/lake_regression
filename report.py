@@ -96,7 +96,7 @@ class Report:
     """
     Returns current report's id. 
     """
-    def _get_report_id(self):
+    def get_report_id(self):
         report_dir_path = osp.join(os.getcwd(), 'reports')
         return len([name for name in os.listdir(report_dir_path) if osp.isfile(os.path.join(report_dir_path, name))])
     
@@ -104,7 +104,7 @@ class Report:
     Saves the report. 
     """
     def save(self):
-        report_id = self._get_report_id()
+        report_id = self.get_report_id()
         path = osp.join(osp.join(os.getcwd(), 'reports'), str(report_id) + '.xls')
         self.wb.save(path)
         print('Report saved to', path)
