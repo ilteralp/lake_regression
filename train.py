@@ -819,7 +819,7 @@ if __name__ == "__main__":
                 args['pred_type'] = pred_type
                 args['use_unlabeled_samples'] = use_unlabeled_samples
                 # args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
-                args['num_folds'] = None
+                args['num_folds'] = 10
                 args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
                 verify_args(args)
                 
