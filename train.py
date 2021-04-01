@@ -782,14 +782,14 @@ def help():
     
     
 if __name__ == "__main__":
-    seed = None
+    seed = 42
     if seed is not None:
         torch.manual_seed(seed)
         np.random.seed(seed)
         random.seed(seed)    
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    args = {'max_epoch': 2,
+    args = {'max_epoch': 100,
             'device': device,
             'seed': seed,
             'test_per': 0.1,
@@ -807,15 +807,16 @@ if __name__ == "__main__":
             'unlabeled': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'test': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4}}
     
-    """ Run experiments """
+    """ Create report & run experiments """
     report = Report()
-    # for fold_setup in ['spatial', 'temporal_day', 'temporal_year']:
-    for num_folds in [None, 3]:
+    args['report_id'] = report.get_report_id()
+    
+    for fold_setup in ['spatial', 'temporal_day', 'temporal_year']:
         args['fold_setup'] = 'random'
         # args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
-        args['num_folds'] = num_folds
+        args['num_folds'] = None
         args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
-        args['report_id'] = report.get_report_id()
+        
         verify_args(args)
         
         if args['fold_setup'] == 'random':
