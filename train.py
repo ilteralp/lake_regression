@@ -811,12 +811,12 @@ if __name__ == "__main__":
     report = Report()
     args['report_id'] = report.get_report_id()
     
-    for fold_setup in ['spatial', 'temporal_day', 'temporal_year']:
-        args['fold_setup'] = 'random'
+    # for fold_setup in ['spatial', 'temporal_day', 'temporal_year']:
+    for fold_setup in ['random']:
+        args['fold_setup'] = fold_setup
         # args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
         args['num_folds'] = None
         args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
-        
         verify_args(args)
         
         if args['fold_setup'] == 'random':
