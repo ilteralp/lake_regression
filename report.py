@@ -104,8 +104,10 @@ class Report:
     Saves the report. 
     """
     def save(self):
-        path = osp.join(osp.join(os.getcwd(), 'reports'), str(self._get_report_id()) + '.xls')
+        report_id = self._get_report_id()
+        path = osp.join(osp.join(os.getcwd(), 'reports'), str(report_id) + '.xls')
         self.wb.save(path)
         print('Report saved to', path)
+        return report_id
     
     

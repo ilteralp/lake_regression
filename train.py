@@ -585,9 +585,6 @@ def train_random_on_folds(model, dataset, unlabeled_dataset, train_fn, args):
             _test(test_set=test_set, model_name=model_name, 
                   metrics=metrics, args=args, fold=1)
             
-    """ Save args """
-    save_args(args)
-            
 """
 Returns ids (pixel, image or year) of that fold setup that will be used to 
 create train, test and validation sets. 
@@ -708,7 +705,6 @@ def train_on_folds(args, report):
     report.add(args=args, test_result=test_result)
     with open(osp.join(os.getcwd(), 'runs', args['run_name'], 'fold_test_results.txt'), 'w') as f:
         f.write(str(metrics.test_scores))
-    save_args(args)
 
 """
 Creates model.
@@ -786,8 +782,8 @@ if __name__ == "__main__":
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
     fold_setup = 'spatial'
-    args = {'num_folds': None,
-    # args = {'num_folds': C.FOLD_SETUP_NUM_FOLDS[fold_setup],
+    # args = {'num_folds': None,
+    args = {'num_folds': C.FOLD_SETUP_NUM_FOLDS[fold_setup],
             'max_epoch': 100,
             'device': device,
             'seed': seed,
@@ -809,10 +805,10 @@ if __name__ == "__main__":
             'test': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4}}
     verify_args(args)
     
-    """ Create & save report """
+    """ Create & save report & args """
     report = Report()
-    # for fold_setup in ['random', 'spatial', 'temporal_day', 'temporal_year']:
-    for fold_setup in ['temporal_day', 'temporal_year']:
+    for fold_setup in ['spatial', 'temporal_day', 'temporal_year']:
+    # for fold_setup in ['temporal_day', 'temporal_year']:
         print('Fold_setup:', fold_setup)
         args['fold_setup'] = fold_setup
         args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
@@ -822,7 +818,10 @@ if __name__ == "__main__":
         else:
             train_on_folds(args=args, report=report)
         print('*' * 72)
-    report.save()
+        
+    report_id = report.save()
+    args['report_id'] = report_id
+    save_args(args)
     
     # for use_unlabeled_samples in [True, False]:
     #     args['use_unlabeled_samples'] = use_unlabeled_samples
