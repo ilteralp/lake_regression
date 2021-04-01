@@ -39,7 +39,8 @@ YEAR_IMG_ID = {0: [1, 2, 3, 4, 5, 6, 7],                                  # 2017
                2: [24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34]}           # 2019, can *NOT* be used to index img_names list. 
 FOLD_SETUP_NUM_FOLDS = {'spatial': 10,
                         'temporal_day': 16,
-                        'temporal_year': 3}
+                        'temporal_year': 3,
+                        'random': 10}
 
 """ ===================== Model params ===================== """
 BATCH_SIZE = 32
