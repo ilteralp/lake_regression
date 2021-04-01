@@ -789,12 +789,12 @@ if __name__ == "__main__":
         random.seed(seed)    
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    args = {'max_epoch': 10,
+    args = {'max_epoch': 100,
             'device': device,
             'seed': seed,
             'test_per': 0.1,
             'lr': 0.0001,                                                       # From EA's model, default is 1e-2.
-            'patch_norm': False,                                                 # Normalizes patches
+            'patch_norm': True,                                                 # Normalizes patches
             'reg_norm': True,                                                   # Normalize regression values
             'date_type': 'month',
             'model': 'eadan',                                              # Model name, can be {dandadadan, eanet, eadan}.
@@ -809,8 +809,7 @@ if __name__ == "__main__":
     report = Report()
     args['report_id'] = report.get_report_id()
     
-    # for fold_setup in ['spatial', 'temporal_day', 'temporal_year', 'random']:
-    for fold_setup in ['random']:
+    for fold_setup in ['spatial', 'temporal_day', 'temporal_year', 'random']:
         for pred_type in ['reg', 'reg+class']:
             for use_unlabeled_samples in [False, True]:
                 if pred_type == 'reg' and use_unlabeled_samples:
@@ -818,8 +817,7 @@ if __name__ == "__main__":
                 args['fold_setup'] = fold_setup
                 args['pred_type'] = pred_type
                 args['use_unlabeled_samples'] = use_unlabeled_samples
-                # args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
-                args['num_folds'] = 10
+                args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
                 args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
                 verify_args(args)
                 
