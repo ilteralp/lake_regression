@@ -784,13 +784,9 @@ if __name__ == "__main__":
         random.seed(seed)    
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    fold_setup = 'spatial'
-    # args = {'num_folds': None,
-    args = {'num_folds': C.FOLD_SETUP_NUM_FOLDS[fold_setup],
-            'max_epoch': 100,
+    args = {'max_epoch': 2,
             'device': device,
             'seed': seed,
-            'create_val': True,                                                 # Creates validation set
             'test_per': 0.1,
             'lr': 0.0001,                                                       # From EA's model, default is 1e-2.
             'patch_norm': False,                                                 # Normalizes patches
@@ -799,33 +795,34 @@ if __name__ == "__main__":
             'date_type': 'month',
             'pred_type': 'reg+class',                                           # Prediction type, can be {'reg', 'class', 'reg+class'}
             'model': 'eadan',                                              # Model name, can be {dandadadan, eanet, eadan}.
-            'fold_setup': fold_setup,
             'split_layer': 1,
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'val': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4},
             'unlabeled': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'test': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4}}
-    verify_args(args)
     
-    """ Create & save report & args """
+    """ Run experiments """
     report = Report()
-    for fold_setup in ['spatial', 'temporal_day', 'temporal_year']:
-        # for use_unlabeled_samples in [True, False]:
-        print('Fold_setup:', fold_setup)
+    # for fold_setup in ['spatial', 'temporal_day', 'temporal_year']:
+    for fold_setup in ['temporal_year', 'spatial']:
         args['fold_setup'] = fold_setup
+        # args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
+        args['num_folds'] = None
         args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
-        # args['use_unlabeled_samples'] = use_unlabeled_samples
+        verify_args(args)
         
         if args['fold_setup'] == 'random':
             run(args)
         else:
             train_on_folds(args=args, report=report)
+            
+        """ Save args """
+        save_args(args)
         print('*' * 72)
         
-    report_id = report.save()
-    args['report_id'] = report_id
-    save_args(args)
+    """ Save report """  
+    report.save()
     
     # for use_unlabeled_samples in [True, False]:
     #     args['use_unlabeled_samples'] = use_unlabeled_samples
