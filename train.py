@@ -812,7 +812,7 @@ if __name__ == "__main__":
     """ Create & save report """
     report = Report()
     # for fold_setup in ['random', 'spatial', 'temporal_day', 'temporal_year']:
-    for fold_setup in ['spatial']:
+    for fold_setup in ['temporal_day', 'temporal_year']:
         print('Fold_setup:', fold_setup)
         args['fold_setup'] = fold_setup
         args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
