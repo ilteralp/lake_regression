@@ -782,8 +782,8 @@ if __name__ == "__main__":
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
     fold_setup = 'spatial'
-    # args = {'num_folds': None,
-    args = {'num_folds': C.FOLD_SETUP_NUM_FOLDS[fold_setup],
+    args = {'num_folds': None,
+    # args = {'num_folds': C.FOLD_SETUP_NUM_FOLDS[fold_setup],
             'max_epoch': 100,
             'device': device,
             'seed': seed,
