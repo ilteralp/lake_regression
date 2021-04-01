@@ -688,8 +688,6 @@ def train_on_folds(args, report):
                                                              test_ids=ids[test_index], 
                                                              model=model, fold=fold, 
                                                              metrics=metrics)
-            """ Save args """
-            save_args(args)
             print('=' * 72)
 
     
