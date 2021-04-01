@@ -688,7 +688,10 @@ def train_on_folds(args, report):
                                                              test_ids=ids[test_index], 
                                                              model=model, fold=fold, 
                                                              metrics=metrics)
+            """ Save args """
+            save_args(args)
             print('=' * 72)
+
     
     # Train and test without cross-validation
     else:
@@ -705,7 +708,7 @@ def train_on_folds(args, report):
     report.add(args=args, test_result=test_result)
     with open(osp.join(os.getcwd(), 'runs', args['run_name'], 'fold_test_results.txt'), 'w') as f:
         f.write(str(metrics.test_scores))
-
+        
 """
 Creates model.
 """
