@@ -808,18 +808,17 @@ if __name__ == "__main__":
     """ Create & save report & args """
     report = Report()
     for fold_setup in ['spatial', 'temporal_day', 'temporal_year']:
-        for use_unlabeled_samples in [True, False]:
-        # for fold_setup in ['temporal_day']:
-            print('Fold_setup:', fold_setup)
-            args['fold_setup'] = fold_setup
-            args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
-            args['use_unlabeled_samples'] = use_unlabeled_samples
-            
-            if args['fold_setup'] == 'random':
-                run(args)
-            else:
-                train_on_folds(args=args, report=report)
-            print('*' * 72)
+        # for use_unlabeled_samples in [True, False]:
+        print('Fold_setup:', fold_setup)
+        args['fold_setup'] = fold_setup
+        args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
+        # args['use_unlabeled_samples'] = use_unlabeled_samples
+        
+        if args['fold_setup'] == 'random':
+            run(args)
+        else:
+            train_on_folds(args=args, report=report)
+        print('*' * 72)
         
     report_id = report.save()
     args['report_id'] = report_id
