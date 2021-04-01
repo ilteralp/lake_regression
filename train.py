@@ -494,7 +494,7 @@ def create_run_folder(args):
 Takes a labeled dataset, a train function and arguments. 
 Creates dataset's folds and applies train function.
 """
-def train_random_on_folds(model, dataset, unlabeled_dataset, train_fn, args):
+def train_random_on_folds(model, dataset, unlabeled_dataset, train_fn, args, report):
     unlabeled_loader = DataLoader(unlabeled_dataset, **args['unlabeled']) if args['use_unlabeled_samples'] else None
     metrics = Metrics(num_folds=args['num_folds'], device=args['device'].type, pred_type=args['pred_type'])
     indices = [*range(len(dataset))]                                                              # Sample indices
@@ -551,8 +551,9 @@ def train_random_on_folds(model, dataset, unlabeled_dataset, train_fn, args):
         """ Create train, val and test sets """
         len_test = int(len(indices) * args['test_per'])
         tr_index = indices[0:-2*len_test]
-        val_index = indices[-2*len_test:-len_test]
         test_index = indices[-len_test:]
+        
+        val_index = indices[-2*len_test:-len_test]
         tr_set, val_set, test_set = Subset(dataset, tr_index), Subset(dataset, val_index), Subset(dataset, test_index)
         print('tr: {}, val: {}, test: {}'.format(tr_index[0:3], val_index[0:3], test_index[0:3]))
         
@@ -584,7 +585,13 @@ def train_random_on_folds(model, dataset, unlabeled_dataset, train_fn, args):
         for model_name in ['best_val_loss.pth', 'model_last_epoch.pth', 'best_val_score.pth']:
             _test(test_set=test_set, model_name=model_name, 
                   metrics=metrics, args=args, fold=1)
-            
+    
+    # Save experiment results to the report and its file.
+    test_result = metrics.get_mean_std_test_results()
+    report.add(args=args, test_result=test_result)
+    with open(osp.join(os.getcwd(), 'runs', args['run_name'], 'fold_test_results.txt'), 'w') as f:
+        f.write(str(metrics.test_scores))
+     
 """
 Returns ids (pixel, image or year) of that fold setup that will be used to 
 create train, test and validation sets. 
@@ -746,7 +753,7 @@ def create_model_params(args):
 """
 Runs model with given args. 
 """        
-def run(args):
+def run(args, report):
     """ Create labeled and unlabeled datasets. """
     labeled_set = Lake2dDataset(learning='labeled', date_type=args['date_type'])
     unlabeled_set = None
@@ -763,7 +770,7 @@ def run(args):
     # train_fn = _train if args['use_unlabeled_samples'] else _train_labeled_only
     train_fn = _train
     train_random_on_folds(model=model, dataset=labeled_set, unlabeled_dataset=unlabeled_set,  
-                          train_fn=train_fn, args=args)
+                          train_fn=train_fn, args=args, report=report)
 
 """
 Help with params in case you need it. 
@@ -803,16 +810,16 @@ if __name__ == "__main__":
     """ Run experiments """
     report = Report()
     # for fold_setup in ['spatial', 'temporal_day', 'temporal_year']:
-    for fold_setup in ['temporal_year', 'spatial']:
-        args['fold_setup'] = fold_setup
+    for num_folds in [None, 3]:
+        args['fold_setup'] = 'random'
         # args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
-        args['num_folds'] = None
+        args['num_folds'] = num_folds
         args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
         args['report_id'] = report.get_report_id()
         verify_args(args)
         
         if args['fold_setup'] == 'random':
-            run(args)
+            run(args, report=report)
         else:
             train_on_folds(args=args, report=report)
             
