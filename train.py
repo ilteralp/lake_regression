@@ -788,7 +788,7 @@ if __name__ == "__main__":
     fold_setup = 'spatial'
     args = {'num_folds': None,
     # args = {'num_folds': C.FOLD_SETUP_NUM_FOLDS[fold_setup],
-            'max_epoch': 2,
+            'max_epoch': 100,
             'device': device,
             'seed': seed,
             'create_val': True,                                                 # Creates validation set
