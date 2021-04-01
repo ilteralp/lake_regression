@@ -813,6 +813,8 @@ if __name__ == "__main__":
     for fold_setup in ['random']:
         for pred_type in ['reg', 'reg+class']:
             for use_unlabeled_samples in [True, False]:
+                if pred_type == 'reg' and use_unlabeled_samples:
+                    continue
                 args['fold_setup'] = fold_setup
                 args['pred_type'] = pred_type
                 args['use_unlabeled_samples'] = use_unlabeled_samples
