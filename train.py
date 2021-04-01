@@ -782,7 +782,7 @@ def help():
     
     
 if __name__ == "__main__":
-    seed = 42
+    seed = None
     if seed is not None:
         torch.manual_seed(seed)
         np.random.seed(seed)
@@ -796,9 +796,7 @@ if __name__ == "__main__":
             'lr': 0.0001,                                                       # From EA's model, default is 1e-2.
             'patch_norm': False,                                                 # Normalizes patches
             'reg_norm': True,                                                   # Normalize regression values
-            'use_unlabeled_samples': False,
             'date_type': 'month',
-            'pred_type': 'reg+class',                                           # Prediction type, can be {'reg', 'class', 'reg+class'}
             'model': 'eadan',                                              # Model name, can be {dandadadan, eanet, eadan}.
             'split_layer': 1,
             
@@ -811,22 +809,26 @@ if __name__ == "__main__":
     report = Report()
     args['report_id'] = report.get_report_id()
     
-    # for fold_setup in ['spatial', 'temporal_day', 'temporal_year']:
+    # for fold_setup in ['spatial', 'temporal_day', 'temporal_year', 'random']:
     for fold_setup in ['random']:
-        args['fold_setup'] = fold_setup
-        # args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
-        args['num_folds'] = None
-        args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
-        verify_args(args)
-        
-        if args['fold_setup'] == 'random':
-            run(args, report=report)
-        else:
-            train_on_folds(args=args, report=report)
-            
-        """ Save args """
-        save_args(args)
-        print('*' * 72)
+        for pred_type in ['reg', 'reg+class']:
+            for use_unlabeled_samples in [True, False]:
+                args['fold_setup'] = fold_setup
+                args['pred_type'] = pred_type
+                args['use_unlabeled_samples'] = use_unlabeled_samples
+                # args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
+                args['num_folds'] = None
+                args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
+                verify_args(args)
+                
+                if args['fold_setup'] == 'random':
+                    run(args, report=report)
+                else:
+                    train_on_folds(args=args, report=report)
+                    
+                """ Save args """
+                save_args(args)
+                print('*' * 72)
         
     """ Save report """  
     report.save()
