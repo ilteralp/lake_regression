@@ -789,7 +789,7 @@ if __name__ == "__main__":
         random.seed(seed)    
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    args = {'max_epoch': 100,
+    args = {'max_epoch': 2,
             'device': device,
             'seed': seed,
             'test_per': 0.1,
@@ -809,16 +809,21 @@ if __name__ == "__main__":
     report = Report()
     args['report_id'] = report.get_report_id()
     
-    for fold_setup in ['spatial', 'temporal_day', 'temporal_year', 'random']:
-        for pred_type in ['reg', 'reg+class']:
-            for use_unlabeled_samples in [False, True]:
+    # for fold_setup in ['spatial', 'temporal_day', 'temporal_year', 'random']:
+    for fold_setup in ['temporal_day']:
+        # for pred_type in ['reg', 'reg+class']:
+        for pred_type in ['reg+class']:
+            # for use_unlabeled_samples in [False, True]:
+            for use_unlabeled_samples in [True]:
                 if pred_type == 'reg' and use_unlabeled_samples:
                     continue
                 args['fold_setup'] = fold_setup
                 args['pred_type'] = pred_type
                 args['use_unlabeled_samples'] = use_unlabeled_samples
-                args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
+                # args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
+                args['num_folds'] = 3
                 args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
+                print('setup: {}, pred: {}, use_unlabeled: {}'.format(fold_setup, pred_type, use_unlabeled_samples))
                 verify_args(args)
                 
                 if args['fold_setup'] == 'random':
