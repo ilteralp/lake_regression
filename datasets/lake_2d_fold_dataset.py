@@ -45,27 +45,29 @@ class Lake2dFoldDataset(Lake2dDataset):
     def verify(self, fold_setup, ids):
         if fold_setup.lower() not in ['spatial', 'temporal_day', 'temporal_year']:
             raise Exception('fold_setup should be one of {\'spatial\', \'temporal_day\', \'temporal_year\'}')
-        if fold_setup.lower() == 'spatial':
-            if self.learning == 'labeled':
+        """ Samples labeled """
+        if self.learning == 'labeled':
+            if fold_setup.lower() == 'spatial':
                 if len(ids) > 10:
                     raise Exception('Expected at most 10 ids for spatial setup. Given {} ids.'.format(len(ids)))
                 if not np.all([i in range(0, 10) for i in ids]):
                     raise Exception('Ids are expected to be in [0-9] range for the spatial setup. Given {}'.format(ids))
-            else:
-                if ids is not None:
-                    raise Exception('Expected ids to be None in case of fold_setup=\'{}\' and learning=\'{}\'.'.format(fold_setup, self.learning))
-        if fold_setup.lower() == 'temporal_day':
-            if len(ids) > 32:
-                raise Exception('Expected at most 32 ids for temporal_day setup. Given {} ids.'.format(len(ids)))
-            if np.any([i in [22, 23] for i in ids]):
-                raise Exception('Image ids [22, 23] are invalid.')
-            if not np.all([i in range(1, 35) for i in ids]):
-                raise Exception('Ids are expected to be in [1-34] range for the temporal_day setup. Given {}'.format(ids))
-        if fold_setup.lower() == 'temporal_year':
-            if len(ids) > 3:
-                raise Exception('Expected at most 3 ids for temporal_day setup. Given {} ids.'.format(len(ids)))     
-            if not np.all([i in range(0, 3) for i in ids]):
-                raise Exception('Temporal_year setup supports ids [0, 1, 2] that corresponds to years [2017, 2018, 2019]. Given {}'.format(ids))
+            if fold_setup.lower() == 'temporal_day':
+                if len(ids) > 32:
+                    raise Exception('Expected at most 32 ids for temporal_day setup. Given {} ids.'.format(len(ids)))
+                if np.any([i in [22, 23] for i in ids]):
+                    raise Exception('Image ids [22, 23] are invalid.')
+                if not np.all([i in range(1, 35) for i in ids]):
+                    raise Exception('Ids are expected to be in [1-34] range for the temporal_day setup. Given {}'.format(ids))
+            if fold_setup.lower() == 'temporal_year':
+                if len(ids) > 3:
+                    raise Exception('Expected at most 3 ids for temporal_day setup. Given {} ids.'.format(len(ids)))     
+                if not np.all([i in range(0, 3) for i in ids]):
+                    raise Exception('Temporal_year setup supports ids [0, 1, 2] that corresponds to years [2017, 2018, 2019]. Given {}'.format(ids))
+        # Samples unlabeled
+        else:
+            if ids is not None:
+                raise Exception('Expected ids to be None in case of fold_setup=\'{}\' and learning=\'{}\'.'.format(fold_setup, self.learning))
     """
     Returns ids of images. Image names are not kept due to accessing it with global indices. 
     """
