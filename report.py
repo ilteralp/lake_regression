@@ -65,7 +65,7 @@ class Report:
     def _test_result_to_sheet(self, test_result, rid, idx):
         init_idx = idx
         for score_name in test_result:
-            if len(test_result) == 1 and score_name == 'reg':                   # Make R2 score for reg and reg+class start at the same column. 
+            if len(test_result) == 1 and score_name == 'r2':                   # Make R2 score for reg and reg+class start at the same column. 
                 idx = idx + 7
             self.sheet.write(rid, idx, score_name)
             idx = idx + 1
