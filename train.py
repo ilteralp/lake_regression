@@ -794,7 +794,7 @@ if __name__ == "__main__":
         random.seed(seed)    
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    args = {'max_epoch': 2,
+    args = {'max_epoch': 100,
             'device': device,
             'seed': seed,
             'test_per': 0.1,
@@ -814,8 +814,7 @@ if __name__ == "__main__":
     report = Report()
     args['report_id'] = report.get_report_id()
     
-    # for fold_setup in ['spatial', 'temporal_day', 'temporal_year', 'random']:
-    for fold_setup in ['temporal_year']:
+    for fold_setup in ['spatial', 'temporal_day', 'temporal_year', 'random']:
         for pred_type in ['reg', 'reg+class']:
             for use_unlabeled_samples in [False, True]:
                 if pred_type == 'reg' and use_unlabeled_samples:
