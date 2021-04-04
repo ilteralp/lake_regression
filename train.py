@@ -672,7 +672,7 @@ def _base_train_on_folds(ids, tr_ids, test_ids, model, fold, metrics):
     for model_name in model_names:
         _test(test_set=test_set, model_name=model_name, metrics=metrics, args=args, fold=fold)
         
-    return len(train_set_labeled), len(test_set), len(val_set) if val_set else None
+    return len(train_set_labeled), len(test_set), len(val_set) if val_set else None, len(unlabeled_set) if unlabeled_set else None
     
 """
 Takes arguments. Creates a model and trains it with the given dataset with folds
@@ -691,11 +691,11 @@ def train_on_folds(args, report):
         kf = KFold(n_splits=args['num_folds'], shuffle=True, random_state=args['seed'])
         for fold, (tr_index, test_index) in enumerate(kf.split(ids)):
             print('\nFold#{}'.format(fold))
-            len_tr, len_test, len_val = _base_train_on_folds(ids=ids, 
-                                                             tr_ids=ids[tr_index], 
-                                                             test_ids=ids[test_index], 
-                                                             model=model, fold=fold, 
-                                                             metrics=metrics)
+            len_tr, len_test, len_val, len_unlabeled = _base_train_on_folds(ids=ids, 
+                                                                            tr_ids=ids[tr_index], 
+                                                                            test_ids=ids[test_index], 
+                                                                            model=model, fold=fold, 
+                                                                            metrics=metrics)
             print('=' * 72)
 
     
@@ -704,12 +704,14 @@ def train_on_folds(args, report):
         test_len = len(ids) // C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]                        # Ensure that test set has the same size as the ones trained with folds.
         np.random.shuffle(ids)                                                                   # Shuffle ids, so that test_ids does not always become the samples with greatest ids. 
         tr_ids, test_ids = ids[:-test_len], ids[-test_len:]
-        len_tr, len_test, len_val = _base_train_on_folds(ids=ids, tr_ids=tr_ids, 
-                                                         test_ids=test_ids, model=model, 
-                                                         fold=1, metrics=metrics)
+        len_tr, len_test, len_val, len_unlabeled = _base_train_on_folds(ids=ids, 
+                                                                        tr_ids=tr_ids, 
+                                                                        test_ids=test_ids, 
+                                                                        model=model, fold=1, 
+                                                                        metrics=metrics)
     
     """ Save experiment results to the report and its file. """
-    args['train_size'], args['test_size'], args['val_size'] = len_tr, len_test, len_val
+    args['train_size'], args['test_size'], args['val_size'], args['unlabeled_size'] = len_tr, len_test, len_val, len_unlabeled
     test_result = metrics.get_mean_std_test_results()
     report.add(args=args, test_result=test_result)
     with open(osp.join(os.getcwd(), 'runs', args['run_name'], 'fold_test_results.txt'), 'w') as f:
