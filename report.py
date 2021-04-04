@@ -54,10 +54,10 @@ class Report:
         self.sheet.write(0, 24, 'ScoreName', self.header)
         self.sheet.write(0, 25, 'LastEpochModelMean', self.header)              # For folded cases mean of score, o.w. score itself. 
         self.sheet.write(0, 26, 'LastEpochModelStd', self.header)               # For folded cases std of score, o.w. 0.
-        self.sheet.write(0, 23, 'BestValLossModelMean', self.header)
-        self.sheet.write(0, 24, 'BestValLossModelStd', self.header)
-        self.sheet.write(0, 25, 'BestValScoreModelMean', self.header)
-        self.sheet.write(0, 27, 'BestValScoreModelStd', self.header)
+        self.sheet.write(0, 27, 'BestValLossModelMean', self.header)
+        self.sheet.write(0, 28, 'BestValLossModelStd', self.header)
+        self.sheet.write(0, 29, 'BestValScoreModelMean', self.header)
+        self.sheet.write(0, 30, 'BestValScoreModelStd', self.header)
         # self.sheet.write(0, 25, 'Loss', self.header)                          # AWL or sum
 
     """
