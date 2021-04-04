@@ -713,6 +713,7 @@ def train_on_folds(args, report):
                                                                         metrics=metrics)
     
     """ Save experiment results to the report and its file. """
+    # Beware that number samples in train set (and the other sets) may vary in each fold due to different number of images in each fold. 
     args['train_size'], args['test_size'], args['val_size'], args['unlabeled_size'] = len_tr, len_test, len_val, len_unlabeled
     test_result = metrics.get_mean_std_test_results()
     report.add(args=args, test_result=test_result)
