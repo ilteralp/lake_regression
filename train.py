@@ -812,12 +812,9 @@ if __name__ == "__main__":
     report = Report()
     args['report_id'] = report.get_report_id()
     
-    # for fold_setup in ['spatial', 'temporal_day', 'temporal_year', 'random']:
-    for fold_setup in ['temporal_year']:
-        # for pred_type in ['reg', 'reg+class']:
-        for pred_type in ['reg+class']:
-            # for use_unlabeled_samples in [False, True]:
-            for use_unlabeled_samples in [True]:
+    for fold_setup in ['spatial', 'temporal_day', 'temporal_year', 'random']:
+        for pred_type in ['reg', 'reg+class']:
+            for use_unlabeled_samples in [False, True]:
                 if pred_type == 'reg' and use_unlabeled_samples:
                     continue
                 args['fold_setup'] = fold_setup
