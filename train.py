@@ -633,8 +633,9 @@ def _base_train_on_folds(ids, tr_ids, test_ids, model, fold, metrics):
     """ Create unlabeled set """
     unlabeled_set, unlabeled_loader = None, None
     if args['use_unlabeled_samples']:
+        unlabeled_ids = None if args['fold_setup'] == 'spatial' else tr_ids
         unlabeled_set = Lake2dFoldDataset(learning='unlabeled', date_type=args['date_type'],
-                                          fold_setup=args['fold_setup'])
+                                          fold_setup=args['fold_setup'], ids=unlabeled_ids)
     
     """ Normalize patches on all datasets """
     if args['patch_norm']:
@@ -810,7 +811,7 @@ if __name__ == "__main__":
     args['report_id'] = report.get_report_id()
     
     # for fold_setup in ['spatial', 'temporal_day', 'temporal_year', 'random']:
-    for fold_setup in ['temporal_day']:
+    for fold_setup in ['temporal_year']:
         # for pred_type in ['reg', 'reg+class']:
         for pred_type in ['reg+class']:
             # for use_unlabeled_samples in [False, True]:
