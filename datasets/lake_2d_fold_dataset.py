@@ -45,13 +45,15 @@ class Lake2dFoldDataset(Lake2dDataset):
     def verify(self, fold_setup, ids):
         if fold_setup.lower() not in ['spatial', 'temporal_day', 'temporal_year']:
             raise Exception('fold_setup should be one of {\'spatial\', \'temporal_day\', \'temporal_year\'}')
-        """ Samples labeled """
-        if self.learning == 'labeled':
             if fold_setup.lower() == 'spatial':
-                if len(ids) > 10:
-                    raise Exception('Expected at most 10 ids for spatial setup. Given {} ids.'.format(len(ids)))
-                if not np.all([i in range(0, 10) for i in ids]):
-                    raise Exception('Ids are expected to be in [0-9] range for the spatial setup. Given {}'.format(ids))
+                if self.learning == 'labeled':
+                    if len(ids) > 10:
+                        raise Exception('Expected at most 10 ids for spatial setup. Given {} ids.'.format(len(ids)))
+                    if not np.all([i in range(0, 10) for i in ids]):
+                        raise Exception('Ids are expected to be in [0-9] range for the spatial setup. Given {}'.format(ids))
+                else:
+                    if ids is not None:
+                        raise Exception('Expected ids to be None in case of fold_setup=\'{}\' and learning=\'{}\'.'.format(fold_setup, self.learning))
             if fold_setup.lower() == 'temporal_day':
                 if len(ids) > 32:
                     raise Exception('Expected at most 32 ids for temporal_day setup. Given {} ids.'.format(len(ids)))
@@ -64,15 +66,12 @@ class Lake2dFoldDataset(Lake2dDataset):
                     raise Exception('Expected at most 3 ids for temporal_day setup. Given {} ids.'.format(len(ids)))     
                 if not np.all([i in range(0, 3) for i in ids]):
                     raise Exception('Temporal_year setup supports ids [0, 1, 2] that corresponds to years [2017, 2018, 2019]. Given {}'.format(ids))
-        # Samples unlabeled
-        else:
-            if ids is not None:
-                raise Exception('Expected ids to be None in case of fold_setup=\'{}\' and learning=\'{}\'.'.format(fold_setup, self.learning))
+
     """
     Returns ids of images. Image names are not kept due to accessing it with global indices. 
     """
     def _init_image_ids(self):
-        if self.fold_setup == 'spatial':                                        # Image ids are [1, 34] with skipping [22, 23s]
+        if self.fold_setup == 'spatial':                                        # Image ids are [1, 34] with skipping [22, 23]
             # return [*range(len(self.img_names))]
             return [*range(1, 22)] + [*range(24, 35)]
         elif self.fold_setup == 'temporal_day':                                 # Image ids correspond to self.ids for temporal_day. 
@@ -89,7 +88,7 @@ class Lake2dFoldDataset(Lake2dDataset):
     """
     Returns length of the dataset. 
     """
-    def __len__(self):                                                          # Does not inherit! Depends on fold_setup. 
+    def __len__(self):                                                          # Does not inherit & depends on fold_setup. 
         if self.fold_setup == 'spatial':
             num_pixels = len(self.ids) if self.learning == 'labeled' else len(self.unlabeled_mask)             # (10-1-1) * 32 or 75K * 32
         else:
@@ -97,14 +96,14 @@ class Lake2dFoldDataset(Lake2dDataset):
         return num_pixels * len(self.img_ids)
     
     def __getitem__(self, index):
-        img_idx, px_idx = index % len(self.img_ids), index // len(self.img_ids) # img_idx and px_idx may *NOT* be in global range [0, 319]. len(img_ids) may be 
+        img_idx, px_idx = index % len(self.img_ids), index // len(self.img_ids)
         if self.fold_setup == 'spatial':
             if self.learning == 'labeled':
                 px_idx = self.ids[px_idx]                                       # px_idx returns [0, len) but self.ids are not continuous, so get that px_id from self.ids
         else:
             img_idx = self.img_ids[img_idx]                                     # img_idx are in [0, len(img_ids)) but self.img_ids are not contigous and may not be in that range, so get that img_idx from self.img_ids
             img_idx = self.glob_img_id_dict[img_idx]                            # Get global index of that img_id/img_name.
-        return self._get_sample(img_idx=img_idx, px_idx=px_idx)                 # Uses image's index, not name, to access it on image_name list
+        return self._get_sample(img_idx=img_idx, px_idx=px_idx)                 # Uses image's index, not name, to access it on img_name list
             
     
 if __name__ == "__main__":
