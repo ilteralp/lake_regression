@@ -509,7 +509,7 @@ def train_random_on_folds(model, dataset, unlabeled_dataset, train_fn, args, rep
             np.random.shuffle(tr_index)                                                           # kfold does not shuffle samples in splits.     
             val_loader = None
             
-            """ Create train and validation set """ 
+            """ Create train and validation set """
             if args['create_val']:                                                                # Create validation set
                 val_len = len(test_index)
                 tr_index, val_index = tr_index[:-val_len], tr_index[-val_len:]
@@ -591,6 +591,8 @@ def train_random_on_folds(model, dataset, unlabeled_dataset, train_fn, args, rep
     report.add(args=args, test_result=test_result)
     with open(osp.join(os.getcwd(), 'runs', args['run_name'], 'fold_test_results.txt'), 'w') as f:
         f.write(str(metrics.test_scores))
+    args['train_size'], args['test_size'] = len(tr_set), len(test_set)
+    args['val_size'], args['unlabeled_size'] = len(val_set) if args['create_val'] else 0, len(unlabeled_dataset) if unlabeled_dataset is not None else 0
      
 """
 Returns ids (pixel, image or year) of that fold setup that will be used to 
