@@ -802,7 +802,6 @@ if __name__ == "__main__":
             'lr': 0.0001,                                                       # From EA's model, default is 1e-2.
             'patch_norm': True,                                                 # Normalizes patches
             'reg_norm': True,                                                   # Normalize regression values
-            'date_type': 'month',
             'model': 'eadan',                                              # Model name, can be {dandadadan, eanet, eadan}.
             'split_layer': 1,
             
@@ -818,24 +817,26 @@ if __name__ == "__main__":
     for fold_setup in ['spatial', 'temporal_day', 'temporal_year', 'random']:
         for pred_type in ['reg', 'reg+class']:
             for use_unlabeled_samples in [False, True]:
-                if pred_type == 'reg' and use_unlabeled_samples:
-                    continue
-                args['fold_setup'] = fold_setup
-                args['pred_type'] = pred_type
-                args['use_unlabeled_samples'] = use_unlabeled_samples
-                args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
-                args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
-                print('setup: {}, pred: {}, use_unlabeled: {}'.format(fold_setup, pred_type, use_unlabeled_samples))
-                verify_args(args)
-                
-                if args['fold_setup'] == 'random':
-                    run(args, report=report)
-                else:
-                    train_on_folds(args=args, report=report)
+                for date_type in ['month', 'season']:
+                    if pred_type == 'reg' and use_unlabeled_samples:
+                        continue
+                    args['fold_setup'] = fold_setup
+                    args['pred_type'] = pred_type
+                    args['use_unlabeled_samples'] = use_unlabeled_samples
+                    args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
+                    args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
+                    args['date_type'] = date_type
+                    print('setup: {}, pred: {}, use_unlabeled: {}'.format(fold_setup, pred_type, use_unlabeled_samples))
+                    verify_args(args)
                     
-                """ Save args """
-                save_args(args)
-                print('*' * 72)
+                    if args['fold_setup'] == 'random':
+                        run(args, report=report)
+                    else:
+                        train_on_folds(args=args, report=report)
+                        
+                    """ Save args """
+                    save_args(args)
+                    print('*' * 72)
         
     """ Save report """  
     report.save()
