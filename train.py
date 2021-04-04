@@ -587,12 +587,12 @@ def train_random_on_folds(model, dataset, unlabeled_dataset, train_fn, args, rep
                   metrics=metrics, args=args, fold=1)
     
     # Save experiment results to the report and its file.
+    args['train_size'], args['test_size'] = len(tr_set), len(test_set)
+    args['val_size'], args['unlabeled_size'] = len(val_set) if args['create_val'] else 0, len(unlabeled_dataset) if unlabeled_dataset is not None else 0
     test_result = metrics.get_mean_std_test_results()
     report.add(args=args, test_result=test_result)
     with open(osp.join(os.getcwd(), 'runs', args['run_name'], 'fold_test_results.txt'), 'w') as f:
         f.write(str(metrics.test_scores))
-    args['train_size'], args['test_size'] = len(tr_set), len(test_set)
-    args['val_size'], args['unlabeled_size'] = len(val_set) if args['create_val'] else 0, len(unlabeled_dataset) if unlabeled_dataset is not None else 0
      
 """
 Returns ids (pixel, image or year) of that fold setup that will be used to 
