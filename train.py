@@ -814,7 +814,8 @@ if __name__ == "__main__":
     report = Report()
     args['report_id'] = report.get_report_id()
     
-    for fold_setup in ['spatial', 'temporal_day', 'temporal_year', 'random']:
+    # for fold_setup in ['spatial', 'temporal_day', 'temporal_year', 'random']:
+    for fold_setup in ['random']:
         for pred_type in ['reg', 'reg+class']:
             for use_unlabeled_samples in [False, True]:
                 if pred_type == 'reg' and use_unlabeled_samples:
@@ -822,8 +823,8 @@ if __name__ == "__main__":
                 args['fold_setup'] = fold_setup
                 args['pred_type'] = pred_type
                 args['use_unlabeled_samples'] = use_unlabeled_samples
-                args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
-                # args['num_folds'] = 3
+                # args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
+                args['num_folds'] = 3
                 args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
                 print('setup: {}, pred: {}, use_unlabeled: {}'.format(fold_setup, pred_type, use_unlabeled_samples))
                 verify_args(args)
