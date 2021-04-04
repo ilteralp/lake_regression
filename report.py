@@ -34,26 +34,30 @@ class Report:
         self.sheet.write(0, 4, 'NumEpochs', self.header)
         self.sheet.write(0, 5, 'HasValSet', self.header)
         self.sheet.write(0, 6, 'UsedUnlabeled', self.header)
-        self.sheet.write(0, 7, 'Seed', self.header)
-        self.sheet.write(0, 8, 'PatchNorm', self.header)
-        self.sheet.write(0, 9, 'RegNorm', self.header)
-        self.sheet.write(0, 10, 'DateType', self.header)                        # Only meaningful in case of class and reg+class.
-        self.sheet.write(0, 11, 'Model', self.header)
-        self.sheet.write(0, 12, 'ModelSplitLayer', self.header)
-        self.sheet.write(0, 13, 'ScoreName', self.header)
-        self.sheet.write(0, 14, 'LastEpochModelMean', self.header)              # For folded cases mean of score, o.w. score itself. 
-        self.sheet.write(0, 15, 'LastEpochModelStd', self.header)               # For folded cases std of score, o.w. 0.
-        self.sheet.write(0, 16, 'BestValLossModelMean', self.header)
-        self.sheet.write(0, 17, 'BestValLossModelStd', self.header)
-        self.sheet.write(0, 18, 'BestValScoreModelMean', self.header)
-        self.sheet.write(0, 19, 'BestValScoreModelStd', self.header)
-        self.sheet.write(0, 20, 'ScoreName', self.header)
-        self.sheet.write(0, 21, 'LastEpochModelMean', self.header)              # For folded cases mean of score, o.w. score itself. 
-        self.sheet.write(0, 22, 'LastEpochModelStd', self.header)               # For folded cases std of score, o.w. 0.
+        self.sheet.write(0, 7, 'NumTrainSamples (labeled)', self.header)
+        self.sheet.write(0, 8, 'NumTestSamples', self.header)
+        self.sheet.write(0, 9, 'NumValSamples', self.header)
+        self.sheet.write(0, 10, 'NumTrainSamples (unlabeled', self.header)
+        self.sheet.write(0, 11, 'Seed', self.header)
+        self.sheet.write(0, 12, 'PatchNorm', self.header)
+        self.sheet.write(0, 13, 'RegNorm', self.header)
+        self.sheet.write(0, 14, 'DateType', self.header)                        # Only meaningful in case of class and reg+class.
+        self.sheet.write(0, 15, 'Model', self.header)
+        self.sheet.write(0, 16, 'ModelSplitLayer', self.header)
+        self.sheet.write(0, 17, 'ScoreName', self.header)
+        self.sheet.write(0, 18, 'LastEpochModelMean', self.header)              # For folded cases mean of score, o.w. score itself. 
+        self.sheet.write(0, 19, 'LastEpochModelStd', self.header)               # For folded cases std of score, o.w. 0.
+        self.sheet.write(0, 20, 'BestValLossModelMean', self.header)
+        self.sheet.write(0, 21, 'BestValLossModelStd', self.header)
+        self.sheet.write(0, 22, 'BestValScoreModelMean', self.header)
+        self.sheet.write(0, 23, 'BestValScoreModelStd', self.header)
+        self.sheet.write(0, 24, 'ScoreName', self.header)
+        self.sheet.write(0, 25, 'LastEpochModelMean', self.header)              # For folded cases mean of score, o.w. score itself. 
+        self.sheet.write(0, 26, 'LastEpochModelStd', self.header)               # For folded cases std of score, o.w. 0.
         self.sheet.write(0, 23, 'BestValLossModelMean', self.header)
         self.sheet.write(0, 24, 'BestValLossModelStd', self.header)
         self.sheet.write(0, 25, 'BestValScoreModelMean', self.header)
-        self.sheet.write(0, 26, 'BestValScoreModelStd', self.header)
+        self.sheet.write(0, 27, 'BestValScoreModelStd', self.header)
         # self.sheet.write(0, 25, 'Loss', self.header)                          # AWL or sum
 
     """
@@ -85,13 +89,17 @@ class Report:
         self.sheet.write(rid, 4, args['max_epoch'])
         self.sheet.write(rid, 5, 'True' if args['create_val'] == 1 else 'False')
         self.sheet.write(rid, 6, 'True' if args['use_unlabeled_samples'] == 1 else 'False')
-        self.sheet.write(rid, 7, args['seed'])
-        self.sheet.write(rid, 8, 'True' if args['patch_norm'] == 1 else 'False')
-        self.sheet.write(rid, 9, 'True' if args['reg_norm'] == 1 else 'False')
-        self.sheet.write(rid, 10, '' if args['pred_type'] == 'reg' else args['date_type'])
-        self.sheet.write(rid, 11, args['model'])
-        self.sheet.write(rid, 12, args['split_layer'] if args['model'] == 'eadan' else '')
-        idx = self._test_result_to_sheet(test_result=test_result, rid=rid, idx=13)
+        self.sheet.write(rid, 7, args['train_size'])
+        self.sheet.write(rid, 8, args['test_size'])
+        self.sheet.write(rid, 9, args['val_size'] if args['val_size'] is not None else 0)
+        self.sheet.write(rid, 10, args['unlabeled_size'] if args['unlabeled_size'] is not None else 0)
+        self.sheet.write(rid, 11, args['seed'])
+        self.sheet.write(rid, 12, 'True' if args['patch_norm'] == 1 else 'False')
+        self.sheet.write(rid, 13, 'True' if args['reg_norm'] == 1 else 'False')
+        self.sheet.write(rid, 14, '' if args['pred_type'] == 'reg' else args['date_type'])
+        self.sheet.write(rid, 15, args['model'])
+        self.sheet.write(rid, 16, args['split_layer'] if args['model'] == 'eadan' else '')
+        idx = self._test_result_to_sheet(test_result=test_result, rid=rid, idx=17)
         
     """
     Returns current report's id. 
