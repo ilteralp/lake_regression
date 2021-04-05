@@ -169,8 +169,8 @@ def verify_args(args):
         raise Exception('Expected prediction type to be one of [\'reg\', \'class\', \'reg+class\']')
     if args['model'] not in ['dandadadan', 'eanet', 'eadan']:
         raise Exception('Model can be one of [\'dandadadan\', \'eanet\', \'eadan\']')
-    if args['use_unlabeled_samples'] and args['pred_type'] == 'reg':
-        raise Exception('Unlabeled samples cannot be used with regression. They can only be used for reg+class.')
+    if args['use_unlabeled_samples'] and (args['pred_type'] == 'reg' or args['pred_type'] == 'class'):
+        raise Exception('Unlabeled samples cannot be used with regression or classification. They can only be used with \'reg+class\'.')
     if args['num_folds'] is not None and args['fold_setup'] not in ['spatial', 'temporal_day', 'temporal_year', 'random']:
         raise Exception('Expected fold_type to be one of [\'spatial\', \'temporal_day\', \'temporal_year\', \'random\'].')
     if args['num_folds'] is not None and args['num_folds'] < 3 and args['create_val']:
@@ -179,6 +179,9 @@ def verify_args(args):
         raise Exception('Validation set cannot be created for fold_setup=\'temporal_year\'. Reason: Has only 3 years.')
     if args['date_type'] == 'year' and args['fold_setup'] == 'temporal_year':
         raise Exception('Cannot use as year as classification label since one of the years is used as test set and model has not seen all the year samples.')
+    if args['loss_name'] == 'awl' and args['pred_type'] != 'reg+class':
+        raise Exception('AWL loss only works with reg+class!')
+    
 
 """
 Plots loss and scores to Tensorboard
@@ -221,7 +224,7 @@ def plot(writer, tr_loss, val_loss, tr_scores, val_scores, e):
 """
 Loads the model with given name and prints its results. 
 """
-def _test(test_set, model_name, metrics, args, fold):
+def _test(test_set, model_name, metrics, args, fold, awl):
     print('model: {} with fold: {}'.format(model_name, str(fold)))
     test_model = create_model(args)                                             # Already places model to device. 
     model_dir_path = osp.join(C.MODEL_DIR_PATH, args['run_name'], 'fold_' + str(fold))
@@ -241,7 +244,7 @@ def _test(test_set, model_name, metrics, args, fold):
         test_scores = [{'kappa' : [], 'f1' : [], 'acc' : []}]
     
     _validate(model=test_model, val_loader=test_loader, metrics=metrics, args=args,
-              val_loss=test_loss, val_scores=test_scores, epoch=0)
+              val_loss=test_loss, val_scores=test_scores, epoch=0, awl=awl)
     
     """ Save result to file """
     msg = get_msg(test_loss, test_scores, e=0, dataset='test', args=args)
@@ -259,7 +262,7 @@ def _test(test_set, model_name, metrics, args, fold):
 Takes model and validation set. Calculates metrics on validation set. 
 Runs for each epoch. 
 """
-def _validate(model, val_loader, metrics, args, val_loss, val_scores, epoch):
+def _validate(model, val_loader, metrics, args, val_loss, val_scores, epoch, awl):
     model.eval()
     
     with torch.no_grad():
@@ -268,10 +271,11 @@ def _validate(model, val_loader, metrics, args, val_loss, val_scores, epoch):
             v_patches, v_date_types, v_reg_vals = v_patches.to(args['device']), v_date_types.to(args['device']), v_reg_vals.to(args['device'])
             
             """ Calculate loss """
-            loss = calc_loss(model=model, patches=v_patches, args=args, loss_arr=val_loss, score_arr=val_scores, 
-                             e=epoch, target_regs=v_reg_vals, target_labels=v_date_types, metrics=metrics)
+            losses = calc_loss(model=model, patches=v_patches, args=args, loss_arr=val_loss, score_arr=val_scores, 
+                               e=epoch, target_regs=v_reg_vals, target_labels=v_date_types, metrics=metrics)
             
             """ Keep loss """
+            loss = add_losses(args=args, losses=losses, unlabeled_loss=None, awl=awl)
             val_loss[epoch]['total'].append(loss.item())      
             
 """
@@ -302,7 +306,27 @@ def add_scores_reg_class(reg_preds, target_regs, class_preds, target_labels, sco
     score_arr[e]['acc'].append(class_score['acc'])
     
 """
-Calculates loss(es) depending on prediction type
+Calculates total loss depending on param. 
+"""
+def add_losses(args, losses, unlabeled_loss, awl):
+    l1, l2 = losses
+    if args['loss_name'] == 'sum':
+        if args['pred_type'] == 'reg+class':
+            if unlabeled_loss is not None:
+                return l1 + l2 + unlabeled_loss
+            else:
+                return l1 + l2
+        else:                                                                                       # It's either reg or class, so return 1st loss. 
+            return l1
+    elif args['loss_name'] == 'awl':
+        if args['pred_type'] == 'reg+class':
+            if unlabeled_loss is not None:
+                return awl(l1, l2 + unlabeled_loss)                                                 # In case of reg+class, 2nd loss is class.
+            else:
+                return awl(l1, l2)
+    
+"""
+Calculates loss(es) depending on prediction type. Returns calculated losses. 
 """
 def calc_loss(model, patches, args, loss_arr, score_arr, e, target_regs, metrics, target_labels=None):
     if args['pred_type'] == 'reg':    
@@ -312,7 +336,7 @@ def calc_loss(model, patches, args, loss_arr, score_arr, e, target_regs, metrics
         reg_loss = args['loss_fn_reg'](input=reg_preds, target=target_regs)
         loss_arr[e]['l_reg_loss'].append(reg_loss.item())
         add_scores(preds=reg_preds, targets=target_regs, e=e, score_arr=score_arr, metrics=metrics)
-        return reg_loss
+        return reg_loss, None
     
     elif args['pred_type'] == 'class':
         class_preds = model(patches)
@@ -321,7 +345,7 @@ def calc_loss(model, patches, args, loss_arr, score_arr, e, target_regs, metrics
         class_loss = args['loss_fn_class'](input=class_preds, target=target_labels)
         loss_arr[e]['l_class_loss'].append(class_loss.item())                                       # No more 'l_class_loss', all samples are labeled for classification case. 
         add_scores(preds=class_preds, targets=target_labels, e=e, score_arr=score_arr, metrics=metrics)
-        return class_loss
+        return class_loss, None
 
     elif args['pred_type'] == 'reg+class':
         reg_preds, class_preds = model(patches)
@@ -331,7 +355,8 @@ def calc_loss(model, patches, args, loss_arr, score_arr, e, target_regs, metrics
         loss_arr[e]['l_class_loss'].append(class_loss.item())
         add_scores_reg_class(reg_preds=reg_preds, target_regs=target_regs, class_preds=class_preds, 
                              target_labels=target_labels, score_arr=score_arr, metrics=metrics, e=e)
-        return reg_loss + class_loss
+        # return reg_loss + class_loss
+        return reg_loss, class_loss
 
 """
 Creates arrays of losses and scores with given args. 
@@ -368,20 +393,21 @@ def init_best_val_score_loss(args):
     return score_name, best_val_score, best_val_loss
 
 
-# """
-# Creates optimizer and weighted loss depending on args. 
-# """
-# def create_optimizer_loss(model, args):
-#     if args['pred_type'] == 'reg+class' and args['use_awl']:
-#             awl = AutomaticWeightedLoss(num=2)
-#             optimizer = RMSprop([
-#                 {'params': model.parameters(), 'lr': args['lr']},
-#                 {'params': awl.parameters(), 'weight_decay': 0}
-#             ])
-#             return optimizer, awl
-#     else:
-#         optimizer = RMSprop(params=model.parameters(), lr=args['lr'])
-#         return optimizer, None
+"""
+Creates optimizer and weighted loss depending on args. 
+"""
+def create_optimizer_loss(model, args):
+    if args['loss_name'] == 'awl':
+        if args['pred_type'] == 'reg+class':
+            awl = AutomaticWeightedLoss(num=2)
+            optimizer = RMSprop([
+                {'params': model.parameters(), 'lr': args['lr']},
+                {'params': awl.parameters(), 'weight_decay': 0}
+            ])
+            return optimizer, awl
+    elif args['loss_name'] == 'sum':
+        optimizer = RMSprop(params=model.parameters(), lr=args['lr'])
+        return optimizer, None
 
 """
 Trains model with labeled and unlabeled data. 
@@ -389,8 +415,8 @@ Trains model with labeled and unlabeled data.
 def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, val_loader=None):
     # model.apply(weight_reset)                                                   # Or save weights of the model first & load them.
     model = reset_model(model, args)                                            # Init weights before each fold. 
-    optimizer = RMSprop(params=model.parameters(), lr=args['lr'])               # EA uses RMSprop with lr=0.0001, I can try SGD or Adam as in [1, 2] or [3].
-    # optimizer, awl = create_optimizer_loss(model=model, args=args) 
+    # optimizer = RMSprop(params=model.parameters(), lr=args['lr'])               # EA uses RMSprop with lr=0.0001, I can try SGD or Adam as in [1, 2] or [3].
+    optimizer, awl = create_optimizer_loss(model=model, args=args) 
     tr_loss, tr_scores = create_losses_scores(args)
     val_loss, val_scores = create_losses_scores(args) if args['create_val'] else (None, None)
     score_name, best_val_score, best_val_loss = init_best_val_score_loss(args)  # Init best val score and loss.
@@ -417,10 +443,11 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, v
             l_patches, l_reg_vals, l_date_types = l_patches.to(args['device']), l_reg_vals.to(args['device']), l_date_types.to(args['device'])
             
             """ Prediction on labeled data """
-            loss = calc_loss(model=model, patches=l_patches, args=args, loss_arr=tr_loss, score_arr=tr_scores, 
-                             e=e, target_regs=l_reg_vals, target_labels=l_date_types, metrics=metrics)
+            losses = calc_loss(model=model, patches=l_patches, args=args, loss_arr=tr_loss, score_arr=tr_scores, 
+                               e=e, target_regs=l_reg_vals, target_labels=l_date_types, metrics=metrics)
             
             """ Unlabeled data """
+            class_loss_unlabeled = None
             if args['use_unlabeled_samples']:
                 unlabeled_data = next(unlabeled_iter)
                 u_patches, u_date_types, _, (u_img_idxs, u_pxs, u_pys) = unlabeled_data
@@ -433,10 +460,11 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, v
                     _, u_class_preds = u_class_preds
                 class_loss_unlabeled = args['loss_fn_class'](input=u_class_preds, target=u_date_types)
                 tr_loss[e]['u_class_loss'].append(class_loss_unlabeled.item())
-                loss = loss + class_loss_unlabeled
+                # loss = loss + class_loss_unlabeled
     
             """ Calculate loss """
             # loss = reg_loss_labeled + class_loss_labeled + class_loss_unlabeled
+            loss = add_losses(args=args, losses=losses, unlabeled_loss=class_loss_unlabeled, awl=awl)
             loss.backward()
             optimizer.step()
             
@@ -449,7 +477,7 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, v
             
         """ Validation """
         if val_loader is not None:
-            _validate(model, val_loader, metrics, args, val_loss, val_scores, e)
+            _validate(model, val_loader, metrics, args, val_loss, val_scores, e, awl)
             if np.mean(val_loss[e]['total']) < best_val_loss:
                 best_val_loss = np.mean(val_loss[e]['total'])
                 torch.save(model.state_dict(), osp.join(model_dir_path, 'best_val_loss.pth'))
@@ -462,7 +490,7 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, v
         plot(writer=writer, tr_loss=tr_loss, val_loss=val_loss, tr_scores=tr_scores, val_scores=val_scores, e=e)
         
     torch.save(model.state_dict(), osp.join(model_dir_path, 'model_last_epoch.pth'))     # Save model of last epoch.
-    
+    return awl
     
     # X Re-init model as in https://discuss.pytorch.org/t/reinitializing-the-weights-after-each-cross-validation-fold/11034
     # X Create a new optimizer. 
@@ -535,8 +563,8 @@ def train_random_on_folds(model, dataset, unlabeled_dataset, train_fn, args, rep
             
             """ Train & Validation """
             print('\nTrain & Validation')
-            train_fn(model=model, train_loader=tr_loader, val_loader=val_loader, args=args, metrics=metrics, 
-                     unlabeled_loader=unlabeled_loader, fold=fold, writer=writer)
+            awl = train_fn(model=model, train_loader=tr_loader, val_loader=val_loader, args=args, metrics=metrics, 
+                           unlabeled_loader=unlabeled_loader, fold=fold, writer=writer)
             writer.close()
 
             """ Test """
@@ -544,7 +572,7 @@ def train_random_on_folds(model, dataset, unlabeled_dataset, train_fn, args, rep
             test_set = Subset(dataset, indices=test_index)
             for model_name in ['best_val_loss.pth', 'model_last_epoch.pth', 'best_val_score.pth']:
                 _test(test_set=test_set, model_name=model_name, metrics=metrics, 
-                      args=args, fold=fold)
+                      args=args, fold=fold, awl=awl)
             print('=' * 72)
             
     # Train and test without cross-validation
@@ -575,8 +603,8 @@ def train_random_on_folds(model, dataset, unlabeled_dataset, train_fn, args, rep
         
         """ Train & Validation """
         print('\nTrain & Validation')
-        train_fn(model=model, train_loader=tr_loader, unlabeled_loader=unlabeled_loader, 
-                 val_loader=val_loader, args=args, metrics=metrics, fold=1, writer=writer)
+        awl = train_fn(model=model, train_loader=tr_loader, unlabeled_loader=unlabeled_loader, 
+                       val_loader=val_loader, args=args, metrics=metrics, fold=1, writer=writer)
         
         writer.close()
         
@@ -585,7 +613,7 @@ def train_random_on_folds(model, dataset, unlabeled_dataset, train_fn, args, rep
         test_set = Subset(dataset, indices=test_index)
         for model_name in ['best_val_loss.pth', 'model_last_epoch.pth', 'best_val_score.pth']:
             _test(test_set=test_set, model_name=model_name, 
-                  metrics=metrics, args=args, fold=1)
+                  metrics=metrics, args=args, fold=1, awl=awl)
     
     # Save experiment results to the report and its file.
     args['train_size'], args['test_size'] = len(tr_set), len(test_set)
@@ -664,8 +692,8 @@ def _base_train_on_folds(ids, tr_ids, test_ids, model, fold, metrics):
     """ Train & Validation """
     print('\nTrain (& Validation)')
     writer = SummaryWriter(osp.join('runs', args['run_name'], 'fold_{}'.format(fold)))
-    _train(model=model, train_loader=tr_loader, unlabeled_loader=unlabeled_loader,
-           args=args, metrics=metrics, fold=fold, writer=writer, val_loader=val_loader)
+    awl = _train(model=model, train_loader=tr_loader, unlabeled_loader=unlabeled_loader,
+                 args=args, metrics=metrics, fold=fold, writer=writer, val_loader=val_loader)
     writer.close()
     
     """ Test """
@@ -673,7 +701,8 @@ def _base_train_on_folds(ids, tr_ids, test_ids, model, fold, metrics):
     model_names = ['model_last_epoch.pth']
     if args['create_val']: model_names += ['best_val_loss.pth', 'best_val_score.pth']
     for model_name in model_names:
-        _test(test_set=test_set, model_name=model_name, metrics=metrics, args=args, fold=fold)
+        _test(test_set=test_set, model_name=model_name, metrics=metrics, 
+              args=args, fold=fold, awl=awl)
         
     return len(train_set_labeled), len(test_set), len(val_set) if val_set else None, len(unlabeled_set) if unlabeled_set else None
     
@@ -816,15 +845,17 @@ if __name__ == "__main__":
     args['report_id'] = report.get_report_id()
     
     """ Create experiment params """
+    loss_names = ['sum', 'awl']
     fold_setups = ['spatial', 'temporal_day', 'temporal_year', 'random']
     pred_types = ['reg', 'reg+class']
     using_unlabeled_samples = [False, True]
     date_types = ['month', 'season']
     
     """ Train model with each param """
-    for (fold_setup, pred_type, unlabeled, date_type) in itertools.product(fold_setups, pred_types, using_unlabeled_samples, date_types):
+    for (loss_name, fold_setup, pred_type, unlabeled, date_type) in itertools.product(loss_names, fold_setups, pred_types, using_unlabeled_samples, date_types):
         if pred_type == 'reg' and unlabeled:
             continue
+        args['loss_name'] = loss_name
         args['fold_setup'] = fold_setup
         args['pred_type'] = pred_type
         args['use_unlabeled_samples'] = unlabeled
