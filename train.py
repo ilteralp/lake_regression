@@ -825,7 +825,7 @@ if __name__ == "__main__":
         random.seed(seed)    
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    args = {'max_epoch': 10,
+    args = {'max_epoch': 100,
             'device': device,
             'seed': seed,
             'test_per': 0.1,
@@ -845,10 +845,10 @@ if __name__ == "__main__":
     args['report_id'] = report.get_report_id()
     
     """ Create experiment params """
-    loss_names = ['sum']
-    fold_setups = ['random']
+    loss_names = ['awl', 'sum']
+    fold_setups = ['spatial']
     pred_types = ['reg+class']
-    using_unlabeled_samples = [False]
+    using_unlabeled_samples = [False, True]
     date_types = ['month']
     
     """ Train model with each param """
