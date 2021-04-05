@@ -857,7 +857,7 @@ if __name__ == "__main__":
             continue
         if loss_name == 'awl' and pred_type != 'reg+class':
             continue
-        print('loss_name: {}, fold_setup: {}, pred_type: {}, use_unlabeled: {}, date_type: {}'.format(loss_name, fold_setup, pred_type, unlabeled, date_type))
+        print('loss_name: {}, {}, {}, use_unlabeled: {}, date_type: {}'.format(loss_name, fold_setup, pred_type, unlabeled, date_type))
         args['loss_name'] = loss_name
         args['fold_setup'] = fold_setup
         args['pred_type'] = pred_type
