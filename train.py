@@ -22,7 +22,7 @@ from datasets import Lake2dDataset, Lake2dFoldDataset
 from metrics import Metrics
 from models import DandadaDAN, EANet, EADAN
 from report import Report
-# from losses import AutomaticWeightedLoss
+from losses import AutomaticWeightedLoss
 
 """
 Takes a dataset and splits it into train, test and validation sets. 
@@ -840,49 +840,6 @@ if __name__ == "__main__":
         
     """ Save report """  
     report.save()
-    
-    # for use_unlabeled_samples in [True, False]:
-    #     args['use_unlabeled_samples'] = use_unlabeled_samples
-    #     run(args)
-    
-    # print('\nOnly regression\n')
-    # # args['model'] = 'eadan'
-    # args['pred_type'] = 'reg'
-    # run(args)
-    # print('+' * 72)
-    
-    # # args['pred_type'] = 'reg+class'
-    # # print('\nreg+class\n')
-    # # for use_unlabeled_samples in [True, False]:
-    # #     args['use_unlabeled_samples'] = use_unlabeled_samples
-    # #     print('use_unlabeled_samples: {}'.format(args['use_unlabeled_samples']))
-    # #     run(args)
-    # #     print('+' * 72)
-        
-    # print('\nclassification\n')
-    # # args['model'] = 'eadan'
-    # args['pred_type'] = 'class'
-    # run(args)
-    # print('+' * 72)
-    
-    # args['model'] = 'eadan'
-    # args['use_unlabeled_samples'] = False
-    # args['pred_type'] = 'reg+class'
-    # for split_layer in range(1, 6):
-    #     args['split_layer'] = split_layer
-    #     print('\nsplit_layer:{}\n'.format(args['split_layer']))
-    #     run(args)
-    #     print('+' * 72)
- 
-    # for reg_norm in [True, False]:
-    #     args['reg_norm'] = reg_norm
-    #     for patch_norm in [True, False]:
-    #         args['patch_norm'] = patch_norm
-    #         # args['use_unlabeled_samples'] = use_unlabeled_samples
-    #         print('reg_norm: {}, patch_norm: {}'.format(args['reg_norm'], args['patch_norm']))
-    #         run(args)
-    #         print('+' * 72)
-
 
 """
 Ideas:
