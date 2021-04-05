@@ -830,10 +830,10 @@ if __name__ == "__main__":
             'seed': seed,
             'test_per': 0.1,
             'lr': 0.0001,                                                       # From EA's model, default is 1e-2.
-            'patch_norm': False,                                                 # Normalizes patches
-            'reg_norm': False,                                                   # Normalize regression values
+            'patch_norm': True,                                                 # Normalizes patches
+            'reg_norm': True,                                                   # Normalize regression values
             'model': 'eadan',                                              # Model name, can be {dandadadan, eanet, eadan}.
-            'split_layer': 4,
+            'split_layer': 1,
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'val': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4},
@@ -847,16 +847,14 @@ if __name__ == "__main__":
     """ Create experiment params """
     loss_names = ['sum']
     fold_setups = ['random']
-    pred_types = ['reg', 'reg+class']
+    pred_types = ['reg+class']
     using_unlabeled_samples = [False]
     date_types = ['month']
     
     """ Train model with each param """
     for (loss_name, fold_setup, pred_type, unlabeled, date_type) in itertools.product(loss_names, fold_setups, pred_types, using_unlabeled_samples, date_types):
-        if pred_type == 'reg' and unlabeled:
-            continue
-        if loss_name == 'awl' and pred_type != 'reg+class':
-            continue
+        if pred_type == 'reg' and unlabeled:                    continue
+        if loss_name == 'awl' and pred_type != 'reg+class':     continue
         print('loss_name: {}, {}, {}, use_unlabeled: {}, date_type: {}'.format(loss_name, fold_setup, pred_type, unlabeled, date_type))
         args['loss_name'] = loss_name
         args['fold_setup'] = fold_setup
@@ -866,7 +864,6 @@ if __name__ == "__main__":
         args['num_folds'] = None
         args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
         args['date_type'] = date_type
-        
         print('setup: {}, pred: {}, use_unlabeled: {}'.format(fold_setup, pred_type, unlabeled))
         verify_args(args)
         
