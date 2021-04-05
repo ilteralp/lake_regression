@@ -17,6 +17,7 @@ import os
 import os.path as osp
 from sklearn.model_selection import KFold
 from datetime import datetime
+import itertools
 import constants as C
 from datasets import Lake2dDataset, Lake2dFoldDataset
 from metrics import Metrics
@@ -810,35 +811,40 @@ if __name__ == "__main__":
             'unlabeled': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'test': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4}}
     
-    """ Create report & run experiments """
+    """ Create report """
     report = Report()
     args['report_id'] = report.get_report_id()
     
-    for fold_setup in ['spatial', 'temporal_day', 'temporal_year', 'random']:
-        for pred_type in ['reg', 'reg+class']:
-            for use_unlabeled_samples in [False, True]:
-                for date_type in ['month', 'season']:
-                    if pred_type == 'reg' and use_unlabeled_samples:
-                        continue
-                    args['fold_setup'] = fold_setup
-                    args['pred_type'] = pred_type
-                    args['use_unlabeled_samples'] = use_unlabeled_samples
-                    args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
-                    args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
-                    args['date_type'] = date_type
-                    print('setup: {}, pred: {}, use_unlabeled: {}'.format(fold_setup, pred_type, use_unlabeled_samples))
-                    verify_args(args)
-                    
-                    if args['fold_setup'] == 'random':
-                        run(args, report=report)
-                    else:
-                        train_on_folds(args=args, report=report)
-                        
-                    """ Save args """
-                    save_args(args)
-                    print('*' * 72)
+    """ Create experiment params """
+    fold_setups = ['spatial', 'temporal_day', 'temporal_year', 'random']
+    pred_types = ['reg', 'reg+class']
+    using_unlabeled_samples = [False, True]
+    date_types = ['month', 'season']
+    
+    """ Train model with each param """
+    for (fold_setup, pred_type, unlabeled, date_type) in itertools.product(fold_setups, pred_types, using_unlabeled_samples, date_types):
+        if pred_type == 'reg' and unlabeled:
+            continue
+        args['fold_setup'] = fold_setup
+        args['pred_type'] = pred_type
+        args['use_unlabeled_samples'] = unlabeled
+        args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
+        args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
+        args['date_type'] = date_type
         
-    """ Save report """  
+        print('setup: {}, pred: {}, use_unlabeled: {}'.format(fold_setup, pred_type, unlabeled))
+        verify_args(args)
+        
+        if args['fold_setup'] == 'random':
+            run(args, report=report)
+        else:
+            train_on_folds(args=args, report=report)
+            
+        """ Save args """
+        save_args(args)
+        print('*' * 72)
+        
+    """ Save report including all experiments """  
     report.save()
 
 """
