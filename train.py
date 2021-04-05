@@ -825,7 +825,7 @@ if __name__ == "__main__":
         random.seed(seed)    
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    args = {'max_epoch': 100,
+    args = {'max_epoch': 2,
             'device': device,
             'seed': seed,
             'test_per': 0.1,
@@ -846,20 +846,22 @@ if __name__ == "__main__":
     
     """ Create experiment params """
     loss_names = ['sum', 'awl']
-    fold_setups = ['spatial', 'temporal_day', 'temporal_year', 'random']
+    fold_setups = ['spatial']
     pred_types = ['reg', 'reg+class']
     using_unlabeled_samples = [False, True]
-    date_types = ['month', 'season']
+    date_types = ['month']
     
     """ Train model with each param """
     for (loss_name, fold_setup, pred_type, unlabeled, date_type) in itertools.product(loss_names, fold_setups, pred_types, using_unlabeled_samples, date_types):
         if pred_type == 'reg' and unlabeled:
             continue
+        print(loss_name, fold_setup, pred_type, unlabeled, date_type)
         args['loss_name'] = loss_name
         args['fold_setup'] = fold_setup
         args['pred_type'] = pred_type
         args['use_unlabeled_samples'] = unlabeled
-        args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
+        # args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
+        args['num_folds'] = 3
         args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
         args['date_type'] = date_type
         
