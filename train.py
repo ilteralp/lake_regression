@@ -855,6 +855,8 @@ if __name__ == "__main__":
     for (loss_name, fold_setup, pred_type, unlabeled, date_type) in itertools.product(loss_names, fold_setups, pred_types, using_unlabeled_samples, date_types):
         if pred_type == 'reg' and unlabeled:
             continue
+        if loss_name == 'awl' and pred_type != 'reg+class':
+            continue
         print('loss_name: {}, fold_setup: {}, pred_type: {}, use_unlabeled: {}, date_type: {}'.format(loss_name, fold_setup, pred_type, unlabeled, date_type))
         args['loss_name'] = loss_name
         args['fold_setup'] = fold_setup
