@@ -825,7 +825,7 @@ if __name__ == "__main__":
         random.seed(seed)    
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    args = {'max_epoch': 100,
+    args = {'max_epoch': 2,
             'device': device,
             'seed': seed,
             'test_per': 0.1,
@@ -842,13 +842,13 @@ if __name__ == "__main__":
     
     """ Create report """
     report = Report()
-    args['report_id'] = report.get_report_id()
+    args['report_id'] = report.report_id
     
     """ Create experiment params """
-    loss_names = ['awl', 'sum']
+    loss_names = ['sum']
     fold_setups = ['spatial']
     pred_types = ['reg+class']
-    using_unlabeled_samples = [False, True]
+    using_unlabeled_samples = [False]
     date_types = ['month']
     
     """ Train model with each param """
@@ -860,7 +860,8 @@ if __name__ == "__main__":
         args['fold_setup'] = fold_setup
         args['pred_type'] = pred_type
         args['use_unlabeled_samples'] = unlabeled
-        args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
+        # args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
+        args['num_folds'] = None
         args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
         args['date_type'] = date_type
         print('setup: {}, pred: {}, use_unlabeled: {}'.format(fold_setup, pred_type, unlabeled))
@@ -875,9 +876,6 @@ if __name__ == "__main__":
         save_args(args)
         print('*' * 72)
         
-    """ Save report including all experiments """  
-    report.save()
-
 """
 Ideas:
 X 1. Normalize patch values
