@@ -845,9 +845,9 @@ if __name__ == "__main__":
     args['report_id'] = report.report_id
     
     """ Create experiment params """
-    loss_names = ['sum']
-    fold_setups = ['spatial']
-    pred_types = ['reg+class']
+    loss_names = ['sum', 'awl']
+    fold_setups = ['spatial', 'temporal_year']
+    pred_types = ['reg+class', 'reg']
     using_unlabeled_samples = [False]
     date_types = ['month']
     
