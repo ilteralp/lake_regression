@@ -182,9 +182,17 @@ def verify_args(args):
     if args['loss_name'] == 'awl' and args['pred_type'] != 'reg+class':
         raise Exception('AWL loss only works with reg+class!')
     
+"""
+Plots test set result of each fold to Tensorboard. 
+"""
+def plot_test(writer, metrics, fold, model_name):
+    for i, score_name in enumerate(metrics.test_scores):
+        table_name = '{}_{}/{} (test)'.format(8 + i, score_name, model_name)    # Last table is 7, so start with 8. 
+        val = metrics.test_scores[score_name][model_name][fold]             # Folds start from 1.     
+        writer.add_scalar(table_name, val, fold)
 
 """
-Plots loss and scores to Tensorboard
+Plots loss and scores of train and val set to Tensorboard. 
 """
 def plot(writer, tr_loss, val_loss, tr_scores, val_scores, e):
     
@@ -224,7 +232,7 @@ def plot(writer, tr_loss, val_loss, tr_scores, val_scores, e):
 """
 Loads the model with given name and prints its results. 
 """
-def _test(test_set, model_name, metrics, args, fold, awl):
+def _test(test_set, model_name, metrics, args, fold, awl, writer):
     print('model: {} with fold: {}'.format(model_name, str(fold)))
     test_model = create_model(args)                                             # Already places model to device. 
     model_dir_path = osp.join(C.MODEL_DIR_PATH, args['run_name'], 'fold_' + str(fold))
@@ -258,6 +266,9 @@ def _test(test_set, model_name, metrics, args, fold, awl):
     """ Keep score of this fold """
     metrics.add_fold_score(fold_score=test_scores, model_name=model_name)
     
+    """ Plot test scores to Tensorboard """
+    plot_test(writer=writer, metrics=metrics, fold=fold, model_name=model_name)
+    
 """
 Takes model and validation set. Calculates metrics on validation set. 
 Runs for each epoch. 
@@ -270,11 +281,11 @@ def _validate(model, val_loader, metrics, args, val_loss, val_scores, epoch, awl
             v_patches, v_date_types, v_reg_vals, (v_img_idxs, v_pxs, v_pys) = val_data
             v_patches, v_date_types, v_reg_vals = v_patches.to(args['device']), v_date_types.to(args['device']), v_reg_vals.to(args['device'])
             
-            """ Calculate loss """
-            losses = calc_loss(model=model, patches=v_patches, args=args, loss_arr=val_loss, score_arr=val_scores, 
-                               e=epoch, target_regs=v_reg_vals, target_labels=v_date_types, metrics=metrics)
+            """ Calculate losses and scores. """
+            losses = calc_losses_scores(model=model, patches=v_patches, args=args, loss_arr=val_loss, score_arr=val_scores, 
+                                        e=epoch, target_regs=v_reg_vals, target_labels=v_date_types, metrics=metrics)
             
-            """ Keep loss """
+            """ Add losses to calculate final loss in case of multi-task and keep total loss. """
             loss = add_losses(args=args, losses=losses, unlabeled_loss=None, awl=awl)
             val_loss[epoch]['total'].append(loss.item())      
             
@@ -328,7 +339,7 @@ def add_losses(args, losses, unlabeled_loss, awl):
 """
 Calculates loss(es) depending on prediction type. Returns calculated losses. 
 """
-def calc_loss(model, patches, args, loss_arr, score_arr, e, target_regs, metrics, target_labels=None):
+def calc_losses_scores(model, patches, args, loss_arr, score_arr, e, target_regs, metrics, target_labels=None):
     if args['pred_type'] == 'reg':    
         reg_preds = model(patches)
         if args['model'] in C.DAN_MODELS:
@@ -443,8 +454,8 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, v
             l_patches, l_reg_vals, l_date_types = l_patches.to(args['device']), l_reg_vals.to(args['device']), l_date_types.to(args['device'])
             
             """ Prediction on labeled data """
-            losses = calc_loss(model=model, patches=l_patches, args=args, loss_arr=tr_loss, score_arr=tr_scores, 
-                               e=e, target_regs=l_reg_vals, target_labels=l_date_types, metrics=metrics)
+            losses = calc_losses_scores(model=model, patches=l_patches, args=args, loss_arr=tr_loss, score_arr=tr_scores, 
+                                        e=e, target_regs=l_reg_vals, target_labels=l_date_types, metrics=metrics)
             
             """ Unlabeled data """
             class_loss_unlabeled = None
@@ -565,14 +576,15 @@ def train_random_on_folds(model, dataset, unlabeled_dataset, train_fn, args, rep
             print('\nTrain & Validation')
             awl = train_fn(model=model, train_loader=tr_loader, val_loader=val_loader, args=args, metrics=metrics, 
                            unlabeled_loader=unlabeled_loader, fold=fold, writer=writer)
-            writer.close()
 
             """ Test """
             print('\nTest')
             test_set = Subset(dataset, indices=test_index)
             for model_name in ['best_val_loss.pth', 'model_last_epoch.pth', 'best_val_score.pth']:
                 _test(test_set=test_set, model_name=model_name, metrics=metrics, 
-                      args=args, fold=fold, awl=awl)
+                      args=args, fold=fold, awl=awl, writer=writer)
+            writer.close()
+            
             print('=' * 72)
             
     # Train and test without cross-validation
@@ -604,16 +616,15 @@ def train_random_on_folds(model, dataset, unlabeled_dataset, train_fn, args, rep
         """ Train & Validation """
         print('\nTrain & Validation')
         awl = train_fn(model=model, train_loader=tr_loader, unlabeled_loader=unlabeled_loader, 
-                       val_loader=val_loader, args=args, metrics=metrics, fold=1, writer=writer)
-        
-        writer.close()
+                       val_loader=val_loader, args=args, metrics=metrics, fold=0, writer=writer)
         
         """ Test """
         print('\nTest')
         test_set = Subset(dataset, indices=test_index)
         for model_name in ['best_val_loss.pth', 'model_last_epoch.pth', 'best_val_score.pth']:
             _test(test_set=test_set, model_name=model_name, 
-                  metrics=metrics, args=args, fold=1, awl=awl)
+                  metrics=metrics, args=args, fold=0, awl=awl, writer=writer)
+        writer.close()
     
     # Save experiment results to the report and its file.
     args['train_size'], args['test_size'] = len(tr_set), len(test_set)
@@ -694,7 +705,6 @@ def _base_train_on_folds(ids, tr_ids, test_ids, model, fold, metrics):
     writer = SummaryWriter(osp.join('runs', args['run_name'], 'fold_{}'.format(fold)))
     awl = _train(model=model, train_loader=tr_loader, unlabeled_loader=unlabeled_loader,
                  args=args, metrics=metrics, fold=fold, writer=writer, val_loader=val_loader)
-    writer.close()
     
     """ Test """
     print('\nTest')
@@ -702,7 +712,8 @@ def _base_train_on_folds(ids, tr_ids, test_ids, model, fold, metrics):
     if args['create_val']: model_names += ['best_val_loss.pth', 'best_val_score.pth']
     for model_name in model_names:
         _test(test_set=test_set, model_name=model_name, metrics=metrics, 
-              args=args, fold=fold, awl=awl)
+              args=args, fold=fold, awl=awl, writer=writer)
+    writer.close()
         
     return len(train_set_labeled), len(test_set), len(val_set) if val_set else None, len(unlabeled_set) if unlabeled_set else None
     
@@ -739,9 +750,9 @@ def train_on_folds(args, report):
         len_tr, len_test, len_val, len_unlabeled = _base_train_on_folds(ids=ids, 
                                                                         tr_ids=tr_ids, 
                                                                         test_ids=test_ids, 
-                                                                        model=model, fold=1, 
+                                                                        model=model, fold=0, 
                                                                         metrics=metrics)
-    
+        
     """ Save experiment results to the report and its file. """
     # Beware that number samples in train set (and the other sets) may vary in each fold due to different number of images in each fold. 
     args['train_size'], args['test_size'], args['val_size'], args['unlabeled_size'] = len_tr, len_test, len_val, len_unlabeled
@@ -825,7 +836,7 @@ if __name__ == "__main__":
         random.seed(seed)    
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    args = {'max_epoch': 2,
+    args = {'max_epoch': 10,
             'device': device,
             'seed': seed,
             'test_per': 0.1,
@@ -845,9 +856,9 @@ if __name__ == "__main__":
     args['report_id'] = report.report_id
     
     """ Create experiment params """
-    loss_names = ['sum', 'awl']
-    fold_setups = ['spatial', 'temporal_year']
-    pred_types = ['reg+class', 'reg']
+    loss_names = ['sum']
+    fold_setups = ['spatial']
+    pred_types = ['reg+class']
     using_unlabeled_samples = [False]
     date_types = ['month']
     
@@ -861,7 +872,7 @@ if __name__ == "__main__":
         args['pred_type'] = pred_type
         args['use_unlabeled_samples'] = unlabeled
         # args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
-        args['num_folds'] = None
+        args['num_folds'] = 3
         args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
         args['date_type'] = date_type
         print('setup: {}, pred: {}, use_unlabeled: {}'.format(fold_setup, pred_type, unlabeled))
