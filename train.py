@@ -444,6 +444,7 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, v
         """ Train """
         batch_id = 0
         while batch_id < len_loader:
+            print('batch_id:', batch_id)
             optimizer.zero_grad()
             
             """ Labeled data """
@@ -502,7 +503,6 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, v
           
         """ Plot loss & scores """
         plot(writer=writer, tr_loss=tr_loss, val_loss=val_loss, tr_scores=tr_scores, val_scores=val_scores, e=e)
-        print('batch_id:', batch_id)
         
     torch.save(model.state_dict(), osp.join(model_dir_path, 'model_last_epoch.pth'))     # Save model of last epoch.
     return awl
