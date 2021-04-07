@@ -182,14 +182,15 @@ def verify_args(args):
     if args['loss_name'] == 'awl' and args['pred_type'] != 'reg+class':
         raise Exception('AWL loss only works with reg+class!')
     
-"""
-Plots test set result of each fold to Tensorboard. 
-"""
-def plot_test(writer, metrics, fold, model_name):
-    for i, score_name in enumerate(metrics.test_scores):
-        table_name = '{}_{}/{} (test)'.format(8 + i, score_name, model_name)    # Last table is 7, so start with 8. 
-        val = metrics.test_scores[score_name][model_name][fold]             # Folds start from 1.     
-        writer.add_scalar(table_name, val, fold)
+def plot_fold_test_results(metrics):
+    writer = SummaryWriter(osp.join('runs', args['run_name'], 'test_results'))
+    test_scores = metrics.test_scores
+    for score_name in test_scores:
+        for model_name in test_scores[score_name]:
+            table_name = '{}_{}/{}'.format(0, score_name, model_name)
+            for fold, val in enumerate(test_scores[score_name][model_name]):
+                writer.add_scalar(table_name, val, fold)
+    writer.close()
 
 """
 Plots loss and scores of train and val set to Tensorboard. 
@@ -232,7 +233,7 @@ def plot(writer, tr_loss, val_loss, tr_scores, val_scores, e):
 """
 Loads the model with given name and prints its results. 
 """
-def _test(test_set, model_name, metrics, args, fold, awl, writer):
+def _test(test_set, model_name, metrics, args, fold, awl):
     print('model: {} with fold: {}'.format(model_name, str(fold)))
     test_model = create_model(args)                                             # Already places model to device. 
     model_dir_path = osp.join(C.MODEL_DIR_PATH, args['run_name'], 'fold_' + str(fold))
@@ -265,9 +266,6 @@ def _test(test_set, model_name, metrics, args, fold, awl, writer):
     
     """ Keep score of this fold """
     metrics.add_fold_score(fold_score=test_scores, model_name=model_name)
-    
-    """ Plot test scores to Tensorboard """
-    plot_test(writer=writer, metrics=metrics, fold=fold, model_name=model_name)
     
 """
 Takes model and validation set. Calculates metrics on validation set. 
@@ -576,14 +574,14 @@ def train_random_on_folds(model, dataset, unlabeled_dataset, train_fn, args, rep
             print('\nTrain & Validation')
             awl = train_fn(model=model, train_loader=tr_loader, val_loader=val_loader, args=args, metrics=metrics, 
                            unlabeled_loader=unlabeled_loader, fold=fold, writer=writer)
+            writer.close()
 
             """ Test """
             print('\nTest')
             test_set = Subset(dataset, indices=test_index)
             for model_name in ['best_val_loss.pth', 'model_last_epoch.pth', 'best_val_score.pth']:
                 _test(test_set=test_set, model_name=model_name, metrics=metrics, 
-                      args=args, fold=fold, awl=awl, writer=writer)
-            writer.close()
+                      args=args, fold=fold, awl=awl)
             
             print('=' * 72)
             
@@ -617,14 +615,14 @@ def train_random_on_folds(model, dataset, unlabeled_dataset, train_fn, args, rep
         print('\nTrain & Validation')
         awl = train_fn(model=model, train_loader=tr_loader, unlabeled_loader=unlabeled_loader, 
                        val_loader=val_loader, args=args, metrics=metrics, fold=0, writer=writer)
-        
+        writer.close()
+
         """ Test """
         print('\nTest')
         test_set = Subset(dataset, indices=test_index)
         for model_name in ['best_val_loss.pth', 'model_last_epoch.pth', 'best_val_score.pth']:
             _test(test_set=test_set, model_name=model_name, 
-                  metrics=metrics, args=args, fold=0, awl=awl, writer=writer)
-        writer.close()
+                  metrics=metrics, args=args, fold=0, awl=awl)
     
     # Save experiment results to the report and its file.
     args['train_size'], args['test_size'] = len(tr_set), len(test_set)
@@ -633,6 +631,9 @@ def train_random_on_folds(model, dataset, unlabeled_dataset, train_fn, args, rep
     report.add(args=args, test_result=test_result)
     with open(osp.join(os.getcwd(), 'runs', args['run_name'], 'fold_test_results.txt'), 'w') as f:
         f.write(str(metrics.test_scores))
+        
+    """ Plot test results """
+    plot_fold_test_results(metrics=metrics)
      
 """
 Returns ids (pixel, image or year) of that fold setup that will be used to 
@@ -705,15 +706,15 @@ def _base_train_on_folds(ids, tr_ids, test_ids, model, fold, metrics):
     writer = SummaryWriter(osp.join('runs', args['run_name'], 'fold_{}'.format(fold)))
     awl = _train(model=model, train_loader=tr_loader, unlabeled_loader=unlabeled_loader,
                  args=args, metrics=metrics, fold=fold, writer=writer, val_loader=val_loader)
-    
+    writer.close()
+
     """ Test """
     print('\nTest')
     model_names = ['model_last_epoch.pth']
     if args['create_val']: model_names += ['best_val_loss.pth', 'best_val_score.pth']
     for model_name in model_names:
         _test(test_set=test_set, model_name=model_name, metrics=metrics, 
-              args=args, fold=fold, awl=awl, writer=writer)
-    writer.close()
+              args=args, fold=fold, awl=awl)
         
     return len(train_set_labeled), len(test_set), len(val_set) if val_set else None, len(unlabeled_set) if unlabeled_set else None
     
@@ -760,6 +761,9 @@ def train_on_folds(args, report):
     report.add(args=args, test_result=test_result)
     with open(osp.join(os.getcwd(), 'runs', args['run_name'], 'fold_test_results.txt'), 'w') as f:
         f.write(str(metrics.test_scores))
+        
+    """ Plot test results """
+    plot_fold_test_results(metrics=metrics)
         
 """
 Creates model.
@@ -836,7 +840,7 @@ if __name__ == "__main__":
         random.seed(seed)    
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    args = {'max_epoch': 10,
+    args = {'max_epoch': 2,
             'device': device,
             'seed': seed,
             'test_per': 0.1,
@@ -872,7 +876,7 @@ if __name__ == "__main__":
         args['pred_type'] = pred_type
         args['use_unlabeled_samples'] = unlabeled
         # args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
-        args['num_folds'] = 3
+        args['num_folds'] = 4
         args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
         args['date_type'] = date_type
         print('setup: {}, pred: {}, use_unlabeled: {}'.format(fold_setup, pred_type, unlabeled))
