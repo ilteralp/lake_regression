@@ -726,7 +726,7 @@ def _base_train_on_folds(ids, tr_ids, test_ids, model, fold, metrics):
               args=args, fold=fold, awl=awl)
         
     """ Save sample ids """
-    save_sample_ids(args=args, fold=fold, tr_ids=tr_ids, test_ids=test_ids, val_ids=val_ids)
+    save_sample_ids(args=args, fold=fold, tr_ids=tr_ids, test_ids=test_ids, val_ids=val_ids if args['create_val'] else None)
     
     """ Return dataset lengths """
     return len(train_set_labeled), len(test_set), len(val_set) if val_set else None, len(unlabeled_set) if unlabeled_set else None
