@@ -435,19 +435,24 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, v
     for e in range(args['max_epoch']):
         model.train()
         if args['use_unlabeled_samples']:
-            len_loader = min(len(train_loader), len(unlabeled_loader))              # Update unlabeled batch size to use all its samples. 
+            len_loader = len(unlabeled_loader)                                  # Update unlabeled batch size to use all its samples. 
             unlabeled_iter = iter(unlabeled_loader)
         else:
             len_loader = len(train_loader)
         labeled_iter = iter(train_loader)
-    
+        
         """ Train """
         batch_id = 0
         while batch_id < len_loader:
             optimizer.zero_grad()
             
             """ Labeled data """
-            labeled_data = next(labeled_iter)
+            try:
+                labeled_data = next(labeled_iter)
+            except:
+                labeled_iter = iter(train_loader)
+                labeled_data = next(labeled_iter)
+            
             l_patches, l_date_types, l_reg_vals, (l_img_idxs, l_pxs, l_pys) = labeled_data
             l_patches, l_reg_vals, l_date_types = l_patches.to(args['device']), l_reg_vals.to(args['device']), l_date_types.to(args['device'])
             
@@ -497,6 +502,7 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, v
           
         """ Plot loss & scores """
         plot(writer=writer, tr_loss=tr_loss, val_loss=val_loss, tr_scores=tr_scores, val_scores=val_scores, e=e)
+        print('batch_id:', batch_id)
         
     torch.save(model.state_dict(), osp.join(model_dir_path, 'model_last_epoch.pth'))     # Save model of last epoch.
     return awl
@@ -865,7 +871,7 @@ if __name__ == "__main__":
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'val': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4},
-            'unlabeled': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
+            'unlabeled': {'batch_size': C.BATCH_SIZE * 8, 'shuffle': True, 'num_workers': 4},
             'test': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4}}
     
     """ Create report """
@@ -876,7 +882,7 @@ if __name__ == "__main__":
     loss_names = ['sum']
     fold_setups = ['spatial']
     pred_types = ['reg+class']
-    using_unlabeled_samples = [False]
+    using_unlabeled_samples = [True]
     date_types = ['month']
     
     """ Train model with each param """
