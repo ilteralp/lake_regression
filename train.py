@@ -634,6 +634,15 @@ def train_random_on_folds(model, dataset, unlabeled_dataset, train_fn, args, rep
         
     """ Plot test results """
     plot_fold_test_results(metrics=metrics)
+    
+"""
+Saves sample ids of that fold to its folder. 
+"""
+def save_sample_ids(args, fold, tr_ids, test_ids, val_ids):
+    path = osp.join(os.getcwd(), 'runs', args['run_name'], 'fold_{}'.format(fold), 'sample_ids.txt')
+    dict_sample_ids = {'tr_ids' : tr_ids, 'test_ids' : test_ids, 'val_ids' : val_ids if val_ids is not None else ''}
+    with open(path, 'w') as f:
+        f.write(str(dict_sample_ids))
      
 """
 Returns ids (pixel, image or year) of that fold setup that will be used to 
@@ -716,6 +725,10 @@ def _base_train_on_folds(ids, tr_ids, test_ids, model, fold, metrics):
         _test(test_set=test_set, model_name=model_name, metrics=metrics, 
               args=args, fold=fold, awl=awl)
         
+    """ Save sample ids """
+    save_sample_ids(args=args, fold=fold, tr_ids=tr_ids, test_ids=test_ids, val_ids=val_ids)
+    
+    """ Return dataset lengths """
     return len(train_set_labeled), len(test_set), len(val_set) if val_set else None, len(unlabeled_set) if unlabeled_set else None
     
 """
