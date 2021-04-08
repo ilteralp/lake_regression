@@ -478,17 +478,21 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, v
                 class_loss_unlabeled = args['loss_fn_class'](input=u_class_preds, target=u_date_types)
                 tr_loss[e]['u_class_loss'].append(class_loss_unlabeled.item())
                 # loss = loss + class_loss_unlabeled
+            unl_time = time.time()
     
             """ Calculate loss """
             # loss = reg_loss_labeled + class_loss_labeled + class_loss_unlabeled
             loss = add_losses(args=args, losses=losses, unlabeled_loss=class_loss_unlabeled, awl=awl)
             loss.backward()
             optimizer.step()
+            loss_time = time.time()
             
             """ Keep losses for plotting """
             tr_loss[e]['total'].append(loss.item())
             batch_id += 1
             print('batch {}, time: {:.2f}, half: {:.2f}, batch_size, l: {}, u: {}'.format(batch_id, time.time() - start, half_time - start, l_patches.shape[0], u_patches.shape[0]))
+            now = time.time()
+            print('times, total: {:.2f}, half: {:.2f}, unlabeled: {:.2f}, loss: {:.2f}'.format(now - start, now - half_time, now - unl_time, now - loss_time))
 
         
         if e % 10 == 0:
