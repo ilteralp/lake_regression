@@ -540,7 +540,8 @@ Creates dataset's folds and applies train function.
 """
 def train_random_on_folds(model, dataset, unlabeled_dataset, train_fn, args, report):
     unlabeled_loader = DataLoader(unlabeled_dataset, **args['unlabeled']) if args['use_unlabeled_samples'] else None
-    metrics = Metrics(num_folds=args['num_folds'], device=args['device'].type, pred_type=args['pred_type'])
+    metrics = Metrics(num_folds=args['num_folds'], device=args['device'].type, 
+                      pred_type=args['pred_type'], num_classes=args['num_classes'])
     indices = [*range(len(dataset))]                                                              # Sample indices
     np.random.shuffle(indices)
     create_run_folder(args=args)
@@ -747,7 +748,7 @@ def train_on_folds(args, report):
     args = create_model_params(args=args)                                                        # Create regression and/or classification losses and model params.
     model = create_model(args=args)                                                              # Create model.
     metrics = Metrics(num_folds=args['num_folds'], device=args['device'].type, 
-                      pred_type=args['pred_type'])
+                      pred_type=args['pred_type'], num_classes=args['num_classes'])
 
     """ Train & test with cross-validation """
     if args['num_folds'] is not None:
@@ -809,7 +810,7 @@ Creates loss functions depending on prediction type and adds model params.
 """
 def create_model_params(args):
     args['in_channels'] = 12
-    args['num_classes'] = C.NUM_CLASSES[args['date_type']]
+    args['num_classes'] = C.NUM_CLASSES[args['date_type']] if args['pred_type'] != 'reg' else None
     
     if args['pred_type'] == 'reg' or args['pred_type'] == 'reg+class':
         loss_fn_reg = torch.nn.MSELoss().to(args['device'])                     # Regression loss function
