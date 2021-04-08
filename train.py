@@ -468,6 +468,8 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, v
             if args['use_unlabeled_samples']:
                 print('using unlabeled samples')
                 unlabeled_data = next(unlabeled_iter)
+                unl_fetch_time = time.time()
+                
                 u_patches, u_date_types, _, (u_img_idxs, u_pxs, u_pys) = unlabeled_data
                 u_patches, u_date_types = u_patches.to(args['device']), u_date_types.to(args['device'])
                 unlabeled_load_time = time.time()
@@ -477,27 +479,24 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, v
                 u_class_preds = model(u_patches)
                 if args['pred_type'] == 'reg+class':
                     _, u_class_preds = u_class_preds
-                unlabeled_pred_time = time.time()
                     
                 class_loss_unlabeled = args['loss_fn_class'](input=u_class_preds, target=u_date_types)
                 tr_loss[e]['u_class_loss'].append(class_loss_unlabeled.item())
                 # loss = loss + class_loss_unlabeled
-            unl_time = time.time()
     
             """ Calculate loss """
             # loss = reg_loss_labeled + class_loss_labeled + class_loss_unlabeled
             loss = add_losses(args=args, losses=losses, unlabeled_loss=class_loss_unlabeled, awl=awl)
             loss.backward()
             optimizer.step()
-            loss_time = time.time()
             
             """ Keep losses for plotting """
             tr_loss[e]['total'].append(loss.item())
             batch_id += 1
             print('batch {}, batch_size, l: {}, u: {}, loaders, l: {}, u: {}'.format(batch_id, l_patches.shape[0], u_patches.shape[0], len(train_loader), len(unlabeled_loader)))
             now = time.time()
-            print('\ttimes, total: {:.2f}, half: {:.2f}, unlabeled: {:.2f} = (load: {:.2f} + pred: {:.2f} + loss: {:.2f}), final loss: {:.2f}'.format(
-                now - start, half_time - start, unl_time - half_time, unlabeled_load_time - half_time, unlabeled_pred_time - unlabeled_load_time, unl_time - unlabeled_pred_time, loss_time - unl_time))
+            print('\ttimes, total: {:.2f}, half: {:.2f}, fetch: {:.2f}, to_device: {:.2f}'.format(
+                now - start, half_time - start, unl_fetch_time - half_time, unlabeled_load_time - unl_fetch_time))
 
         
         if e % 10 == 0:
