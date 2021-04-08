@@ -466,6 +466,7 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, v
             """ Unlabeled data """
             class_loss_unlabeled = None
             if args['use_unlabeled_samples']:
+                print('using unlabeled samples')
                 unlabeled_data = next(unlabeled_iter)
                 u_patches, u_date_types, _, (u_img_idxs, u_pxs, u_pys) = unlabeled_data
                 u_patches, u_date_types = u_patches.to(args['device']), u_date_types.to(args['device'])
