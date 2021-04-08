@@ -487,7 +487,7 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, v
             """ Keep losses for plotting """
             tr_loss[e]['total'].append(loss.item())
             batch_id += 1
-            print('batch {}, time: {}, batch_size, l: {}, u: {}'.format(batch_id, time.time() - start, l_patches.shape[0], u_patches.shape[0]))
+            print('batch {}, time: {:.2f}, batch_size, l: {}, u: {}'.format(batch_id, time.time() - start, l_patches.shape[0], u_patches.shape[0]))
 
         
         if e % 10 == 0:
@@ -875,7 +875,7 @@ if __name__ == "__main__":
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'val': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4},
-            'unlabeled': {'batch_size': C.BATCH_SIZE * 16, 'shuffle': True, 'num_workers': 4},
+            'unlabeled': {'batch_size': C.BATCH_SIZE * 32, 'shuffle': True, 'num_workers': 4},
             'test': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4}}
     
     """ Create report """
