@@ -461,6 +461,7 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, v
             """ Prediction on labeled data """
             losses = calc_losses_scores(model=model, patches=l_patches, args=args, loss_arr=tr_loss, score_arr=tr_scores, 
                                         e=e, target_regs=l_reg_vals, target_labels=l_date_types, metrics=metrics)
+            half_time = time.time()
             
             """ Unlabeled data """
             class_loss_unlabeled = None
@@ -487,7 +488,7 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, v
             """ Keep losses for plotting """
             tr_loss[e]['total'].append(loss.item())
             batch_id += 1
-            print('batch {}, time: {:.2f}, batch_size, l: {}, u: {}'.format(batch_id, time.time() - start, l_patches.shape[0], u_patches.shape[0]))
+            print('batch {}, time: {:.2f}, half: {:.2f}, batch_size, l: {}, u: {}'.format(batch_id, time.time() - start, half_time - start, l_patches.shape[0], u_patches.shape[0]))
 
         
         if e % 10 == 0:
