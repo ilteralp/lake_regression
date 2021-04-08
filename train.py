@@ -18,6 +18,7 @@ import os.path as osp
 from sklearn.model_selection import KFold
 from datetime import datetime
 import itertools
+import time
 import constants as C
 from datasets import Lake2dDataset, Lake2dFoldDataset
 from metrics import Metrics
@@ -444,7 +445,7 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, v
         """ Train """
         batch_id = 0
         while batch_id < len_loader:
-            print('batch_id:', batch_id)
+            start = time.time()
             optimizer.zero_grad()
             
             """ Labeled data """
@@ -486,6 +487,8 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, v
             """ Keep losses for plotting """
             tr_loss[e]['total'].append(loss.item())
             batch_id += 1
+            print('batch {}, time: {}, batch_size, l: {}, u: {}'.format(batch_id, time.time() - start, l_patches.shape[0], u_patches.shape[0]))
+
         
         if e % 10 == 0:
             print(get_msg(tr_loss, tr_scores, e, dataset='train', args=args))                  # Print train set loss & score for each **epoch**. 
