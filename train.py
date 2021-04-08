@@ -885,7 +885,7 @@ if __name__ == "__main__":
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'val': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4},
-            'unlabeled': {'batch_size': C.UNLABELED_BATCH_SIZE * 32, 'shuffle': True, 'num_workers': 4},
+            'unlabeled': {'batch_size': C.UNLABELED_BATCH_SIZE * 8, 'shuffle': True, 'num_workers': 4},
             'test': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4}}
     
     """ Create report """
