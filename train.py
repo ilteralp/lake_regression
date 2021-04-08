@@ -469,12 +469,15 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, v
                 unlabeled_data = next(unlabeled_iter)
                 u_patches, u_date_types, _, (u_img_idxs, u_pxs, u_pys) = unlabeled_data
                 u_patches, u_date_types = u_patches.to(args['device']), u_date_types.to(args['device'])
+                unlabeled_load_time = time.time()
                 
                 """ Prediction on unlabeled data """
                 # _, u_class_preds = model(u_patches)
                 u_class_preds = model(u_patches)
                 if args['pred_type'] == 'reg+class':
                     _, u_class_preds = u_class_preds
+                unlabeled_pred_time = time.time()
+                    
                 class_loss_unlabeled = args['loss_fn_class'](input=u_class_preds, target=u_date_types)
                 tr_loss[e]['u_class_loss'].append(class_loss_unlabeled.item())
                 # loss = loss + class_loss_unlabeled
@@ -492,7 +495,8 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, v
             batch_id += 1
             print('batch {}, batch_size, l: {}, u: {}, loaders, l: {}, u: {}'.format(batch_id, l_patches.shape[0], u_patches.shape[0], len(train_loader), len(unlabeled_loader)))
             now = time.time()
-            print('\ttimes, total: {:.2f}, half: {:.2f}, unlabeled: {:.2f}, loss: {:.2f}'.format(now - start, half_time - start, unl_time - half_time, loss_time - unl_time))
+            print('\ttimes, total: {:.2f}, half: {:.2f}, unlabeled: {:.2f} = (load: {:.2f} + pred: {:.2f} + loss: {:.2f}), final loss: {:.2f}'.format(
+                now - start, half_time - start, unl_time - half_time, unlabeled_load_time - half_time, unlabeled_pred_time - unlabeled_load_time, unl_time - unlabeled_pred_time, loss_time - unl_time))
 
         
         if e % 10 == 0:
