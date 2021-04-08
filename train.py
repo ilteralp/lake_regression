@@ -470,7 +470,7 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, v
                 unl_fetch_time = time.time()
                 
                 u_patches, u_date_types, _, (u_img_idxs, u_pxs, u_pys) = unlabeled_data
-                print('pixels: {}'.format(u_pxs))
+                print('pixels: {}'.format(u_pxs[0:3]))
                 u_patches, u_date_types = u_patches.to(args['device']), u_date_types.to(args['device'])
                 unlabeled_load_time = time.time()
                 
@@ -707,6 +707,7 @@ def _base_train_on_folds(ids, tr_ids, test_ids, model, fold, metrics):
         unlabeled_ids = None if args['fold_setup'] == 'spatial' else tr_ids
         unlabeled_set = Lake2dFoldDataset(learning='unlabeled', date_type=args['date_type'],
                                           fold_setup=args['fold_setup'], ids=unlabeled_ids)
+    print('dataset lens, train: {}, test: {}, unlabeled: {}'.format(len(train_set_labeled), len(test_set), len(unlabeled_set)))
     
     """ Normalize patches on all datasets """
     if args['patch_norm']:
@@ -884,7 +885,7 @@ if __name__ == "__main__":
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'val': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4},
-            'unlabeled': {'batch_size': C.BATCH_SIZE * 32, 'shuffle': True, 'num_workers': 4},
+            'unlabeled': {'batch_size': C.UNLABELED_BATCH_SIZE * 32, 'shuffle': True, 'num_workers': 4},
             'test': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4}}
     
     """ Create report """
