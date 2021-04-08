@@ -492,7 +492,7 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, v
             batch_id += 1
             print('batch {}, time: {:.2f}, half: {:.2f}, batch_size, l: {}, u: {}'.format(batch_id, time.time() - start, half_time - start, l_patches.shape[0], u_patches.shape[0]))
             now = time.time()
-            print('times, total: {:.2f}, half: {:.2f}, unlabeled: {:.2f}, loss: {:.2f}'.format(now - start, now - half_time, now - unl_time, now - loss_time))
+            print('\ttimes, total: {:.2f}, half: {:.2f}, unlabeled: {:.2f}, loss: {:.2f}'.format(now - start, half_time - start, unl_time - start, loss_time - start))
 
         
         if e % 10 == 0:
