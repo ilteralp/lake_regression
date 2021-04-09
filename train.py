@@ -710,7 +710,6 @@ def _base_train_on_folds(ids, tr_ids, test_ids, model, fold, metrics):
         unlabeled_ids = None if args['fold_setup'] == 'spatial' else tr_ids
         unlabeled_set = Lake2dFoldDataset(learning='unlabeled', date_type=args['date_type'],
                                           fold_setup=args['fold_setup'], ids=unlabeled_ids)
-    print('dataset lens, train: {}, test: {}, unlabeled: {}'.format(len(train_set_labeled), len(test_set), len(unlabeled_set)))
     
     """ Normalize patches on all datasets """
     if args['patch_norm']:
@@ -869,14 +868,14 @@ def help():
     
     
 if __name__ == "__main__":
-    seed = None
+    seed = 42
     if seed is not None:
         torch.manual_seed(seed)
         np.random.seed(seed)
         random.seed(seed)    
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    args = {'max_epoch': 2,
+    args = {'max_epoch': 100,
             'device': device,
             'seed': seed,
             'test_per': 0.1,
@@ -898,8 +897,8 @@ if __name__ == "__main__":
     """ Create experiment params """
     loss_names = ['sum']
     fold_setups = ['spatial']
-    pred_types = ['reg+class']
-    using_unlabeled_samples = [True]
+    pred_types = ['reg', 'reg+class']
+    using_unlabeled_samples = [False, True]
     date_types = ['month']
     
     """ Train model with each param """
@@ -915,7 +914,6 @@ if __name__ == "__main__":
         args['num_folds'] = None
         args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
         args['date_type'] = date_type
-        print('setup: {}, pred: {}, use_unlabeled: {}'.format(fold_setup, pred_type, unlabeled))
         verify_args(args)
         
         if args['fold_setup'] == 'random':
