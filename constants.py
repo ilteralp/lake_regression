@@ -44,4 +44,4 @@ FOLD_SETUP_NUM_FOLDS = {'spatial': 10,
 
 """ ===================== Model params ===================== """
 BATCH_SIZE = 128
-UNLABELED_BATCH_SIZE = 16
+UNLABELED_BATCH_SIZE = 512
