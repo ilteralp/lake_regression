@@ -909,7 +909,7 @@ if __name__ == "__main__":
         args['pred_type'] = pred_type
         args['use_unlabeled_samples'] = unlabeled
         # args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
-        args['num_folds'] = None
+        args['num_folds'] = 3
         args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
         args['date_type'] = date_type
         print('setup: {}, pred: {}, use_unlabeled: {}'.format(fold_setup, pred_type, unlabeled))
