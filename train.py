@@ -493,8 +493,7 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, v
             """ Keep losses for plotting """
             tr_loss[e]['total'].append(loss.item())
             batch_id += 1
-            if batch_id % 64 == 0:
-                print('batch {}, batch_size, l: {}, u: {}, loaders, l: {}, u: {}'.format(batch_id, l_patches.shape[0], u_patches.shape[0], len(train_loader), len(unlabeled_loader)))
+            print('batch {}, batch_size, l: {}, u: {}, loaders, l: {}, u: {}'.format(batch_id, l_patches.shape[0], u_patches.shape[0], len(train_loader), len(unlabeled_loader)))
             now = time.time()
             print('\ttimes, total: {:.2f}, half: {:.2f}, fetch: {:.2f}, to_device: {:.2f}'.format(
                 now - start, half_time - start, unl_fetch_time - half_time, unlabeled_load_time - unl_fetch_time))
