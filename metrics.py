@@ -191,7 +191,7 @@ class Metrics:
         # sk_mae = mean_absolute_error(y_true=targets, y_pred=preds)
         # print('scikit rmse: {:.4f}, r2: {:.4f}, mae: {:.4f}'.format(sk_rmse, sk_r2, sk_mae))
         ######################################################################
-        return {'rmse' : rmse, 'r2' : r2, 'mae' : mae}
+        return {'rmse' : rmse.item(), 'r2' : r2.item(), 'mae' : mae.item()}
     
     """
     Calculates classification metrics for given batch.
