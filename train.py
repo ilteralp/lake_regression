@@ -436,7 +436,7 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, v
     for e in range(args['max_epoch']):
         model.train()
         if args['use_unlabeled_samples']:
-            len_loader = min(len(unlabeled_loader), len(train_loader))                                  # Update unlabeled batch size to use all its samples. 
+            len_loader = len(unlabeled_loader)                                  # Update unlabeled batch size to use all its samples. 
             unlabeled_iter = iter(unlabeled_loader)
         else:
             len_loader = len(train_loader)
@@ -445,7 +445,7 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, v
         """ Train """
         batch_id = 0
         while batch_id < len_loader:
-            start = time.time()
+            # start = time.time()
             optimizer.zero_grad()
             
             """ Labeled data """
@@ -461,18 +461,18 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, v
             """ Prediction on labeled data """
             losses = calc_losses_scores(model=model, patches=l_patches, args=args, loss_arr=tr_loss, score_arr=tr_scores, 
                                         e=e, target_regs=l_reg_vals, target_labels=l_date_types, metrics=metrics)
-            half_time = time.time()
+            # half_time = time.time()
             
             """ Unlabeled data """
             class_loss_unlabeled = None
             if args['use_unlabeled_samples']:
                 unlabeled_data = next(unlabeled_iter)
-                unl_fetch_time = time.time()
+                # unl_fetch_time = time.time()
                 
                 u_patches, u_date_types, _, (u_img_idxs, u_pxs, u_pys) = unlabeled_data
-                print('pixels: {}'.format(u_pxs[0:3]))
+                # print('pixels: {}'.format(u_pxs[0:3]))
                 u_patches, u_date_types = u_patches.to(args['device']), u_date_types.to(args['device'])
-                unlabeled_load_time = time.time()
+                # unlabeled_load_time = time.time()
                 
                 """ Prediction on unlabeled data """
                 # _, u_class_preds = model(u_patches)
@@ -494,9 +494,9 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, v
             tr_loss[e]['total'].append(loss.item())
             batch_id += 1
             print('batch {}, batch_size, l: {}, u: {}, loaders, l: {}, u: {}'.format(batch_id, l_patches.shape[0], u_patches.shape[0], len(train_loader), len(unlabeled_loader)))
-            now = time.time()
-            print('\ttimes, total: {:.2f}, half: {:.2f}, fetch: {:.2f}, to_device: {:.2f}'.format(
-                now - start, half_time - start, unl_fetch_time - half_time, unlabeled_load_time - unl_fetch_time))
+            # now = time.time()
+            # print('\ttimes, total: {:.2f}, half: {:.2f}, fetch: {:.2f}, to_device: {:.2f}'.format(
+            #     now - start, half_time - start, unl_fetch_time - half_time, unlabeled_load_time - unl_fetch_time))
 
         
         if e % 10 == 0:
