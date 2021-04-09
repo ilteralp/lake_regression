@@ -34,7 +34,23 @@ class Lake2dDataset(BaseLakeDataset):
         self.patch_size = patch_size
         if learning.lower() == 'unlabeled':
             self.unlabeled_mask = self._init_mask()
-            
+        
+        """
+        Load all images
+        """
+        Lake2dDataset.images = []
+        for img_name in self.img_names:
+            img_path = osp.join(C.IMG_DIR_PATH, img_name, 'level2a.h5')
+            if osp.exists(img_path):
+                with h5py.File(img_path, 'r') as img:
+                    data = img['bands'][:]
+                    if data.shape != (12, 650, 650):
+                        raise Exception('Expected input shape to be (12, 650, 650) for {}'.format(img_path))
+                    data = torch.from_numpy(data.astype(np.float32))                # Pytorch cannot convert uint16
+                    Lake2dDataset.images.append(data)
+            else:
+                raise Exception('Image not found on {}'.format(img_path))
+
     """
     Returns unlabeled sample mask that keeps unlabeled sample indices. 
     """
@@ -50,55 +66,35 @@ class Lake2dDataset(BaseLakeDataset):
 
     
     def _get_sample(self, img_idx, px_idx):
-        img_path = osp.join(C.IMG_DIR_PATH, self.img_names[img_idx], 'level2a.h5')
-        if osp.exists(img_path):
-            with h5py.File(img_path, 'r') as img:
-                data = img['bands'][:]                                          # (12, 650, 650), ndarray
-                if data.shape != (12, 650, 650):
-                        raise Exception('Expected input shape to be (12, 650, 650) for {}'.format(img_path))
-                # No need for padding since all lake pixels are not in borders :) 
-                # if self.patch_size is not None:                                # Apply padding to crop patches from border pixels.
-                #     pad = self.patch_size // 2
-                #     data = np.pad(data, ((0, 0), (pad, pad), (pad, pad)), mode='symmetric')
-                #     print('Padded, data.shape:', data.shape)
-                #     if self.learning == 'unlabeled':
-                #         self.unlabeled_mask = np.pad(self.unlabeled_mask, ((0, 0), (pad, pad), (pad, pad)), mode='symmetric')
-                #         print('Padded, unlabeled_mask.shape:', self.unlabeled_mask.shape)
-                # If you decide back to padding, don't forget to add pad value to each pixel. 
-                data = torch.from_numpy(data.astype(np.float32))                # Pytorch cannot convert uint16
-                pad = self.patch_size // 2
-                reg_val = 1.0
-                if self.learning == 'unlabeled':
-                    px, py = self.unlabeled_mask[px_idx].numpy()                # Check for cuda
-                else:                                                           # Labeled
-                    px, py = C.LABELED_INDICES[0][px_idx], C.LABELED_INDICES[1][px_idx]
-                    reg_val = self._get_regression_val(img_idx, px_idx)
-                    
-                patch = data[:, px-pad : px+pad + 1, py-pad : py+pad+1]         # (12, 3, 3)
-                # month, season, year = self.dates[img_idx].values()
-                # return patch, month, season, year, reg_val, (img_idx, px, py)
-                date_class = self.dates[img_idx][self.date_type]
-                
-                if self.patch_means is not None and self.patch_stds is not None: # Normalize patch
-                    transform = torchvision.transforms.Compose([
-                        torchvision.transforms.Normalize(
-                            mean=self.patch_means,
-                            std=self.patch_stds
-                            ),
-                        ])
-                    patch = transform(patch)
-                    
-                # if self.reg_mean is not None and self.reg_std is not None:    # Standardize regression value. 
-                #     reg_val = (reg_val - self.reg_mean) / self.reg_std
-                
-                if self.reg_min is not None and self.reg_max is not None:       # Normalize regression value. 
-                    reg_val = self.normalize_reg(reg_val)                    
-                
-                return patch, date_class, np.expand_dims(reg_val, axis=0).astype(np.float32), (img_idx, px, py)
-
-        else:
-            raise Exception('Image not found on {}'.format(img_path))
+        data = Lake2dDataset.images[img_idx]
+        pad = self.patch_size // 2
+        reg_val = 1.0
+        if self.learning == 'unlabeled':
+            px, py = self.unlabeled_mask[px_idx].numpy()                # Check for cuda
+        else:                                                           # Labeled
+            px, py = C.LABELED_INDICES[0][px_idx], C.LABELED_INDICES[1][px_idx]
+            reg_val = self._get_regression_val(img_idx, px_idx)
+            
+        patch = data[:, px-pad : px+pad + 1, py-pad : py+pad+1]         # (12, 3, 3)
+        date_class = self.dates[img_idx][self.date_type]
         
+        if self.patch_means is not None and self.patch_stds is not None: # Normalize patch
+            transform = torchvision.transforms.Compose([
+                torchvision.transforms.Normalize(
+                    mean=self.patch_means,
+                    std=self.patch_stds
+                    ),
+                ])
+            patch = transform(patch)
+            
+        # if self.reg_mean is not None and self.reg_std is not None:    # Standardize regression value. 
+        #     reg_val = (reg_val - self.reg_mean) / self.reg_std
+        
+        if self.reg_min is not None and self.reg_max is not None:       # Normalize regression value. 
+            reg_val = self.normalize_reg(reg_val)                    
+        
+        return patch, date_class, np.expand_dims(reg_val, axis=0).astype(np.float32), (img_idx, px, py)
+
     """
     Normalizes given regression value to [-1, 1] range. 
     """
@@ -125,7 +121,8 @@ if __name__ == "__main__":
     # lake_mask = np.all(img == (255, 0, 255), axis=-1) # Includes labeled pixels too! It must be 
     # print('Total lake pixels: {}'.format(np.sum(lake_mask)))
     
-    labeled_2d_dataset = Lake2dDataset(learning='labeled', date_type='year', patch_size=3)
+    labeled_2d_dataset = Lake2dDataset(learning='unlabeled', date_type='year', patch_size=3)
+    v2_labeled_2d_dataset = Lake2dDataset(learning='unlabeled', date_type='year', patch_size=3)
     # unlabeled_2d_dataset = Lake2dDataset(learning='unlabeled', date_type='year', patch_size=3)
     # patch, date_type, reg_val, (img_idx, px, py) = labeled_2d_dataset[0]
     
@@ -134,9 +131,9 @@ if __name__ == "__main__":
                     'num_workers': 4}
     # patches_mean, patches_std, _, _ = calc_mean_std(DataLoader(labeled_2d_dataset, **labeled_args))
 
+    # # patch, date_type, reg_val, (img_idx, px, py) = labeled_2d_dataset[0]
     # patch, date_type, reg_val, (img_idx, px, py) = labeled_2d_dataset[0]
-    patch, date_type, reg_val, (img_idx, px, py) = labeled_2d_dataset[0]
-    print('reg_val:', reg_val)
+    # print('reg_val:', reg_val)
     
     # labeled_loader = DataLoader(labeled_2d_dataset, **labeled_args)
     # it = iter(labeled_loader)
