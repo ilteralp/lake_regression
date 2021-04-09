@@ -9,7 +9,7 @@ Created on Fri Feb 19 18:13:13 2021
 
 import os.path as osp
 
-LOCAL_ENV = False
+LOCAL_ENV = True
 ROG_ENV = not LOCAL_ENV
 
 """ Melike local """
@@ -43,5 +43,5 @@ FOLD_SETUP_NUM_FOLDS = {'spatial': 10,
                         'random': 10}
 
 """ ===================== Model params ===================== """
-BATCH_SIZE = 32
-UNLABELED_BATCH_SIZE = 4096
+BATCH_SIZE = 64
+UNLABELED_BATCH_SIZE = 2048
