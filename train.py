@@ -436,7 +436,7 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, v
     for e in range(args['max_epoch']):
         model.train()
         if args['use_unlabeled_samples']:
-            len_loader = len(unlabeled_loader)                                  # Update unlabeled batch size to use all its samples. 
+            len_loader = min(len(unlabeled_loader), len(train_loader))                                  # Update unlabeled batch size to use all its samples. 
             unlabeled_iter = iter(unlabeled_loader)
         else:
             len_loader = len(train_loader)
