@@ -780,9 +780,11 @@ def train_on_folds(args, report):
     
     # Train and test without cross-validation
     else:
-        test_len = len(ids) // C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]                        # Ensure that test set has the same size as the ones trained with folds.
-        np.random.shuffle(ids)                                                                   # Shuffle ids, so that test_ids does not always become the samples with greatest ids. 
-        tr_ids, test_ids = ids[:-test_len], ids[-test_len:]
+        # test_len = len(ids) // C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]                        # Ensure that test set has the same size as the ones trained with folds.
+        # np.random.shuffle(ids)                                                                   # Shuffle ids, so that test_ids does not always become the samples with greatest ids. 
+        # tr_ids, test_ids = ids[:-test_len], ids[-test_len:]
+        tr_ids = [6, 1, 8, 7, 3, 9, 5, 2, 0]
+        test_ids = [4]
         len_tr, len_test, len_val, len_unlabeled = _base_train_on_folds(ids=ids, 
                                                                         tr_ids=tr_ids, 
                                                                         test_ids=test_ids, 
@@ -868,7 +870,7 @@ def help():
     
     
 if __name__ == "__main__":
-    seed = 42
+    seed = None
     if seed is not None:
         torch.manual_seed(seed)
         np.random.seed(seed)
@@ -898,7 +900,7 @@ if __name__ == "__main__":
     loss_names = ['sum']
     fold_setups = ['spatial']
     pred_types = ['reg+class']
-    using_unlabeled_samples = [True]
+    using_unlabeled_samples = [False]
     date_types = ['month']
     
     """ Train model with each param """
@@ -910,8 +912,8 @@ if __name__ == "__main__":
         args['fold_setup'] = fold_setup
         args['pred_type'] = pred_type
         args['use_unlabeled_samples'] = unlabeled
-        args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
-        # args['num_folds'] = None
+        # args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
+        args['num_folds'] = None
         args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
         args['date_type'] = date_type
         verify_args(args)
