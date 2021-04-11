@@ -780,11 +780,11 @@ def train_on_folds(args, report):
     
     # Train and test without cross-validation
     else:
-        # test_len = len(ids) // C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]                        # Ensure that test set has the same size as the ones trained with folds.
-        # np.random.shuffle(ids)                                                                   # Shuffle ids, so that test_ids does not always become the samples with greatest ids. 
-        # tr_ids, test_ids = ids[:-test_len], ids[-test_len:]
-        tr_ids = [8, 3, 9, 2, 0, 5, 4, 1, 6]
-        test_ids = [7]
+        test_len = len(ids) // C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]                        # Ensure that test set has the same size as the ones trained with folds.
+        np.random.shuffle(ids)                                                                   # Shuffle ids, so that test_ids does not always become the samples with greatest ids. 
+        tr_ids, test_ids = ids[:-test_len], ids[-test_len:]
+        # tr_ids = [8, 3, 9, 2, 0, 5, 4, 1, 6]
+        # test_ids = [7]
         len_tr, len_test, len_val, len_unlabeled = _base_train_on_folds(ids=ids, 
                                                                         tr_ids=tr_ids, 
                                                                         test_ids=test_ids, 
@@ -870,7 +870,7 @@ def help():
     
     
 if __name__ == "__main__":
-    seed = None
+    seed = 42
     if seed is not None:
         torch.manual_seed(seed)
         np.random.seed(seed)
@@ -885,7 +885,6 @@ if __name__ == "__main__":
             'patch_norm': True,                                                 # Normalizes patches
             'reg_norm': True,                                                   # Normalize regression values
             'model': 'eadan',                                              # Model name, can be {dandadadan, eanet, eadan}.
-            'split_layer': 1,
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'val': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4},
@@ -900,11 +899,13 @@ if __name__ == "__main__":
     loss_names = ['sum']
     fold_setups = ['spatial']
     pred_types = ['reg+class']
-    using_unlabeled_samples = [False]
+    using_unlabeled_samples = [True]
     date_types = ['month']
+    split_layers = [*range(1, 6)]
+    
     
     """ Train model with each param """
-    for (loss_name, fold_setup, pred_type, unlabeled, date_type) in itertools.product(loss_names, fold_setups, pred_types, using_unlabeled_samples, date_types):
+    for (loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer) in itertools.product(loss_names, fold_setups, pred_types, using_unlabeled_samples, date_types, split_layers):
         if pred_type == 'reg' and unlabeled:                    continue
         if loss_name == 'awl' and pred_type != 'reg+class':     continue
         print('loss_name: {}, {}, {}, use_unlabeled: {}, date_type: {}'.format(loss_name, fold_setup, pred_type, unlabeled, date_type))
