@@ -908,7 +908,6 @@ if __name__ == "__main__":
     for (loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer) in itertools.product(loss_names, fold_setups, pred_types, using_unlabeled_samples, date_types, split_layers):
         if pred_type == 'reg' and unlabeled:                    continue
         if loss_name == 'awl' and pred_type != 'reg+class':     continue
-        print('loss_name: {}, {}, {}, use_unlabeled: {}, date_type: {}'.format(loss_name, fold_setup, pred_type, unlabeled, date_type))
         args['loss_name'] = loss_name
         args['fold_setup'] = fold_setup
         args['pred_type'] = pred_type
@@ -917,6 +916,8 @@ if __name__ == "__main__":
         args['num_folds'] = None
         args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
         args['date_type'] = date_type
+        args['split_layer'] = split_layer
+        print('loss_name: {}, {}, {}, use_unlabeled: {}, date_type: {}, split_layer: {}'.format(loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer))
         verify_args(args)
         
         if args['fold_setup'] == 'random':
