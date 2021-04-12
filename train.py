@@ -499,6 +499,10 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, v
             # print('\ttimes, total: {:.2f}, half: {:.2f}, fetch: {:.2f}, to_device: {:.2f}'.format(
             #     now - start, half_time - start, unl_fetch_time - half_time, unlabeled_load_time - unl_fetch_time))
             
+            """ Visualize model """
+            if batch_id == 1 and e == 0:
+                writer.add_graph(model=model, input_to_model=l_patches)
+            
         # print('Epoch: {}, time: {:.2f} sec'.format(e, time.time() - epoch_start))
 
         
@@ -819,7 +823,7 @@ def create_model(args):
 
     elif args['model'] == 'eadan':
         model = EADAN(in_channels=args['in_channels'], num_classes=args['num_classes'], split_layer=args['split_layer'])
-    
+        
     return model.to(args['device'])
 
 """
@@ -902,7 +906,7 @@ if __name__ == "__main__":
     using_unlabeled_samples = [False]
     date_types = ['month']
     # split_layers = [*range(1, 6)]
-    split_layers = [1, 4]
+    split_layers = [4]
     
     
     """ Train model with each param """
