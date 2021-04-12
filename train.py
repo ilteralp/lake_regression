@@ -781,10 +781,10 @@ def train_on_folds(args, report):
     # Train and test without cross-validation
     else:
         test_len = len(ids) // C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]                        # Ensure that test set has the same size as the ones trained with folds.
-        np.random.shuffle(ids)                                                                   # Shuffle ids, so that test_ids does not always become the samples with greatest ids. 
-        tr_ids, test_ids = ids[:-test_len], ids[-test_len:]
-        # tr_ids = [8, 3, 9, 2, 0, 5, 4, 1, 6]
-        # test_ids = [7]
+        # np.random.shuffle(ids)                                                                   # Shuffle ids, so that test_ids does not always become the samples with greatest ids. 
+        # tr_ids, test_ids = ids[:-test_len], ids[-test_len:]
+        tr_ids = [8, 3, 9, 2, 0, 5, 4, 1, 6]
+        test_ids = [7]
         len_tr, len_test, len_val, len_unlabeled = _base_train_on_folds(ids=ids, 
                                                                         tr_ids=tr_ids, 
                                                                         test_ids=test_ids, 
@@ -899,9 +899,10 @@ if __name__ == "__main__":
     loss_names = ['sum']
     fold_setups = ['spatial']
     pred_types = ['reg+class']
-    using_unlabeled_samples = [True]
+    using_unlabeled_samples = [False]
     date_types = ['month']
-    split_layers = [*range(1, 6)]
+    # split_layers = [*range(1, 6)]
+    split_layers = [1, 4]
     
     
     """ Train model with each param """
