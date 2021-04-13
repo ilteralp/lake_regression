@@ -557,7 +557,7 @@ def create_run_folder(args):
 Takes a labeled dataset, a train function and arguments. 
 Creates dataset's folds and applies train function.
 """
-def train_random_on_folds(model, dataset, unlabeled_dataset, train_fn, args, report):
+def train_random_on_folds(model, dataset, unlabeled_dataset, train_fn, args, report, fold_sample_ids):
     unlabeled_loader = DataLoader(unlabeled_dataset, **args['unlabeled']) if args['use_unlabeled_samples'] else None
     metrics = Metrics(num_folds=args['num_folds'], device=args['device'].type, 
                       pred_type=args['pred_type'], num_classes=args['num_classes'])
@@ -567,17 +567,23 @@ def train_random_on_folds(model, dataset, unlabeled_dataset, train_fn, args, rep
 
     """ Train & test with cross-validation """
     if args['num_folds'] is not None:
-        kf = KFold(n_splits=args['num_folds'], shuffle=True, random_state=args['seed'])
-        for fold, (tr_index, test_index) in enumerate(kf.split(indices)):
+        
+        """ Ensure each run has the sample ids in the same sequence in each fold """
+        if fold_sample_ids is None:
+            fold_sample_ids = _create_multi_fold_sample_ids(args=args, ids=np.array(indices))
+        
+        # kf = KFold(n_splits=args['num_folds'], shuffle=True, random_state=args['seed'])
+        # for fold, (tr_index, test_index) in enumerate(kf.split(indices)):
+        for fold in range(args['num_folds']):
             print('\nFold#{}'.format(fold))
-            np.random.shuffle(tr_index)                                                           # kfold does not shuffle samples in splits.     
-            val_loader = None
             
             """ Create train and validation set """
+            val_loader = None
             if args['create_val']:                                                                # Create validation set
-                val_len = len(test_index)
-                tr_index, val_index = tr_index[:-val_len], tr_index[-val_len:]
-                val_set = Subset(dataset, indices=val_index)
+                # val_len = len(test_index)
+                # tr_index, val_index = tr_index[:-val_len], tr_index[-val_len:]
+                val_set = Subset(dataset, indices=fold_sample_ids['val_ids'][fold])
+            tr_index = fold_sample_ids['tr_ids'][fold]
             tr_set = Subset(dataset, indices=tr_index)
 
             """ Normalize patches on all datasets """
@@ -604,23 +610,29 @@ def train_random_on_folds(model, dataset, unlabeled_dataset, train_fn, args, rep
 
             """ Test """
             print('\nTest')
+            test_index = fold_sample_ids['test_ids'][fold]
             test_set = Subset(dataset, indices=test_index)
             for model_name in ['best_val_loss.pth', 'model_last_epoch.pth', 'best_val_score.pth']:
                 _test(test_set=test_set, model_name=model_name, metrics=metrics, 
                       args=args, fold=fold, awl=awl)
-            
             print('=' * 72)
             
     # Train and test without cross-validation
     else:
-        """ Create train, val and test sets """
-        len_test = int(len(indices) * args['test_per'])
-        tr_index = indices[0:-2*len_test]
-        test_index = indices[-len_test:]
+        if fold_sample_ids is None:
+            fold_sample_ids = _create_single_fold_sample_ids(args=args, ids=indices)
+            
         
-        val_index = indices[-2*len_test:-len_test]
+        """ Create train, val and test sets """
+        # len_test = int(len(indices) * args['test_per'])
+        # tr_index = indices[0:-2*len_test]
+        # test_index = indices[-len_test:]
+        
+        # val_index = indices[-2*len_test:-len_test]
+        tr_index = fold_sample_ids['tr_ids'][0]
+        val_index = fold_sample_ids['val_ids'][0] if args['create_val'] else None
+        test_index = fold_sample_ids['test_ids'][0]
         tr_set, val_set, test_set = Subset(dataset, tr_index), Subset(dataset, val_index), Subset(dataset, test_index)
-        print('tr: {}, val: {}, test: {}'.format(tr_index[0:3], val_index[0:3], test_index[0:3]))
         
         """ Normalize patches on all datasets """
         if args['patch_norm']:
@@ -649,7 +661,7 @@ def train_random_on_folds(model, dataset, unlabeled_dataset, train_fn, args, rep
         for model_name in ['best_val_loss.pth', 'model_last_epoch.pth', 'best_val_score.pth']:
             _test(test_set=test_set, model_name=model_name, 
                   metrics=metrics, args=args, fold=0, awl=awl)
-    
+            
     # Save experiment results to the report and its file.
     args['train_size'], args['test_size'] = len(tr_set), len(test_set)
     args['val_size'], args['unlabeled_size'] = len(val_set) if args['create_val'] else 0, len(unlabeled_dataset) if unlabeled_dataset is not None else 0
@@ -660,6 +672,9 @@ def train_random_on_folds(model, dataset, unlabeled_dataset, train_fn, args, rep
         
     """ Plot test results """
     plot_fold_test_results(metrics=metrics)
+    
+    """ Return ids in order to use same ids in each run """
+    return fold_sample_ids
     
 """
 Saves sample ids of that fold to its folder. 
@@ -688,8 +703,8 @@ Base method that trains and tests model with given ids. Can be used with and
 without folds. Applicable to [spatial, temporal_day, temporal_year] setups. 
 Returns size of train and test sets. 
 """
-def _base_train_on_folds(ids, tr_ids, test_ids, model, fold, metrics):
-    np.random.shuffle(tr_ids)
+def _base_train_on_folds(ids, tr_ids, test_ids, val_ids, model, fold, metrics):
+    # np.random.shuffle(tr_ids)
     labeled_dataset_dict = {'learning': 'labeled', 
                             'date_type': args['date_type'],
                             'fold_setup': args['fold_setup']}
@@ -697,8 +712,8 @@ def _base_train_on_folds(ids, tr_ids, test_ids, model, fold, metrics):
     """ Create validation set """
     val_set, val_loader = None, None
     if args['create_val']:
-        val_len = len(test_ids)
-        tr_ids, val_ids = tr_ids[:-val_len], tr_ids[-val_len:]
+        # val_len = len(test_ids)
+        # tr_ids, val_ids = tr_ids[:-val_len], tr_ids[-val_len:]
         val_set = Lake2dFoldDataset(**labeled_dataset_dict, ids=val_ids)                         # Validation set is created only with labeled samples.
         print('\tTrain: {}\n\tVal: {}\n\tTest: {}'.format(tr_ids, val_ids, test_ids))
     else:
@@ -756,44 +771,101 @@ def _base_train_on_folds(ids, tr_ids, test_ids, model, fold, metrics):
     
     """ Return dataset lengths """
     return len(train_set_labeled), len(test_set), len(val_set) if val_set else None, len(unlabeled_set) if unlabeled_set else None
+
+"""
+Creates train, val and test sample ids to use the same ids in corresponding fold
+of each run. 
+"""
+def _create_multi_fold_sample_ids(args, ids):
+    kf = KFold(n_splits=args['num_folds'], shuffle=True, random_state=args['seed'])
+    fold_sample_ids = {'tr_ids': [[] for f in range(args['num_folds'])],
+                       'test_ids': [[] for f in range(args['num_folds'])],
+                       'val_ids': [[] for f in range(args['num_folds'])] if args['create_val'] else None}
+    for fold, (tr_index, test_index) in enumerate(kf.split(ids)):
+        test_ids = ids[test_index]
+        tr_ids = ids[tr_index]
+        np.random.shuffle(tr_ids)
+        if args['create_val']:
+            val_len = len(test_ids)
+            tr_ids, val_ids = tr_ids[:-val_len], tr_ids[-val_len:]
+            fold_sample_ids['val_ids'][fold] = val_ids
+        fold_sample_ids['tr_ids'][fold] = tr_ids
+        fold_sample_ids['test_ids'][fold] = test_ids
+    return fold_sample_ids
+
+def _create_single_fold_sample_ids(args, ids):
+    fold_sample_ids = {'tr_ids': [[]],
+                       'test_ids': [[]],
+                       'val_ids': [[]] if args['create_val'] else None}
+    
+    if args['fold_setup'] != 'random':
+        test_len = len(ids) // C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]                    # Ensure that test set has the same size as the ones trained with folds.
+    else:
+        test_len = int(len(ids) * args['test_per'])
+    np.random.shuffle(ids)                                                                   # Shuffle ids, so that test_ids does not always become the samples with greatest ids. 
+    tr_ids, test_ids = ids[:-test_len], ids[-test_len:]
+    if args['create_val']:
+        tr_ids, val_ids = tr_ids[:-test_len], tr_ids[-test_len:]
+        fold_sample_ids['val_ids'][0] = val_ids
+    fold_sample_ids['tr_ids'][0] = tr_ids
+    fold_sample_ids['test_ids'][0] = test_ids
+    return fold_sample_ids
+    
     
 """
 Takes arguments. Creates a model and trains it with the given dataset with folds
 or not depending on args.
 """
-def train_on_folds(args, report):
+def train_on_folds(args, report, fold_sample_ids):
     create_run_folder(args=args)                                                                 # Creates run folder and files for keeping experiment results.
     ids = np.array(get_fold_ids(args=args))                                                      # Returns ids of selected fold_setup.
     args = create_model_params(args=args)                                                        # Create regression and/or classification losses and model params.
     model = create_model(args=args)                                                              # Create model.
     metrics = Metrics(num_folds=args['num_folds'], device=args['device'].type, 
                       pred_type=args['pred_type'], num_classes=args['num_classes'])
-
+    
     """ Train & test with cross-validation """
     if args['num_folds'] is not None:
-        kf = KFold(n_splits=args['num_folds'], shuffle=True, random_state=args['seed'])
-        for fold, (tr_index, test_index) in enumerate(kf.split(ids)):
+
+        """ Ensure each run has the sample ids in the same sequence in each fold """
+        if fold_sample_ids is None:
+            fold_sample_ids = _create_multi_fold_sample_ids(args=args, ids=ids)
+                
+        for fold in range(args['num_folds']):
             print('\nFold#{}'.format(fold))
-            len_tr, len_test, len_val, len_unlabeled = _base_train_on_folds(ids=ids, 
-                                                                            tr_ids=ids[tr_index], 
-                                                                            test_ids=ids[test_index], 
-                                                                            model=model, fold=fold, 
-                                                                            metrics=metrics)
+            len_tr, len_test, len_val, len_unlabeled = _base_train_on_folds(ids=ids,
+                                                                            tr_ids=fold_sample_ids['tr_ids'][fold],
+                                                                            test_ids=fold_sample_ids['test_ids'][fold],
+                                                                            val_ids=fold_sample_ids['val_ids'][fold] if args['create_val'] else None,
+                                                                            model=model, fold=fold, metrics=metrics)
             print('=' * 72)
+                
+        
+        # kf = KFold(n_splits=args['num_folds'], shuffle=True, random_state=args['seed'])
+        # for fold, (tr_index, test_index) in enumerate(kf.split(ids)):
+        #     print('\nFold#{}'.format(fold))
+        #     len_tr, len_test, len_val, len_unlabeled = _base_train_on_folds(ids=ids, 
+        #                                                                     tr_ids=ids[tr_index], 
+        #                                                                     test_ids=ids[test_index], 
+        #                                                                     model=model, fold=fold, 
+        #                                                                     metrics=metrics)
+        #     print('=' * 72)
 
     
     # Train and test without cross-validation
     else:
-        test_len = len(ids) // C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]                        # Ensure that test set has the same size as the ones trained with folds.
+        # test_len = len(ids) // C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]                        # Ensure that test set has the same size as the ones trained with folds.
         # np.random.shuffle(ids)                                                                   # Shuffle ids, so that test_ids does not always become the samples with greatest ids. 
         # tr_ids, test_ids = ids[:-test_len], ids[-test_len:]
-        tr_ids = [8, 3, 9, 2, 0, 5, 4, 1, 6]
-        test_ids = [7]
+        # tr_ids = [8, 3, 9, 2, 0, 5, 4, 1, 6]
+        # test_ids = [7]
+        if fold_sample_ids is None:
+            fold_sample_ids = _create_single_fold_sample_ids(args=args, ids=ids)
         len_tr, len_test, len_val, len_unlabeled = _base_train_on_folds(ids=ids, 
-                                                                        tr_ids=tr_ids, 
-                                                                        test_ids=test_ids, 
-                                                                        model=model, fold=0, 
-                                                                        metrics=metrics)
+                                                                        tr_ids=fold_sample_ids['tr_ids'][0], 
+                                                                        test_ids=fold_sample_ids['test_ids'][0], 
+                                                                        val_ids=fold_sample_ids['val_ids'][0] if args['create_val'] else None,
+                                                                        model=model, fold=0, metrics=metrics)
         
     """ Save experiment results to the report and its file. """
     # Beware that number samples in train set (and the other sets) may vary in each fold due to different number of images in each fold. 
@@ -805,6 +877,9 @@ def train_on_folds(args, report):
         
     """ Plot test results """
     plot_fold_test_results(metrics=metrics)
+    
+    """ Return ids in order to use same ids in each run """
+    return fold_sample_ids
         
 """
 Creates model.
@@ -845,7 +920,7 @@ def create_model_params(args):
 """
 Runs model with given args. 
 """        
-def run(args, report):
+def run(args, report, fold_sample_ids):
     """ Create labeled and unlabeled datasets. """
     labeled_set = Lake2dDataset(learning='labeled', date_type=args['date_type'])
     unlabeled_set = None
@@ -861,8 +936,12 @@ def run(args, report):
     """ Train """
     # train_fn = _train if args['use_unlabeled_samples'] else _train_labeled_only
     train_fn = _train
-    train_random_on_folds(model=model, dataset=labeled_set, unlabeled_dataset=unlabeled_set,  
-                          train_fn=train_fn, args=args, report=report)
+    fold_sample_ids = train_random_on_folds(model=model, dataset=labeled_set, 
+                                            unlabeled_dataset=unlabeled_set,  
+                                            train_fn=train_fn, args=args, 
+                                            report=report, 
+                                            fold_sample_ids=fold_sample_ids)
+    return fold_sample_ids
 
 """
 Help with params in case you need it. 
@@ -901,15 +980,16 @@ if __name__ == "__main__":
     
     """ Create experiment params """
     loss_names = ['sum']
-    fold_setups = ['random']
+    fold_setups = ['spatial']
     pred_types = ['reg', 'reg+class']
-    using_unlabeled_samples = [False, True]
+    using_unlabeled_samples = [False]
     date_types = ['month']
     # split_layers = [*range(1, 6)]
     split_layers = [4]
     
     
     """ Train model with each param """
+    fold_sample_ids, prev_setup_name = None, None
     for (loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer) in itertools.product(loss_names, fold_setups, pred_types, using_unlabeled_samples, date_types, split_layers):
         if pred_type == 'reg' and unlabeled:                    continue
         if loss_name == 'awl' and pred_type != 'reg+class':     continue
@@ -925,11 +1005,16 @@ if __name__ == "__main__":
         print('loss_name: {}, {}, {}, use_unlabeled: {}, date_type: {}, split_layer: {}'.format(loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer))
         verify_args(args)
         
-        if args['fold_setup'] == 'random':
-            run(args, report=report)
-        else:
-            train_on_folds(args=args, report=report)
+        if args['fold_setup'] != prev_setup_name:                               # New fold_setup, old sample ids are meaningless now.
+            print('fold_sample_ids are None due to moving from {} to {}.'.format(prev_setup_name, args['fold_setup']))
+            fold_sample_ids = None
             
+        if args['fold_setup'] == 'random':
+            fold_sample_ids = run(args, report=report, fold_sample_ids=fold_sample_ids)
+        else:
+            fold_sample_ids = train_on_folds(args=args, report=report, fold_sample_ids=fold_sample_ids)
+
+        prev_setup_name = args['fold_setup']
         """ Save args """
         save_args(args)
         print('*' * 72)
