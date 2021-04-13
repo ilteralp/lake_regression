@@ -9,7 +9,7 @@ Created on Fri Feb 19 18:13:13 2021
 
 import os.path as osp
 
-LOCAL_ENV = True
+LOCAL_ENV = False
 ROG_ENV = not LOCAL_ENV
 
 """ Melike local """
