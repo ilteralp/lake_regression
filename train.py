@@ -953,7 +953,7 @@ def help():
     
     
 if __name__ == "__main__":
-    seed = 42
+    seed = None
     if seed is not None:
         torch.manual_seed(seed)
         np.random.seed(seed)
@@ -980,12 +980,12 @@ if __name__ == "__main__":
     
     """ Create experiment params """
     loss_names = ['sum']
-    fold_setups = ['random']
+    fold_setups = ['spatial']
     pred_types = ['reg+class']
-    using_unlabeled_samples = [False]
+    using_unlabeled_samples = [True]
     date_types = ['month']
-    # split_layers = [*range(1, 6)]
-    split_layers = [1]
+    split_layers = [*range(1, 6)]
+    # split_layers = [1]
     
     
     """ Train model with each param """
