@@ -980,12 +980,12 @@ if __name__ == "__main__":
     
     """ Create experiment params """
     loss_names = ['sum']
-    fold_setups = ['spatial']
-    pred_types = ['reg+class']
-    using_unlabeled_samples = [True]
+    fold_setups = ['random']
+    pred_types = ['reg', 'reg+class']
+    using_unlabeled_samples = [False, True]
     date_types = ['month']
-    split_layers = [*range(1, 6)]
-    # split_layers = [1]
+    # split_layers = [*range(1, 6)]
+    split_layers = [4]
     
     
     """ Train model with each param """
