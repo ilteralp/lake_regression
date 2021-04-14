@@ -51,7 +51,7 @@ class EASeq(nn.Module):
     
     def make_layer(self, in_channels, out_channels):
         conv2d = nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=3, stride=1)
-        return nn.Sequential(*[nn.ReflectionPad2d(padding=1), conv2d, nn.Tanh(), nn.Dropout2d()])
+        return nn.Sequential(*[nn.ReflectionPad2d(padding=1), conv2d, nn.Tanh()])
         
     def forward(self, x):
         x = self.conv1(x)
