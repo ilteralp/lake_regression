@@ -960,7 +960,7 @@ if __name__ == "__main__":
         random.seed(seed)    
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    args = {'max_epoch': 5,
+    args = {'max_epoch': 100,
             'device': device,
             'seed': seed,
             'test_per': 0.1,
@@ -985,12 +985,16 @@ if __name__ == "__main__":
     using_unlabeled_samples = [False]
     date_types = ['month']
     # split_layers = [*range(1, 6)]
-    split_layers = [4]
+    split_layers = [1, 4]
     
     
     """ Train model with each param """
-    fold_sample_ids, prev_setup_name = None, None
-    for (loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer) in itertools.product(loss_names, fold_setups, pred_types, using_unlabeled_samples, date_types, split_layers):
+    best_fold_sample_ids = {'tr_ids': np.array([8, 7, 5, 1, 0, 2, 3, 6]), 'test_ids': np.array([9]), 'val_ids': np.array([4])}
+    worst_fold_sample_ids = {'tr_ids': np.array([1, 2, 0, 9, 5, 6, 4, 3]), 'test_ids': np.array([7]), 'val_ids': np.array([8])}
+    
+    list_fold_sample_ids = [best_fold_sample_ids, worst_fold_sample_ids]
+    prev_setup_name = None
+    for (loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer, fold_sample_ids) in itertools.product(loss_names, fold_setups, pred_types, using_unlabeled_samples, date_types, split_layers, list_fold_sample_ids):
         if pred_type == 'reg' and unlabeled:                    continue
         if loss_name == 'awl' and pred_type != 'reg+class':     continue
         args['loss_name'] = loss_name
@@ -1005,9 +1009,9 @@ if __name__ == "__main__":
         print('loss_name: {}, {}, {}, use_unlabeled: {}, date_type: {}, split_layer: {}'.format(loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer))
         verify_args(args)
         
-        if args['fold_setup'] != prev_setup_name:                               # New fold_setup, old sample ids are meaningless now.
-            print('fold_sample_ids are None due to moving from {} to {}.'.format(prev_setup_name, args['fold_setup']))
-            fold_sample_ids = None
+        # if args['fold_setup'] != prev_setup_name:                               # New fold_setup, old sample ids are meaningless now.
+        #     print('fold_sample_ids are None due to moving from {} to {}.'.format(prev_setup_name, args['fold_setup']))
+        #     fold_sample_ids = None
             
         if args['fold_setup'] == 'random':
             fold_sample_ids = run(args, report=report, fold_sample_ids=fold_sample_ids)
