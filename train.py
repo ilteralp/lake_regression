@@ -989,8 +989,8 @@ if __name__ == "__main__":
     
     
     """ Train model with each param """
-    best_fold_sample_ids = {'tr_ids': np.array([8, 7, 5, 1, 0, 2, 3, 6]), 'test_ids': np.array([9]), 'val_ids': np.array([4])}
-    worst_fold_sample_ids = {'tr_ids': np.array([1, 2, 0, 9, 5, 6, 4, 3]), 'test_ids': np.array([7]), 'val_ids': np.array([8])}
+    best_fold_sample_ids = {'tr_ids': np.array([[8, 7, 5, 1, 0, 2, 3, 6]]), 'test_ids': np.array([[9]]), 'val_ids': np.array([[4]])}
+    worst_fold_sample_ids = {'tr_ids': np.array([[1, 2, 0, 9, 5, 6, 4, 3]]), 'test_ids': np.array([[7]]), 'val_ids': np.array([[8]])}
     
     list_fold_sample_ids = [best_fold_sample_ids, worst_fold_sample_ids]
     prev_setup_name = None
@@ -1001,8 +1001,8 @@ if __name__ == "__main__":
         args['fold_setup'] = fold_setup
         args['pred_type'] = pred_type
         args['use_unlabeled_samples'] = unlabeled
-        args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
-        # args['num_folds'] = None
+        # args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
+        args['num_folds'] = None
         args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
         args['date_type'] = date_type
         args['split_layer'] = split_layer
