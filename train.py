@@ -964,7 +964,7 @@ if __name__ == "__main__":
             'device': device,
             'seed': seed,
             'test_per': 0.1,
-            'lr': 0.00001,                                                       # From EA's model, default is 1e-2.
+            'lr': 0.0001,                                                       # From EA's model, default is 1e-2.
             'patch_norm': True,                                                 # Normalizes patches
             'reg_norm': True,                                                   # Normalize regression values
             'model': 'eadan',                                              # Model name, can be {dandadadan, eanet, eadan}.
@@ -985,7 +985,7 @@ if __name__ == "__main__":
     using_unlabeled_samples = [False]
     date_types = ['month']
     # split_layers = [*range(1, 6)]
-    split_layers = [1, 4]
+    split_layers = [1]
     
     
     """ Train model with each param """
