@@ -80,6 +80,7 @@ class Report:
         sheet.write(0, 29, 'BestValLossModelStd', header)
         sheet.write(0, 30, 'BestValScoreModelMean', header)
         sheet.write(0, 31, 'BestValScoreModelStd', header)
+        sheet.write(0, 32, 'ReportId', header)
         wb.save(self.path)
 
     """
@@ -138,6 +139,7 @@ class Report:
         sheet.write(rid, 16, args['split_layer'] if args['model'] == 'eadan' else '')
         sheet.write(rid, 17, args['loss_name'])
         idx = self._test_result_to_sheet(test_result=test_result, sheet=sheet, rid=rid, idx=18)
+        sheet.write(rid, idx, self.report_id)
         wb.save(self.path)
         
     # """
