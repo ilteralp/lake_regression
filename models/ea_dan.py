@@ -38,7 +38,7 @@ class EADAN(nn.Module):
         
         """ Regressor """
         self.regressor = self._create_model(start=self.split_layer, end=None, 
-                                            use_dropout=False, num_convs=6)     # One more conv to regressor
+                                            use_dropout=False, num_convs=4)     # One more conv to regressor
         
         """ Classifier """
         self.classifier = self._create_model(start=self.split_layer, end=None, 
@@ -66,11 +66,12 @@ class EADAN(nn.Module):
     Checks split layer is valid
     """
     def _verify(self, split_layer):
+        
         len_easeq = len([*EASeq(in_channels=12).children()])
         if split_layer > len_easeq - 1 or split_layer < 1:
             raise Exception("EASeq has {} layers, therefore split layer can be in [1, {}]".format(len_easeq, len_easeq - 1))
             
 if __name__ == "__main__":
     in_channels, num_classes = 12, 4
-    split_layer = 1
+    split_layer = 4
     model = EADAN(in_channels=in_channels, num_classes=num_classes, split_layer=split_layer)
