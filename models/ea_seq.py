@@ -60,16 +60,17 @@ class EASeq(nn.Module):
         """ Using nn.Sequential """
         self.convs = []
         for i in range(self.num_convs):
-            conv = self.make_layer(in_channels=64, out_channels=64)
+            dropout_now = self.use_dropout and i == self.num_convs - 1
+            conv = self.make_layer(in_channels=64, out_channels=64, use_dropout=dropout_now)
             self.convs.append(conv)
             setattr(self, 'conv{}'.format(i + 2), conv)                         # They start from 2, so add 2. 
         """ Using nn.ModuleList """
         # self.convs = nn.ModuleList([self.make_layer(in_channels=64, out_channels=64) for i in range(self.num_convs)])
     
-    def make_layer(self, in_channels, out_channels):
+    def make_layer(self, in_channels, out_channels, use_dropout=False):
         conv2d = nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=3, stride=1)
         layers = [nn.ReflectionPad2d(padding=1), conv2d, nn.Tanh()]
-        if self.use_dropout:
+        if use_dropout:
             layers += [nn.Dropout2d()]
         # return nn.Sequential(*[nn.ReflectionPad2d(padding=1), conv2d, nn.Tanh()])
         return nn.Sequential(*layers)
@@ -97,7 +98,7 @@ class EASeq(nn.Module):
 if __name__ == "__main__":
     # in_channels, num_classes = 12, 4
     in_channels = 12
-    model = EASeq(in_channels=in_channels, num_convs=5)
+    model = EASeq(in_channels=in_channels, num_convs=5, use_dropout=True)
     inp = torch.randn(2, in_channels, 3, 3)
     verbose_model = VerboseExecution(model=model)
     _ = verbose_model(inp)
