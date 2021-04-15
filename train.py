@@ -989,10 +989,10 @@ if __name__ == "__main__":
     
     
     """ Train model with each param """
-    # best_fold_sample_ids = {'tr_ids': np.array([[8, 7, 5, 1, 0, 2, 3, 6]]), 'test_ids': np.array([[9]]), 'val_ids': np.array([[4]])}
-    worst_fold_sample_ids = {'tr_ids': np.array([[1, 2, 0, 9, 5, 6, 4, 3]]), 'test_ids': np.array([[7]]), 'val_ids': np.array([[8]])}
+    best_fold_sample_ids = {'tr_ids': np.array([[8, 7, 5, 1, 0, 2, 3, 6]]), 'test_ids': np.array([[9]]), 'val_ids': np.array([[4]])}
+    # worst_fold_sample_ids = {'tr_ids': np.array([[1, 2, 0, 9, 5, 6, 4, 3]]), 'test_ids': np.array([[7]]), 'val_ids': np.array([[8]])}
     
-    list_fold_sample_ids = [worst_fold_sample_ids]
+    list_fold_sample_ids = [best_fold_sample_ids]
     prev_setup_name = None
     for (loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer, fold_sample_ids) in itertools.product(loss_names, fold_setups, pred_types, using_unlabeled_samples, date_types, split_layers, list_fold_sample_ids):
         if pred_type == 'reg' and unlabeled:                    continue
