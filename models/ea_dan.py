@@ -36,7 +36,7 @@ class EADAN(nn.Module):
         self.feature = self._create_model(start=0, end=self.split_layer, use_dropout=False)
         
         """ Regressor """
-        self.regressor = self._create_model(start=self.split_layer, end=None, use_dropout=True)
+        self.regressor = self._create_model(start=self.split_layer, end=None, use_dropout=False)
         
         """ Classifier """
         self.classifier = self._create_model(start=self.split_layer, end=None, 
