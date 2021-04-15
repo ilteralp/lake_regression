@@ -20,10 +20,11 @@ from models import VerboseExecution
 cfg = [64, 64, 64, 64]
 
 class EASeq(nn.Module):
-    def __init__(self, in_channels, num_classes=None):
+    def __init__(self, in_channels, num_classes=None, use_dropout=False):
         super(EASeq, self).__init__()
         self.in_channels = in_channels
         self.num_classes = num_classes
+        self.use_dropout = use_dropout
         
         self.conv1 = self.make_layer(in_channels=self.in_channels, out_channels=64)
         self.conv2 = self.make_layer(in_channels=64, out_channels=64)
@@ -51,7 +52,11 @@ class EASeq(nn.Module):
     
     def make_layer(self, in_channels, out_channels):
         conv2d = nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=3, stride=1)
-        return nn.Sequential(*[nn.ReflectionPad2d(padding=1), conv2d, nn.Tanh()])
+        layers = [nn.ReflectionPad2d(padding=1), conv2d, nn.Tanh()]
+        if self.use_dropout:
+            layers += [nn.Dropout2d()]
+        # return nn.Sequential(*[nn.ReflectionPad2d(padding=1), conv2d, nn.Tanh()])
+        return nn.Sequential(*layers)
         
     def forward(self, x):
         x = self.conv1(x)

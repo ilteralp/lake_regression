@@ -33,14 +33,15 @@ class EADAN(nn.Module):
         self.split_layer = split_layer
         
         """ Feature extractor """
-        self.feature = self._create_model(start=0, end=self.split_layer)
+        self.feature = self._create_model(start=0, end=self.split_layer, use_dropout=False)
         
         """ Regressor """
-        self.regressor = self._create_model(start=self.split_layer, end=None)
+        self.regressor = self._create_model(start=self.split_layer, end=None, use_dropout=True)
         
         """ Classifier """
         self.classifier = self._create_model(start=self.split_layer, end=None, 
-                                             num_classes=self.num_classes)
+                                             num_classes=self.num_classes,
+                                             use_dropout=False)
         
         # No need to init weights since they are already init within EASeq.
     
@@ -53,9 +54,10 @@ class EADAN(nn.Module):
     """
     Creates model
     """
-    def _create_model(self, start, end, num_classes=None):
+    def _create_model(self, start, end, num_classes=None, use_dropout=False):
         return nn.Sequential(*list(EASeq(in_channels=self.in_channels, 
-                                         num_classes=num_classes).children())[start:end])
+                                         num_classes=num_classes,
+                                         use_dropout=use_dropout).children())[start:end])
         
     """
     Checks split layer is valid
