@@ -31,7 +31,6 @@ class EASeq(nn.Module):
         # self.conv2 = self.make_layer(in_channels=64, out_channels=64)
         # self.conv3 = self.make_layer(in_channels=64, out_channels=64)
         # self.conv4 = self.make_layer(in_channels=64, out_channels=64)
-        # self.convs = self.make_layers()
         self.make_layers()
         
         self.fc1 = nn.Sequential(nn.Flatten(start_dim=1),
@@ -45,18 +44,6 @@ class EASeq(nn.Module):
         self._init_weights()
         
     def make_layers(self):
-        ## layers = []
-        ## in_channels = self.in_channels
-        ## for out_channels in cfg:
-        ##     conv2d = nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=3, stride=1)
-        ##     layers += [nn.ReflectionPad2d(padding=1), conv2d, nn.Tanh()]
-        ##     in_channels = out_channels
-        ## return nn.Sequential(*layers)
-        # layers = []
-        # for i in range(self.num_convs):
-        #     layers += self.make_layer(in_channels=64, out_channels=64)
-        # return nn.Sequential(*layers)
-        
         """ Using nn.Sequential """
         self.convs = []
         for i in range(self.num_convs):
@@ -72,7 +59,6 @@ class EASeq(nn.Module):
         layers = [nn.ReflectionPad2d(padding=1), conv2d, nn.Tanh()]
         if use_dropout:
             layers += [nn.Dropout2d()]
-        # return nn.Sequential(*[nn.ReflectionPad2d(padding=1), conv2d, nn.Tanh()])
         return nn.Sequential(*layers)
         
     def forward(self, x):
