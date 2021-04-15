@@ -980,7 +980,7 @@ if __name__ == "__main__":
     
     """ Create experiment params """
     loss_names = ['sum']
-    fold_setups = ['spatial']
+    fold_setups = ['random']
     pred_types = ['reg', 'reg+class']
     using_unlabeled_samples = [False, True]
     date_types = ['month']
