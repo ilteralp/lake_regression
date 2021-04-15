@@ -953,7 +953,7 @@ def help():
     
     
 if __name__ == "__main__":
-    seed = 42
+    seed = None
     if seed is not None:
         torch.manual_seed(seed)
         np.random.seed(seed)
@@ -985,7 +985,7 @@ if __name__ == "__main__":
     using_unlabeled_samples = [False]
     date_types = ['month']
     # split_layers = [*range(1, 6)]
-    split_layers = [1, 4]
+    split_layers = [1]
     
     
     """ Train model with each param """
