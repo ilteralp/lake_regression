@@ -985,7 +985,7 @@ if __name__ == "__main__":
     using_unlabeled_samples = [False]
     date_types = ['month']
     # split_layers = [*range(1, 6)]
-    split_layers = [4]
+    split_layers = [1, 4]
     
     
     """ Train model with each param """
