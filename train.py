@@ -964,7 +964,7 @@ if __name__ == "__main__":
             'device': device,
             'seed': seed,
             'test_per': 0.1,
-            'lr': 0.00001,                                                       # From EA's model, default is 1e-2.
+            'lr': 0.0001,                                                       # From EA's model, default is 1e-2.
             'patch_norm': True,                                                 # Normalizes patches
             'reg_norm': True,                                                   # Normalize regression values
             'model': 'eadan',                                              # Model name, can be {dandadadan, eanet, eadan}.
@@ -979,39 +979,35 @@ if __name__ == "__main__":
     args['report_id'] = report.report_id
     
     """ Create experiment params """
-    loss_names = ['awl']
+    loss_names = ['sum']
     fold_setups = ['spatial']
-    pred_types = ['reg+class']
-    using_unlabeled_samples = [False]
+    pred_types = ['reg', 'reg+class']
+    using_unlabeled_samples = [False, True]
     date_types = ['month']
     # split_layers = [*range(1, 6)]
     split_layers = [4]
     
     
     """ Train model with each param """
-    best_fold_sample_ids = {'tr_ids': np.array([[8, 7, 5, 1, 0, 2, 3, 6]]), 'test_ids': np.array([[9]]), 'val_ids': np.array([[4]])}
-    # worst_fold_sample_ids = {'tr_ids': np.array([[1, 2, 0, 9, 5, 6, 4, 3]]), 'test_ids': np.array([[7]]), 'val_ids': np.array([[8]])}
-    
-    list_fold_sample_ids = [best_fold_sample_ids]
-    prev_setup_name = None
-    for (loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer, fold_sample_ids) in itertools.product(loss_names, fold_setups, pred_types, using_unlabeled_samples, date_types, split_layers, list_fold_sample_ids):
+    fold_sample_ids, prev_setup_name = None, None
+    for (loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer) in itertools.product(loss_names, fold_setups, pred_types, using_unlabeled_samples, date_types, split_layers):
         if pred_type == 'reg' and unlabeled:                    continue
         if loss_name == 'awl' and pred_type != 'reg+class':     continue
         args['loss_name'] = loss_name
         args['fold_setup'] = fold_setup
         args['pred_type'] = pred_type
         args['use_unlabeled_samples'] = unlabeled
-        # args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
-        args['num_folds'] = None
+        args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
+        # args['num_folds'] = None
         args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
         args['date_type'] = date_type
         args['split_layer'] = split_layer
         print('loss_name: {}, {}, {}, use_unlabeled: {}, date_type: {}, split_layer: {}'.format(loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer))
         verify_args(args)
         
-        # if args['fold_setup'] != prev_setup_name:                               # New fold_setup, old sample ids are meaningless now.
-        #     print('fold_sample_ids are None due to moving from {} to {}.'.format(prev_setup_name, args['fold_setup']))
-        #     fold_sample_ids = None
+        if args['fold_setup'] != prev_setup_name:                               # New fold_setup, old sample ids are meaningless now.
+            print('fold_sample_ids are None due to moving from {} to {}.'.format(prev_setup_name, args['fold_setup']))
+            fold_sample_ids = None
             
         if args['fold_setup'] == 'random':
             fold_sample_ids = run(args, report=report, fold_sample_ids=fold_sample_ids)
