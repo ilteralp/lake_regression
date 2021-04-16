@@ -503,7 +503,7 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, v
             if batch_id == 1 and e == 0:
                 writer.add_graph(model=model, input_to_model=l_patches)
             
-        # print('Epoch: {}, time: {:.2f} sec'.format(e, time.time() - epoch_start))
+        print('Epoch: {}, time: {:.2f} sec'.format(e, time.time() - epoch_start))
 
         
         if e % 10 == 0:
@@ -979,10 +979,10 @@ if __name__ == "__main__":
     args['report_id'] = report.report_id
     
     """ Create experiment params """
-    loss_names = ['awl']
+    loss_names = ['sum']
     fold_setups = ['random']
-    pred_types = ['reg', 'reg+class']
-    using_unlabeled_samples = [False, True]
+    pred_types = ['reg+class']
+    using_unlabeled_samples = [True]
     date_types = ['month']
     # split_layers = [*range(1, 6)]
     split_layers = [4]
