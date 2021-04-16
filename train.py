@@ -978,9 +978,9 @@ if __name__ == "__main__":
     args['report_id'] = report.report_id
     
     """ Create experiment params """
-    loss_names = ['awl']
+    loss_names = ['sum', 'awl']
     fold_setups = ['random']
-    pred_types = ['reg+class']
+    pred_types = ['reg', 'reg+class']
     using_unlabeled_samples = [False, True]
     date_types = ['month']
     # split_layers = [*range(1, 6)]
