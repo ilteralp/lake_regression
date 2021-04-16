@@ -502,7 +502,7 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, v
             if batch_id == 1 and e == 0:
                 writer.add_graph(model=model, input_to_model=l_patches)
             
-        print('Epoch: {}, time: {:.2f} sec'.format(e, time.time() - epoch_start))
+        # print('Epoch: {}, time: {:.2f} sec'.format(e, time.time() - epoch_start))
 
         
         if e % 10 == 0:
