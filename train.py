@@ -494,7 +494,6 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, v
             """ Keep losses for plotting """
             tr_loss[e]['total'].append(loss.item())
             batch_id += 1
-            print('batch {}, batch_size, l: {}, u: {}, loaders, l: {}, u: {}'.format(batch_id, l_patches.shape[0], u_patches.shape[0], len(train_loader), len(unlabeled_loader)))
             # now = time.time()
             # print('\ttimes, total: {:.2f}, half: {:.2f}, fetch: {:.2f}, to_device: {:.2f}'.format(
             #     now - start, half_time - start, unl_fetch_time - half_time, unlabeled_load_time - unl_fetch_time))
@@ -982,7 +981,7 @@ if __name__ == "__main__":
     loss_names = ['sum']
     fold_setups = ['spatial']
     pred_types = ['reg+class']
-    using_unlabeled_samples = [True]
+    using_unlabeled_samples = [False]
     date_types = ['month']
     # split_layers = [*range(1, 6)]
     split_layers = [4]
@@ -997,8 +996,8 @@ if __name__ == "__main__":
         args['fold_setup'] = fold_setup
         args['pred_type'] = pred_type
         args['use_unlabeled_samples'] = unlabeled
-        args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
-        # args['num_folds'] = None
+        # args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
+        args['num_folds'] = None
         args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
         args['date_type'] = date_type
         args['split_layer'] = split_layer
