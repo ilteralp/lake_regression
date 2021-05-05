@@ -25,12 +25,13 @@ class EADAN(nn.Module):
         split_layer (int): Index of the layer that will be used to create shared feature extractor 
         starting from the beginning.
     """
-    def __init__(self, in_channels, num_classes, split_layer):
+    def __init__(self, in_channels, num_classes, split_layer, patch_size):
         super(EADAN, self).__init__()
         self._verify(split_layer)
         self.in_channels = in_channels
         self.num_classes = num_classes
         self.split_layer = split_layer
+        self.ps = patch_size
         
         """ Feature extractor """
         self.feature = self._create_model(start=0, end=self.split_layer, 
@@ -60,7 +61,8 @@ class EADAN(nn.Module):
         return nn.Sequential(*list(EASeq(in_channels=self.in_channels, 
                                          num_classes=num_classes,
                                          use_dropout=use_dropout,
-                                         num_convs=num_convs).children())[start:end])
+                                         num_convs=num_convs,
+                                         patch_size=self.ps).children())[start:end])
         
     """
     Checks split layer is valid
@@ -73,5 +75,9 @@ class EADAN(nn.Module):
             
 if __name__ == "__main__":
     in_channels, num_classes = 12, 4
+    patch_size = 5
     split_layer = 4
-    model = EADAN(in_channels=in_channels, num_classes=num_classes, split_layer=split_layer)
+    model = EADAN(in_channels=in_channels, num_classes=num_classes, split_layer=split_layer, patch_size=patch_size)
+    inp = torch.randn(2, in_channels, patch_size, patch_size)
+    outp_reg, outp_class = model(inp)
+    print('shapes, reg: {}, class: {}'.format(outp_reg.shape, outp_class.shape))
