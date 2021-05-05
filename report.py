@@ -81,6 +81,7 @@ class Report:
         sheet.write(0, 30, 'BestValScoreModelMean', header)
         sheet.write(0, 31, 'BestValScoreModelStd', header)
         sheet.write(0, 32, 'ReportId', header)
+        sheet.write(0, 33, 'PatchSize', header)
         wb.save(self.path)
 
     """
@@ -140,6 +141,7 @@ class Report:
         sheet.write(rid, 17, args['loss_name'])
         idx = self._test_result_to_sheet(test_result=test_result, sheet=sheet, rid=rid, idx=18)
         sheet.write(rid, idx, self.report_id)
+        sheet.write(rid, idx + 1, args['patch_size'])
         wb.save(self.path)
         
     # """
