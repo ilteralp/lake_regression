@@ -182,6 +182,8 @@ def verify_args(args):
         raise Exception('Cannot use as year as classification label since one of the years is used as test set and model has not seen all the year samples.')
     if args['loss_name'] == 'awl' and args['pred_type'] != 'reg+class':
         raise Exception('AWL loss only works with reg+class!')
+    if args['patch_size'] != 3 and args['model'] != 'eadan':
+        raise Exception('Only model eadan works with patch sizes different from 3. Given, {} to {}'.format(args['patch_size'], args['model']))
     
 def plot_fold_test_results(metrics):
     writer = SummaryWriter(osp.join('runs', args['run_name'], 'test_results'))
@@ -706,7 +708,8 @@ def _base_train_on_folds(ids, tr_ids, test_ids, val_ids, model, fold, metrics):
     # np.random.shuffle(tr_ids)
     labeled_dataset_dict = {'learning': 'labeled', 
                             'date_type': args['date_type'],
-                            'fold_setup': args['fold_setup']}
+                            'fold_setup': args['fold_setup'],
+                            'patch_size': args['patch_size']}
     
     """ Create validation set """
     val_set, val_loader = None, None
@@ -727,7 +730,8 @@ def _base_train_on_folds(ids, tr_ids, test_ids, val_ids, model, fold, metrics):
     if args['use_unlabeled_samples']:
         unlabeled_ids = None if args['fold_setup'] == 'spatial' else tr_ids
         unlabeled_set = Lake2dFoldDataset(learning='unlabeled', date_type=args['date_type'],
-                                          fold_setup=args['fold_setup'], ids=unlabeled_ids)
+                                          fold_setup=args['fold_setup'], ids=unlabeled_ids,
+                                          patch_size=args['patch_size'])
     
     """ Normalize patches on all datasets """
     if args['patch_norm']:
@@ -896,7 +900,8 @@ def create_model(args):
             raise Exception('EANet only works with pred_type=[\'reg\', \'class\']. Given: \'{}\'.'.format(args['pred_type']))
 
     elif args['model'] == 'eadan':
-        model = EADAN(in_channels=args['in_channels'], num_classes=args['num_classes'], split_layer=args['split_layer'])
+        model = EADAN(in_channels=args['in_channels'], num_classes=args['num_classes'], 
+                      split_layer=args['split_layer'], patch_size=args['patch_size'])
         
     return model.to(args['device'])
 
@@ -921,10 +926,12 @@ Runs model with given args.
 """        
 def run(args, report, fold_sample_ids):
     """ Create labeled and unlabeled datasets. """
-    labeled_set = Lake2dDataset(learning='labeled', date_type=args['date_type'])
+    labeled_set = Lake2dDataset(learning='labeled', date_type=args['date_type'], 
+                                patch_size=args['patch_size'])
     unlabeled_set = None
     if args['use_unlabeled_samples']:
-        unlabeled_set = Lake2dDataset(learning='unlabeled', date_type=args['date_type'])
+        unlabeled_set = Lake2dDataset(learning='unlabeled', date_type=args['date_type'],
+                                      patch_size=args['patch_size'])
    
     """ Create regression and/or classification losses and model params. """
     args = create_model_params(args=args)
@@ -952,14 +959,14 @@ def help():
     
     
 if __name__ == "__main__":
-    seed = None
+    seed = 42
     if seed is not None:
         torch.manual_seed(seed)
         np.random.seed(seed)
         random.seed(seed)    
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    args = {'max_epoch': 100,
+    args = {'max_epoch': 2,
             'device': device,
             'seed': seed,
             'test_per': 0.1,
@@ -978,29 +985,31 @@ if __name__ == "__main__":
     args['report_id'] = report.report_id
     
     """ Create experiment params """
-    loss_names = ['sum', 'awl']
+    loss_names = ['awl']
     fold_setups = ['random']
-    pred_types = ['reg', 'reg+class']
-    using_unlabeled_samples = [False, True]
+    pred_types = ['reg+class']
+    using_unlabeled_samples = [False]
     date_types = ['month']
     # split_layers = [*range(1, 6)]
     split_layers = [4]
+    patch_sizes = [3, 5, 7]
     
     
     """ Train model with each param """
     fold_sample_ids, prev_setup_name = None, None
-    for (loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer) in itertools.product(loss_names, fold_setups, pred_types, using_unlabeled_samples, date_types, split_layers):
+    for (loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer, patch_size) in itertools.product(loss_names, fold_setups, pred_types, using_unlabeled_samples, date_types, split_layers, patch_sizes):
         if pred_type == 'reg' and unlabeled:                    continue
         if loss_name == 'awl' and pred_type != 'reg+class':     continue
         args['loss_name'] = loss_name
         args['fold_setup'] = fold_setup
         args['pred_type'] = pred_type
         args['use_unlabeled_samples'] = unlabeled
-        args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
-        # args['num_folds'] = None
+        # args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
+        args['num_folds'] = None
         args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
         args['date_type'] = date_type
         args['split_layer'] = split_layer
+        args['patch_size'] = patch_size
         print('loss_name: {}, {}, {}, use_unlabeled: {}, date_type: {}, split_layer: {}'.format(loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer))
         verify_args(args)
         
