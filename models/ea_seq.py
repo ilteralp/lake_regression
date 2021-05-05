@@ -47,11 +47,11 @@ class EASeq(nn.Module):
         """ Using nn.Sequential """
         self.convs = []
         for i in range(self.num_convs):
-            dropout_now = self.use_dropout and i == self.num_convs - 1
+            dropout_now = self.use_dropout and i == self.num_convs - 1          # Dropout only on last layer
             conv = self.make_layer(in_channels=64, out_channels=64, use_dropout=dropout_now)
             self.convs.append(conv)
             setattr(self, 'conv{}'.format(i + 2), conv)                         # They start from 2, so add 2. 
-        """ Using nn.ModuleList """
+        # """ Using nn.ModuleList """
         # self.convs = nn.ModuleList([self.make_layer(in_channels=64, out_channels=64) for i in range(self.num_convs)])
     
     def make_layer(self, in_channels, out_channels, use_dropout=False):
@@ -69,7 +69,7 @@ class EASeq(nn.Module):
         """ Using nn.Sequential """
         for conv in self.convs:
             x = conv(x)
-        """ Using nn.ModuleList """
+        # """ Using nn.ModuleList """
         # for conv in self.convs:
         #     x = conv(x)
         x = self.fc1(x)
