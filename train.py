@@ -966,7 +966,7 @@ if __name__ == "__main__":
         random.seed(seed)    
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    args = {'max_epoch': 2,
+    args = {'max_epoch': 100,
             'device': device,
             'seed': seed,
             'test_per': 0.1,
@@ -992,7 +992,7 @@ if __name__ == "__main__":
     date_types = ['month']
     # split_layers = [*range(1, 6)]
     split_layers = [4]
-    patch_sizes = [3, 5, 7]
+    patch_sizes = [3, 5, 7, 9]
     
     
     """ Train model with each param """
