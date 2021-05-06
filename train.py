@@ -959,7 +959,7 @@ def help():
     
     
 if __name__ == "__main__":
-    seed = None
+    seed = 42
     if seed is not None:
         torch.manual_seed(seed)
         np.random.seed(seed)
