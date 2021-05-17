@@ -151,8 +151,8 @@ def get_msg(loss, score, e, dataset, args):
     if dataset == 'test':
         msg += "\t Scores,"
         if args['pred_type'] == 'reg' or args['pred_type'] == 'reg+class':
-            msg += " MAE: {:.2f}, R2: {:.2f}, RMSE: {:.2f}".format(
-                np.mean(score[e]['mae']), np.mean(score[e]['r2']), np.mean(score[e]['rmse']))
+            msg += " MAE: {:.2f}, R2: {:.2f}, RMSE: {:.2f}, R: {:.2f}".format(
+                np.mean(score[e]['mae']), np.mean(score[e]['r2']), np.mean(score[e]['rmse']), np.mean(score[e]['r']))
         if args['pred_type'] == 'class' or args['pred_type'] == 'reg+class':
             msg += " kappa: {:.2f}, f1: {:.2f}, acc: {:.2f}".format(
                 np.nanmean(score[e]['kappa']), np.mean(score[e]['f1']), np.mean(score[e]['acc']))
@@ -245,11 +245,11 @@ def _test(test_set, model_name, metrics, args, fold, awl):
     
     if args['pred_type'] == 'reg+class':
         test_loss = [{'l_reg_loss': [], 'l_class_loss' : [], 'total' : []}]
-        test_scores = [{'r2' : [], 'mae' : [], 'rmse' : [], 'kappa' : [], 'f1' : [], 'acc' : []}]
+        test_scores = [{'r2' : [], 'mae' : [], 'rmse' : [], 'r' : [], 'kappa' : [], 'f1' : [], 'acc' : []}]
         
     elif args['pred_type'] == 'reg':
         test_loss = [{'l_reg_loss': [], 'total' : []}]
-        test_scores = [{'r2' : [], 'mae' : [], 'rmse' : []}]
+        test_scores = [{'r2' : [], 'mae' : [], 'rmse' : [], 'r' : []}]
         
     elif args['pred_type'] == 'class':
         test_loss = [{'l_class_loss': [], 'total' : []}]
@@ -299,6 +299,7 @@ def add_scores(preds, targets, score_arr, metrics, e):
         score_arr[e]['r2'].append(score['r2'])
         score_arr[e]['mae'].append(score['mae'])
         score_arr[e]['rmse'].append(score['rmse'])
+        score_arr[e]['r'].append(score['r'])
         
     elif args['pred_type'] == 'class':
         score = metrics.eval_class_batch_metrics(preds=preds, targets=targets)
@@ -311,6 +312,7 @@ def add_scores_reg_class(reg_preds, target_regs, class_preds, target_labels, sco
     score_arr[e]['r2'].append(reg_score['r2'])
     score_arr[e]['mae'].append(reg_score['mae'])
     score_arr[e]['rmse'].append(reg_score['rmse'])
+    score_arr[e]['r'].append(reg_score['r'])
     
     class_score = metrics.eval_class_batch_metrics(preds=class_preds, targets=target_labels)
     score_arr[e]['kappa'].append(class_score['kappa'])
@@ -376,7 +378,7 @@ Creates arrays of losses and scores with given args.
 def create_losses_scores(args):
     if args['pred_type'] == 'reg':
         losses = [{'l_reg_loss': [], 'total' : []} for e in range(args['max_epoch'])]
-        scores = [{'r2' : [], 'mae' : [], 'rmse' : []} for e in range(args['max_epoch'])]
+        scores = [{'r2' : [], 'mae' : [], 'rmse' : [], 'r' : []} for e in range(args['max_epoch'])]
         
     elif args['pred_type'] == 'class':
         losses = [{'l_class_loss': [], 'total' : []} for e in range(args['max_epoch'])]
@@ -387,7 +389,7 @@ def create_losses_scores(args):
            losses = [{'l_reg_loss': [], 'l_class_loss' : [], 'u_class_loss' : [], 'total' : []} for e in range(args['max_epoch'])]
         else:
             losses = [{'l_reg_loss': [], 'l_class_loss' : [], 'total' : []} for e in range(args['max_epoch'])]
-        scores = [{'r2' : [], 'mae' : [], 'rmse' : [], 'kappa' : [], 'f1' : [], 'acc' : []} for e in range(args['max_epoch'])]
+        scores = [{'r2' : [], 'mae' : [], 'rmse' : [], 'r' : [], 'kappa' : [], 'f1' : [], 'acc' : []} for e in range(args['max_epoch'])]
             
     return losses, scores
 
@@ -966,7 +968,7 @@ if __name__ == "__main__":
         random.seed(seed)    
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    args = {'max_epoch': 100,
+    args = {'max_epoch': 2,
             'device': device,
             'seed': seed,
             'test_per': 0.1,
@@ -987,12 +989,12 @@ if __name__ == "__main__":
     """ Create experiment params """
     loss_names = ['awl']
     fold_setups = ['random']
-    pred_types = ['reg', 'reg+class']
-    using_unlabeled_samples = [False, True]
+    pred_types = ['reg+class']
+    using_unlabeled_samples = [True]
     date_types = ['month']
     # split_layers = [*range(1, 6)]
     split_layers = [4]
-    patch_sizes = [3, 5, 7, 9]
+    patch_sizes = [3]
     
     
     """ Train model with each param """
@@ -1004,8 +1006,8 @@ if __name__ == "__main__":
         args['fold_setup'] = fold_setup
         args['pred_type'] = pred_type
         args['use_unlabeled_samples'] = unlabeled
-        args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
-        # args['num_folds'] = None
+        # args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
+        args['num_folds'] = None
         args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
         args['date_type'] = date_type
         args['split_layer'] = split_layer
