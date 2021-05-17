@@ -32,11 +32,11 @@ class Metrics:
         
     def _init_test_score_names(self):
         if self.pred_type == 'reg':
-            return ['r2']
+            return ['r2', 'r', 'rmse', 'mae']
         elif self.pred_type == 'class':
             return ['kappa']
         elif self.pred_type == 'reg+class':
-            return ['kappa', 'r2']
+            return ['kappa', 'r2', 'r', 'rmse', 'mae']
     
     """
     Create score dict to keep test scores of all folds.
@@ -85,6 +85,14 @@ class Metrics:
         ss_res = torch.sum((y_true - y_pred) ** 2)
         r2 = 1 - ss_res / ss_tot
         return r2
+    
+    """
+    R score
+    """
+    def __r_score(self, y_true, y_pred):
+        r2 = self.__r2_score(y_true=y_true, y_pred=y_pred)
+        r = torch.sqrt(r2) if r2 > 0 else -torch.sqrt(-r2)
+        return r
     
     """
     MAE implementation with PyTorch. 
@@ -179,6 +187,7 @@ class Metrics:
         rmse = self.__root_mean_squared_error(y_pred=preds, y_true=targets)
         r2 = self.__r2_score(y_pred=preds, y_true=targets)
         mae = self.__mean_absolute_error(y_pred=preds, y_true=targets)
+        r = self.__r_score(y_pred=preds, y_true=targets)
         # print('rmse: {:.4f}, r2: {:.4f}, mae: {:.4f}'.format(rmse, r2, mae))
 
         """ Scikit metrics """
@@ -191,7 +200,7 @@ class Metrics:
         # sk_mae = mean_absolute_error(y_true=targets, y_pred=preds)
         # print('scikit rmse: {:.4f}, r2: {:.4f}, mae: {:.4f}'.format(sk_rmse, sk_r2, sk_mae))
         ######################################################################
-        return {'rmse' : rmse.item(), 'r2' : r2.item(), 'mae' : mae.item()}
+        return {'rmse' : rmse.item(), 'r2' : r2.item(), 'mae' : mae.item(), 'r' : r.item()}
     
     """
     Calculates classification metrics for given batch.
