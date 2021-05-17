@@ -780,7 +780,7 @@ Creates train, val and test sample ids to use the same ids in corresponding fold
 of each run. 
 """
 def _create_multi_fold_sample_ids(args, ids):
-    kf = KFold(n_splits=args['num_folds'], shuffle=True, random_state=args['seed'])
+    kf = KFold(n_splits=args['num_folds'], shuffle=False) #, random_state=args['seed'])
     fold_sample_ids = {'tr_ids': [[] for f in range(args['num_folds'])],
                        'test_ids': [[] for f in range(args['num_folds'])],
                        'val_ids': [[] for f in range(args['num_folds'])] if args['create_val'] else None}
@@ -992,7 +992,7 @@ if __name__ == "__main__":
     date_types = ['month']
     # split_layers = [*range(1, 6)]
     split_layers = [4]
-    patch_sizes = [3, 5, 7]
+    patch_sizes = [3, 5, 7, 9]
     
     
     """ Train model with each param """
