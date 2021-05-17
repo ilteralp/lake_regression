@@ -40,6 +40,19 @@ class Report:
     """
     def __init_path(self):
         return osp.join(os.getcwd(), 'reports', '{}.xls'.format(self.report_id))
+    
+    def __init_sheet_for_scores(self, sheet, header, idx):
+        for (score_id, _) in enumerate(['kappa', 'r2', 'r', 'mae', 'rmse']):
+            cid = idx + score_id * 7                                            # 7 model results
+            sheet.write(0, cid + 1, 'ScoreName', header)
+            sheet.write(0, cid + 2, 'LastEpochModelMean', header)               # For folded cases mean of score, o.w. score itself. 
+            sheet.write(0, cid + 3, 'LastEpochModelStd', header)                # For folded cases std of score, o.w. 0.
+            sheet.write(0, cid + 4, 'BestValLossModelMean', header)
+            sheet.write(0, cid + 5, 'BestValLossModelStd', header)
+            sheet.write(0, cid + 6, 'BestValScoreModelMean', header)
+            sheet.write(0, cid + 7, 'BestValScoreModelStd', header)
+        return cid + 8                                                          # Return index to write
+                        
         
     """
     Initializes report with headers and saves it. 
@@ -62,26 +75,14 @@ class Report:
         sheet.write(0, 11, 'Seed', header)
         sheet.write(0, 12, 'PatchNorm', header)
         sheet.write(0, 13, 'RegNorm', header)
-        sheet.write(0, 14, 'DateType', header)                        # Only meaningful in case of class and reg+class.
+        sheet.write(0, 14, 'DateType', header)                                   # Only meaningful in case of class and reg+class.
         sheet.write(0, 15, 'Model', header)
         sheet.write(0, 16, 'ModelSplitLayer', header)
         sheet.write(0, 17, 'LossName', header)
-        sheet.write(0, 18, 'ScoreName', header)
-        sheet.write(0, 19, 'LastEpochModelMean', header)              # For folded cases mean of score, o.w. score itself. 
-        sheet.write(0, 20, 'LastEpochModelStd', header)               # For folded cases std of score, o.w. 0.
-        sheet.write(0, 21, 'BestValLossModelMean', header)
-        sheet.write(0, 22, 'BestValLossModelStd', header)
-        sheet.write(0, 23, 'BestValScoreModelMean', header)
-        sheet.write(0, 24, 'BestValScoreModelStd', header)
-        sheet.write(0, 25, 'ScoreName', header)
-        sheet.write(0, 26, 'LastEpochModelMean', header)              # For folded cases mean of score, o.w. score itself. 
-        sheet.write(0, 27, 'LastEpochModelStd', header)               # For folded cases std of score, o.w. 0.
-        sheet.write(0, 28, 'BestValLossModelMean', header)
-        sheet.write(0, 29, 'BestValLossModelStd', header)
-        sheet.write(0, 30, 'BestValScoreModelMean', header)
-        sheet.write(0, 31, 'BestValScoreModelStd', header)
-        sheet.write(0, 32, 'ReportId', header)
-        sheet.write(0, 33, 'PatchSize', header)
+        
+        idx = self.__init_sheet_for_scores(sheet=sheet, header=header, idx=17)
+        sheet.write(0, idx, 'ReportId', header)
+        sheet.write(0, idx + 1, 'PatchSize', header)
         wb.save(self.path)
 
     """
@@ -89,7 +90,8 @@ class Report:
     def _test_result_to_sheet(self, sheet, test_result, rid, idx):
         init_idx = idx
         for score_name in test_result:
-            if len(test_result) == 1 and score_name == 'r2':                   # Make R2 score for reg and reg+class start at the same column. 
+            # if len(test_result) == 1 and score_name == 'r2':                   # Make R2 score for reg and reg+class start at the same column. 
+            if len(test_result) == 4 and score_name == 'r2':                     # Only reg results, no kappa. So, skip kappa columns in first encounter. 
                 idx = idx + 7
             sheet.write(rid, idx, score_name)
             idx = idx + 1
@@ -101,7 +103,7 @@ class Report:
                     idx = idx + 1
             if len(test_result[score_name]) == 1:                               # Has only one model, no val set. So, skip val score columns. 
                 idx = idx + 4
-        return init_idx + 14                                                    # 7x2=14 columns for results.    
+        return init_idx + 35                                                    # 7x5=35 columns for results.    
     
     """
     Reads and returns workbook and row index. 
