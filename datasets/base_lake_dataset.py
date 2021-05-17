@@ -89,7 +89,9 @@ class BaseLakeDataset(Dataset):
     Loads lake mask of unlabeled samples. Within it, labeled samples are also false. 
     """
     def _load_unlabeled_mask(self):
-        mask = np.all(io.imread(C.MASK_PATH) == (255, 0, 255), axis=-1)         # Lake mask, 650x650
+        img = io.imread(C.MASK_PATH)
+        img = img[:,:,:3] if img.shape[2] == 4 else img                         # Check alpha channel    
+        mask = np.all(img == (255, 0, 255), axis=-1)                            # Lake mask, 650x650
         # print('before', mask[C.LABELED_INDICES])
         # print('before, sum of mask pixels:', np.sum(mask))
         mask[C.LABELED_INDICES] = False                                         # Set labeled indices to false.  
