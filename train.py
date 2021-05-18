@@ -968,7 +968,7 @@ if __name__ == "__main__":
         random.seed(seed)    
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    args = {'max_epoch': 100,
+    args = {'max_epoch': 2,
             'device': device,
             'seed': seed,
             'test_per': 0.1,
@@ -988,31 +988,31 @@ if __name__ == "__main__":
     
     """ Create experiment params """
     loss_names = ['awl']
-    fold_setups = ['random']
+    fold_setups = ['spatial', 'temporal_day', 'temporal_year', 'random']
     pred_types = ['reg', 'reg+class']
     using_unlabeled_samples = [False, True]
     date_types = ['month']
-    split_layers = [*range(1, 6)]
-    # split_layers = [5]
-    patch_sizes = [3, 5, 7, 9]
+    # split_layers = [*range(1,3)]
+    split_layers = [4]
+    patch_sizes = [5]
     
     
     """ Train model with each param """
     fold_sample_ids, prev_setup_name = None, None
     for (loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer, patch_size) in itertools.product(loss_names, fold_setups, pred_types, using_unlabeled_samples, date_types, split_layers, patch_sizes):
         if pred_type == 'reg' and unlabeled:                    continue
-        if loss_name == 'awl' and pred_type != 'reg+class':     continue
+        if loss_name == 'awl' and pred_type != 'reg+class':     loss_name = 'sum' #continue
         args['loss_name'] = loss_name
         args['fold_setup'] = fold_setup
         args['pred_type'] = pred_type
         args['use_unlabeled_samples'] = unlabeled
-        args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
-        # args['num_folds'] = None
+        # args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
+        args['num_folds'] = None
         args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
         args['date_type'] = date_type
         args['split_layer'] = split_layer
         args['patch_size'] = patch_size
-        print('loss_name: {}, {}, {}, use_unlabeled: {}, date_type: {}, split_layer: {}'.format(loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer))
+        print('loss_name: {}, {}, {}, use_unlabeled: {}, date_type: {}, split_layer: {}, patch_size: {}'.format(loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer, patch_size))
         verify_args(args)
         
         if args['fold_setup'] != prev_setup_name:                               # New fold_setup, old sample ids are meaningless now.
