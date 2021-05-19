@@ -69,6 +69,7 @@ class BaseLakeDataset(Dataset):
     
     """
     Returns regression value of for given indices. Only for labeled samples. 
+    Each measured lake sample has 32 values in GT. 
     """
     def _get_regression_val(self, img_idx, px_idx):
         ln = 32 * px_idx + img_idx
