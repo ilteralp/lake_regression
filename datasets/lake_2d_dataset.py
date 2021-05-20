@@ -29,7 +29,7 @@ class Lake2dDataset(BaseLakeDataset):
     """
     
     def __init__(self, learning, date_type, patch_size=3):
-        BaseLakeDataset.__init__(self, learning, date_type)
+        BaseLakeDataset.__init__(self, learning, date_type, patch_size)
         
         self.patch_size = patch_size
         if learning.lower() == 'unlabeled':
@@ -121,8 +121,12 @@ if __name__ == "__main__":
     # lake_mask = np.all(img == (255, 0, 255), axis=-1) # Includes labeled pixels too! It must be 
     # print('Total lake pixels: {}'.format(np.sum(lake_mask)))
     
-    labeled_2d_dataset = Lake2dDataset(learning='unlabeled', date_type='year', patch_size=3)
-    v2_labeled_2d_dataset = Lake2dDataset(learning='unlabeled', date_type='year', patch_size=3)
+    ps, date_type = [3, 5, 7, 9], 'year'
+    # patch_size, date_type = 3, 'year'
+    for patch_size in ps:
+        labeled_2d_dataset = Lake2dDataset(learning='labeled', date_type=date_type, patch_size=patch_size)
+        unlabeled_2d_dataset = Lake2dDataset(learning='unlabeled', date_type=date_type, patch_size=patch_size)
+        print('patch_size: {} lens, l: {}, u: {}'.format(patch_size, len(labeled_2d_dataset), len(unlabeled_2d_dataset)))
     # unlabeled_2d_dataset = Lake2dDataset(learning='unlabeled', date_type='year', patch_size=3)
     # patch, date_type, reg_val, (img_idx, px, py) = labeled_2d_dataset[0]
     
