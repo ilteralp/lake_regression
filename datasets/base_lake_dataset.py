@@ -10,6 +10,7 @@ import numpy as np
 import os
 import sys
 import csv
+import os.path as osp
 from skimage import io
 sys.path.append("..")
 import constants as C
@@ -23,11 +24,12 @@ class BaseLakeDataset(Dataset):
         date_type (Optional, string): Type of date label that will be used for classification. 
         Should be one of {'month', 'season', 'year'}.
     """
-    def __init__(self, learning, date_type):
-        if not self._verify(learning=learning, date_type=date_type):
+    def __init__(self, learning, date_type, patch_size):
+        if not self._verify(learning=learning, date_type=date_type, patch_size=patch_size):
             raise Exception('Params should be one from each, learning: {labeled, unlabeled} and date_type: {month, season, year}.')
         self.learning = learning.lower()
         self.date_type = None if date_type is None else date_type.lower()
+        self.patch_size = patch_size
         self.img_names = self._get_image_names()
         self.dates = self._read_date_info()
         self.patch_means = None
@@ -35,15 +37,16 @@ class BaseLakeDataset(Dataset):
         self.reg_mean = None
         self.reg_std = None
         self.reg_min = None
-        self.reg_max = None        
+        self.reg_max = None
+        
         
         if self.learning == 'labeled':                                          # Load regression values for labeled samples
             self.reg_vals = self._read_GT()
         else:
             self.unlabeled_mask = self._load_unlabeled_mask()                   # Load unlabeled mask where labeled samples are removed. 
             
-    def _verify(self, learning, date_type):
-        return learning.lower() in ['labeled', 'unlabeled'] and date_type.lower() in ['month', 'season', 'year']
+    def _verify(self, learning, date_type, patch_size):
+        return learning.lower() in ['labeled', 'unlabeled'] and date_type.lower() in ['month', 'season', 'year'] and patch_size in [3, 5, 7, 9]
             
     def __len__(self):                                                          # unlabeled: 32 * 75662 = 2421184, labeled: 32 * 10
         return 32 * len(self.unlabeled_mask) if self.learning == 'unlabeled' else len(self.reg_vals) 
@@ -90,7 +93,8 @@ class BaseLakeDataset(Dataset):
     Loads lake mask of unlabeled samples. Within it, labeled samples are also false. 
     """
     def _load_unlabeled_mask(self):
-        img = io.imread(C.MASK_PATH)
+        # img = io.imread(C.MASK_PATH)
+        img = io.imread(osp.join(C.ROOT_DIR, 'eroded_bin_lake_mask_{}.png'.format(self.patch_size)))
         img = img[:,:,:3] if img.shape[2] == 4 else img                         # Check alpha channel    
         mask = np.all(img == (255, 0, 255), axis=-1)                            # Lake mask, 650x650
         # print('before', mask[C.LABELED_INDICES])
