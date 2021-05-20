@@ -968,7 +968,7 @@ if __name__ == "__main__":
         random.seed(seed)    
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    args = {'max_epoch': 100,
+    args = {'max_epoch': 2,
             'device': device,
             'seed': seed,
             'test_per': 0.1,
@@ -988,12 +988,12 @@ if __name__ == "__main__":
     
     """ Create experiment params """
     loss_names = ['awl']
-    fold_setups = ['spatial', 'temporal_day', 'temporal_year', 'random']
-    pred_types = ['reg', 'reg+class']
-    using_unlabeled_samples = [False, True]
+    fold_setups = ['random']
+    pred_types = ['reg+class']
+    using_unlabeled_samples = [True]
     date_types = ['month']
     # split_layers = [*range(1,3)]
-    split_layers = [4]
+    split_layers = [5]
     patch_sizes = [5]
     
     
@@ -1001,7 +1001,7 @@ if __name__ == "__main__":
     fold_sample_ids, prev_setup_name = None, None
     for (loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer, patch_size) in itertools.product(loss_names, fold_setups, pred_types, using_unlabeled_samples, date_types, split_layers, patch_sizes):
         if pred_type == 'reg' and unlabeled:                    continue
-        if loss_name == 'awl' and pred_type != 'reg+class':     loss_name = 'sum' #continue
+        if loss_name == 'awl' and pred_type != 'reg+class':     continue
         args['loss_name'] = loss_name
         args['fold_setup'] = fold_setup
         args['pred_type'] = pred_type
