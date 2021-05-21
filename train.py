@@ -986,8 +986,8 @@ if __name__ == "__main__":
             'seed': seed,
             'test_per': 0.1,
             'lr': 0.0001,                                                       # From EA's model, default is 1e-2.
-            'patch_norm': False,                                                 # Normalizes patches
-            'reg_norm': False,                                                   # Normalize regression values
+            'patch_norm': True,                                                 # Normalizes patches
+            'reg_norm': True,                                                   # Normalize regression values
             'model': 'eaoriginal',                                              # Model name, can be {dandadadan, eanet, eadan}.
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
