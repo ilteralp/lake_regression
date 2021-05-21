@@ -63,6 +63,17 @@ class Lake2dDataset(BaseLakeDataset):
     def __getitem__(self, index):
         img_idx, px_idx = index % 32, index // 32
         return self._get_sample(img_idx=img_idx, px_idx=px_idx)
+    
+    """
+    Reshapes patch from 12x3x3 to 1x12x9 without messing between channels and
+    returns it. 
+    """
+    def __reshape_patch(self, patch):
+        # x = torch.unbind(patch)
+        # vs = [torch.cat((x[3*i], x[3*i+1], x[3*i+2]), 1) for i in range(4)]
+        # return torch.cat(vs, 0).unsqueeze(0)
+        ps = self.patch_size
+        return patch.view(4, 3, ps, ps).permute(0, 2, 1, 3).reshape(1, 4 * ps, 3 * ps)
 
     
     def _get_sample(self, img_idx, px_idx):
@@ -75,7 +86,9 @@ class Lake2dDataset(BaseLakeDataset):
             px, py = C.LABELED_INDICES[0][px_idx], C.LABELED_INDICES[1][px_idx]
             reg_val = self._get_regression_val(img_idx, px_idx)
             
-        patch = data[:, px-pad : px+pad + 1, py-pad : py+pad+1]         # (12, 3, 3)
+        patch = data[:, px-pad : px+pad + 1, py-pad : py+pad+1]         # (12, 3, 3) or (12, 5, 5)
+        patch = self.__reshape_patch(patch=patch)                       # (1, 12, 9) or (1, 20, 15)
+        
         date_class = self.dates[img_idx][self.date_type]
         
         if self.patch_means is not None and self.patch_stds is not None: # Normalize patch
@@ -121,12 +134,12 @@ if __name__ == "__main__":
     # lake_mask = np.all(img == (255, 0, 255), axis=-1) # Includes labeled pixels too! It must be 
     # print('Total lake pixels: {}'.format(np.sum(lake_mask)))
     
-    ps, date_type = [3, 5, 7, 9], 'year'
-    # patch_size, date_type = 3, 'year'
-    for patch_size in ps:
-        labeled_2d_dataset = Lake2dDataset(learning='labeled', date_type=date_type, patch_size=patch_size)
-        unlabeled_2d_dataset = Lake2dDataset(learning='unlabeled', date_type=date_type, patch_size=patch_size)
-        print('patch_size: {} lens, l: {}, u: {}'.format(patch_size, len(labeled_2d_dataset), len(unlabeled_2d_dataset)))
+    # ps, date_type = [5], 'year'
+    patch_size, date_type = 5, 'year'
+    # for patch_size in ps:
+    labeled_2d_dataset = Lake2dDataset(learning='labeled', date_type=date_type, patch_size=patch_size)
+    unlabeled_2d_dataset = Lake2dDataset(learning='unlabeled', date_type=date_type, patch_size=patch_size)
+    # print('patch_size: {} lens, l: {}, u: {}'.format(patch_size, len(labeled_2d_dataset), len(unlabeled_2d_dataset)))
     # unlabeled_2d_dataset = Lake2dDataset(learning='unlabeled', date_type='year', patch_size=3)
     # patch, date_type, reg_val, (img_idx, px, py) = labeled_2d_dataset[0]
     
