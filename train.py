@@ -22,7 +22,7 @@ import time
 import constants as C
 from datasets import Lake2dDataset, Lake2dFoldDataset
 from metrics import Metrics
-from models import DandadaDAN, EANet, EADAN
+from models import DandadaDAN, EANet, EADAN, EAOriginal
 from report import Report
 from losses import AutomaticWeightedLoss
 
@@ -117,6 +117,11 @@ def weights_init(m):
     if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):                    # glorot_uniform in Keras is xavier_uniform_  
         nn.init.xavier_uniform_(m.weight)
         
+def weight_bias_init(m):
+    if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
+        nn.init.xavier_uniform_(m.weight)
+        nn.init.zeros_(m.bias)
+        
 def reset_model(m, args):
     if args['model'] == 'eanet':
         return m.apply(weights_init)
@@ -126,6 +131,9 @@ def reset_model(m, args):
     
     elif args['model'] == 'eadan':
         return m.apply(weights_init)
+    
+    elif args['model'] == 'eaoriginal':
+        return m.apply(weight_bias_init)
 """
 Returns verbose message with loss and score.
 """
@@ -168,8 +176,8 @@ def verify_args(args):
         raise Exception('Test percent should be less than 0.5 since validation set has the same length with it.')
     if args['pred_type'] not in ['reg', 'class', 'reg+class']:
         raise Exception('Expected prediction type to be one of [\'reg\', \'class\', \'reg+class\']')
-    if args['model'] not in ['dandadadan', 'eanet', 'eadan']:
-        raise Exception('Model can be one of [\'dandadadan\', \'eanet\', \'eadan\']')
+    if args['model'] not in ['dandadadan', 'eanet', 'eadan', 'eaoriginal']:
+        raise Exception('Model can be one of [\'dandadadan\', \'eanet\', \'eadan\', \'eaoriginal\']')
     if args['use_unlabeled_samples'] and (args['pred_type'] == 'reg' or args['pred_type'] == 'class'):
         raise Exception('Unlabeled samples cannot be used with regression or classification. They can only be used with \'reg+class\'.')
     if args['num_folds'] is not None and args['fold_setup'] not in ['spatial', 'temporal_day', 'temporal_year', 'random']:
@@ -182,8 +190,10 @@ def verify_args(args):
         raise Exception('Cannot use as year as classification label since one of the years is used as test set and model has not seen all the year samples.')
     if args['loss_name'] == 'awl' and args['pred_type'] != 'reg+class':
         raise Exception('AWL loss only works with reg+class!')
-    if args['patch_size'] != 3 and args['model'] != 'eadan':
-        raise Exception('Only model eadan works with patch sizes different from 3. Given, {} to {}'.format(args['patch_size'], args['model']))
+    if args['patch_size'] != 3 and args['model'] not in ['eadan', 'eaoriginal']:
+        raise Exception('Only model eadan and eaoriginal work with patch sizes different from 3. Given, {} to {}'.format(args['patch_size'], args['model']))
+    if args['model'] == 'eaoriginal' and args['pred_type'] != 'reg':
+        raise Exception('Model eaoriginal only works with regression! Given {}'.format(args['pred_type']))
     
 def plot_fold_test_results(metrics):
     writer = SummaryWriter(osp.join('runs', args['run_name'], 'test_results'))
@@ -905,13 +915,16 @@ def create_model(args):
         model = EADAN(in_channels=args['in_channels'], num_classes=args['num_classes'], 
                       split_layer=args['split_layer'], patch_size=args['patch_size'])
         
+    elif args['model'] == 'eaoriginal':
+        model = EAOriginal(in_channels=args['in_channels'], patch_size=args['patch_size'])
+        
     return model.to(args['device'])
 
 """
 Creates loss functions depending on prediction type and adds model params.
 """
 def create_model_params(args):
-    args['in_channels'] = 12
+    args['in_channels'] = 1 if args['model'] == 'eaoriginal' else 12
     args['num_classes'] = C.NUM_CLASSES[args['date_type']] if args['pred_type'] != 'reg' else None
     
     if args['pred_type'] == 'reg' or args['pred_type'] == 'reg+class':
@@ -956,7 +969,7 @@ Help with params in case you need it.
 """
 def help():
     print('\'dandadan\' and \'eadan\' work with \'use_unlabeled_samples\'=[True, False], \'pred_type\'=[\'reg\', \'reg+class\', \'class\'] and \'date_type\'=[\'month\', \'season\', \'year\'].\n')
-    print('\'eanet\' (and \'easeq\') works with \'use_unlabeled_samples\'=False, \'pred_type\'=[\'reg\', \'class\'] and does not take \'date_type\'.\n')
+    print('\'eanet\', \'eaoriginal\', (and \'easeq\') works with \'use_unlabeled_samples\'=False, \'pred_type\'=[\'reg\', \'class\'] and does not take \'date_type\'.\n')
     print('With \'date_type\'=\'year\', validation set cannot be created.')
     
     
@@ -968,14 +981,14 @@ if __name__ == "__main__":
         random.seed(seed)    
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    args = {'max_epoch': 100,
+    args = {'max_epoch': 400,
             'device': device,
             'seed': seed,
             'test_per': 0.1,
             'lr': 0.0001,                                                       # From EA's model, default is 1e-2.
-            'patch_norm': True,                                                 # Normalizes patches
-            'reg_norm': True,                                                   # Normalize regression values
-            'model': 'eadan',                                              # Model name, can be {dandadadan, eanet, eadan}.
+            'patch_norm': False,                                                 # Normalizes patches
+            'reg_norm': False,                                                   # Normalize regression values
+            'model': 'eaoriginal',                                              # Model name, can be {dandadadan, eanet, eadan}.
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'val': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4},
@@ -987,14 +1000,14 @@ if __name__ == "__main__":
     args['report_id'] = report.report_id
     
     """ Create experiment params """
-    loss_names = ['sum', 'awl']
-    fold_setups = ['random']
-    pred_types = ['reg', 'reg+class']
-    using_unlabeled_samples = [False, True]
+    loss_names = ['sum']
+    fold_setups = ['spatial', 'random']
+    pred_types = ['reg']
+    using_unlabeled_samples = [False]
     date_types = ['month']
     # split_layers = [*range(1,3)]
     split_layers = [5]
-    patch_sizes = [5]
+    patch_sizes = [3]
     
     
     """ Train model with each param """
@@ -1006,8 +1019,8 @@ if __name__ == "__main__":
         args['fold_setup'] = fold_setup
         args['pred_type'] = pred_type
         args['use_unlabeled_samples'] = unlabeled
-        args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
-        # args['num_folds'] = None
+        # args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
+        args['num_folds'] = None
         args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
         args['date_type'] = date_type
         args['split_layer'] = split_layer
