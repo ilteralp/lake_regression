@@ -1051,7 +1051,7 @@ if __name__ == "__main__":
             'patch_norm': True,                                                # Normalizes patches
             'reg_norm': True,                                                  # Normalize regression values
             'model': 'eadan',                                                   # Model name, can be {dandadadan, eanet, eadan}.
-            'use_test_as_val': True,                                            # Uses test set for validation. 
+            'use_test_as_val': False,                                            # Uses test set for validation. 
             'num_early_stop_epoch': 10,                                         # Number of consecutive epochs that model loss does not decrease. 
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
