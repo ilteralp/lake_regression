@@ -43,7 +43,7 @@ class Report:
     
     def __init_sheet_for_scores(self, sheet, header, idx):
         for (score_id, _) in enumerate(['kappa', 'r2', 'r', 'mae', 'rmse']):
-            cid = idx + score_id * 7                                            # 7 model results
+            cid = idx + score_id * 9                                            # 9 model results
             sheet.write(0, cid + 1, 'ScoreName', header)
             sheet.write(0, cid + 2, 'LastEpochModelMean', header)               # For folded cases mean of score, o.w. score itself. 
             sheet.write(0, cid + 3, 'LastEpochModelStd', header)                # For folded cases std of score, o.w. 0.
@@ -51,7 +51,9 @@ class Report:
             sheet.write(0, cid + 5, 'BestValLossModelStd', header)
             sheet.write(0, cid + 6, 'BestValScoreModelMean', header)
             sheet.write(0, cid + 7, 'BestValScoreModelStd', header)
-        return cid + 8                                                          # Return index to write
+            sheet.write(0, cid + 8, 'EarlyStoppingModelMean', header)
+            sheet.write(0, cid + 9, 'EarlyStoppingModelStd', header)
+        return cid + 10                                                          # Return index to write
                         
         
     """
@@ -92,7 +94,7 @@ class Report:
         for score_name in test_result:
             # if len(test_result) == 1 and score_name == 'r2':                   # Make R2 score for reg and reg+class start at the same column. 
             if len(test_result) == 4 and score_name == 'r2':                     # Only reg results, no kappa. So, skip kappa columns in first encounter. 
-                idx = idx + 7
+                idx = idx + 9
             sheet.write(rid, idx, score_name)
             idx = idx + 1
             for model_name in test_result[score_name]:
@@ -102,8 +104,8 @@ class Report:
                         sheet.write(rid, idx, '{:.4f}'.format(val))
                     idx = idx + 1
             if len(test_result[score_name]) == 1:                               # Has only one model, no val set. So, skip val score columns. 
-                idx = idx + 4
-        return init_idx + 35                                                    # 7x5=35 columns for results.    
+                idx = idx + 6
+        return init_idx + 45                                                    # 9x5=45 columns for results.    
     
     """
     Reads and returns workbook and row index. 
