@@ -1086,7 +1086,7 @@ if __name__ == "__main__":
         # args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
         args['num_folds'] = None
         # args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
-        # args['create_val'] = False
+        args['create_val'] = False
         args['date_type'] = date_type
         args['split_layer'] = split_layer
         args['patch_size'] = patch_size
