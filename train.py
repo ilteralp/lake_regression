@@ -1043,13 +1043,13 @@ if __name__ == "__main__":
         random.seed(seed)    
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    args = {'max_epoch': 2,
+    args = {'max_epoch': 100,
             'device': device,
             'seed': seed,
             'test_per': 0.1,
             'lr': 0.0001,                                                       # From EA's model, default is 1e-2.
-            'patch_norm': False,                                                # Normalizes patches
-            'reg_norm': False,                                                  # Normalize regression values
+            'patch_norm': True,                                                # Normalizes patches
+            'reg_norm': True,                                                  # Normalize regression values
             'model': 'eadan',                                                   # Model name, can be {dandadadan, eanet, eadan}.
             'use_test_as_val': True,                                            # Uses test set for validation. 
             'num_early_stop_epoch': 10,                                         # Number of consecutive epochs that model loss does not decrease. 
@@ -1065,12 +1065,12 @@ if __name__ == "__main__":
     
     """ Create experiment params """
     loss_names = ['sum']
-    fold_setups = ['random']
+    fold_setups = ['spatial']
     pred_types = ['reg+class']
     using_unlabeled_samples = [False]
     date_types = ['month']
     # split_layers = [*range(1,3)]
-    split_layers = [5]
+    split_layers = [4]
     patch_sizes = [3]
     
     
@@ -1086,7 +1086,7 @@ if __name__ == "__main__":
         # args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
         args['num_folds'] = None
         # args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
-        args['create_val'] = False
+        # args['create_val'] = False
         args['date_type'] = date_type
         args['split_layer'] = split_layer
         args['patch_size'] = patch_size
