@@ -570,8 +570,8 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, t
                 # val_loss, val_scores = None, None
                 set_loss, set_scores = None, None
               
-            """ Plot loss & scores """
-            plot(writer=writer, tr_loss=tr_loss, val_loss=set_loss, tr_scores=tr_scores, val_scores=set_scores, e=e)
+        """ Plot loss & scores """
+        plot(writer=writer, tr_loss=tr_loss, val_loss=set_loss, tr_scores=tr_scores, val_scores=set_scores, e=e)
     
         """ Early stopping """
         if e > 0:
@@ -1083,8 +1083,8 @@ if __name__ == "__main__":
         args['fold_setup'] = fold_setup
         args['pred_type'] = pred_type
         args['use_unlabeled_samples'] = unlabeled
-        args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
-        # args['num_folds'] = None
+        # args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
+        args['num_folds'] = None
         # args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
         args['create_val'] = False
         args['date_type'] = date_type
