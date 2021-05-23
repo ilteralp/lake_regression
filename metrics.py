@@ -22,10 +22,11 @@ class Metrics:
         cross-validation or an int >0 for training with cross-validation. 
     """
     
-    def __init__(self, num_folds, device, pred_type, num_classes=None):
+    def __init__(self, num_folds, device, pred_type, set_name, num_classes=None):
         self.num_folds = num_folds
         self.device = device
         self.pred_type = pred_type
+        self.set_name = set_name
         self.test_score_names = self._init_test_score_names()
         self.test_scores = self._init_test_scores()
         self.num_classes = num_classes
@@ -44,9 +45,10 @@ class Metrics:
     def _init_test_scores(self):
         scores = {}
         for score_name in self.test_score_names:
-            scores[score_name] = {'model_last_epoch.pth': [],                   # Last epoch model
-                                  'best_val_loss.pth': [],                      # Best validation loss model
-                                  'best_val_score.pth': []}                     # Best validation score model
+            scores[score_name] = {'model_last_epoch.pth': [],                    # Last epoch model
+                                  'best_{}_loss.pth'.format(self.set_name): [],  # Best validation loss model
+                                  'best_{}_score.pth'.format(self.set_name): [], # Best validation score model
+                                  'model_early_stopping.pth': []}                # Early stopping model               
         return scores
             
     """
@@ -67,6 +69,9 @@ class Metrics:
                 if all_fold_scores:                                                     # Check list is empty. 
                     result[score_name][model_name]['mean'] = np.mean(all_fold_scores)
                     result[score_name][model_name]['std'] = np.std(all_fold_scores)
+                else:
+                    result[score_name][model_name]['mean'] = float('NaN')       # Leave them empty in the report.
+                    result[score_name][model_name]['std'] = float('NaN')
         return result
                 
     """
