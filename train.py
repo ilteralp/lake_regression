@@ -1048,10 +1048,10 @@ if __name__ == "__main__":
             'seed': seed,
             'test_per': 0.1,
             'lr': 0.0001,                                                       # From EA's model, default is 1e-2.
-            'patch_norm': False,                                                # Normalizes patches
-            'reg_norm': False,                                                  # Normalize regression values
-            'model': 'eaoriginal',                                                   # Model name, can be {dandadadan, eanet, eadan}.
-            'use_test_as_val': True,                                            # Uses test set for validation. 
+            'patch_norm': True,                                                # Normalizes patches
+            'reg_norm': True,                                                  # Normalize regression values
+            'model': 'eadan',                                                   # Model name, can be {dandadadan, eanet, eadan}.
+            'use_test_as_val': False,                                            # Uses test set for validation. 
             'num_early_stop_epoch': 10,                                         # Number of consecutive epochs that model loss does not decrease. 
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
@@ -1070,8 +1070,8 @@ if __name__ == "__main__":
     using_unlabeled_samples = [False]
     date_types = ['month']
     # split_layers = [*range(1,3)]
-    split_layers = [4]
-    patch_sizes = [3]
+    split_layers = [5]
+    patch_sizes = [5]
     
     
     """ Train model with each param """
@@ -1083,10 +1083,10 @@ if __name__ == "__main__":
         args['fold_setup'] = fold_setup
         args['pred_type'] = pred_type
         args['use_unlabeled_samples'] = unlabeled
-        # args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
-        args['num_folds'] = None
-        # args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
-        args['create_val'] = False
+        args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
+        # args['num_folds'] = None
+        args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
+        # args['create_val'] = False
         args['date_type'] = date_type
         args['split_layer'] = split_layer
         args['patch_size'] = patch_size
