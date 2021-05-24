@@ -456,6 +456,8 @@ def evaluate_save_model(model, loader, args, set_loss, set_scores, model_dir_pat
         best_set_score = np.nanmean(set_scores[e][score_name])
         torch.save(model.state_dict(), 
                    osp.join(model_dir_path, 'best_{}_score.pth'.format(set_name)))
+        
+    return best_set_loss, best_set_score
 
 """
 Trains model with labeled and unlabeled data. 
@@ -550,14 +552,18 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, t
             
         """ Evaluation, using test set for validation """
         if args['use_test_as_val']:
-            evaluate_save_model(model, test_loader, args, set_loss, set_scores, model_dir_path, set_name, 
-                                metrics, e, awl, score_name, best_set_loss, best_set_score)
+            best_set_loss, best_set_score = evaluate_save_model(model, test_loader, args, set_loss, 
+                                                                set_scores, model_dir_path, set_name, 
+                                                                metrics, e, awl, score_name, 
+                                                                best_set_loss, best_set_score)
         
         # Evaluation, using validation set
         else:
             if val_loader is not None:
-                evaluate_save_model(model, val_loader, args, set_loss, set_scores, model_dir_path, set_name, 
-                                    metrics, e, awl, score_name, best_set_loss, best_set_score)
+                best_set_loss, best_set_score = evaluate_save_model(model, val_loader, args, set_loss, 
+                                                                    set_scores, model_dir_path, set_name,  
+                                                                    metrics, e, awl, score_name, 
+                                                                    best_set_loss, best_set_score)
                 # _validate(model, val_loader, metrics, args, val_loss, val_scores, e, awl)
                 # if np.mean(val_loss[e]['total']) < best_val_loss:
                 #     best_val_loss = np.mean(val_loss[e]['total'])
