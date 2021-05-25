@@ -553,26 +553,46 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, t
             
         """ Evaluation, using test set for validation """
         if args['use_test_as_val']:
-            best_set_loss, best_set_score = evaluate_save_model(model, test_loader, args, set_loss, 
-                                                                set_scores, model_dir_path, set_name, 
-                                                                metrics, e, awl, score_name, 
-                                                                best_set_loss, best_set_score)
-        
+            # best_set_loss, best_set_score = evaluate_save_model(model, test_loader, args, set_loss, 
+            #                                                     set_scores, model_dir_path, set_name, 
+            #                                                     metrics, e, awl, score_name, 
+            #                                                     best_set_loss, best_set_score)
+            _validate(model, test_loader, metrics, args, set_loss, set_scores, e, awl)
+            if np.mean(set_loss[e]['total']) < best_set_loss:
+                best_set_loss = np.mean(set_loss[e]['total'])
+                torch.save(model.state_dict(), osp.join(model_dir_path, 'best_test_loss.pth'))
+                print('best_loss_model at epoch: {}, loss: {:.2f}'.format(e, best_set_loss))
+
+            if np.nanmean(set_scores[e][score_name]) > best_set_score:                         # Due to kappa returning NaN in some cases, nanmean is used.      
+                best_set_score = np.nanmean(set_scores[e][score_name])
+                torch.save(model.state_dict(), osp.join(model_dir_path, 'best_test_score.pth'))
+                print('best_score_model at epoch: {}, score: {:.2f}'.format(e, best_set_score))
+
         # Evaluation, using validation set
         else:
             if val_loader is not None:
-                best_set_loss, best_set_score = evaluate_save_model(model, val_loader, args, set_loss, 
-                                                                    set_scores, model_dir_path, set_name,  
-                                                                    metrics, e, awl, score_name, 
-                                                                    best_set_loss, best_set_score)
-                # _validate(model, val_loader, metrics, args, val_loss, val_scores, e, awl)
-                # if np.mean(val_loss[e]['total']) < best_val_loss:
-                #     best_val_loss = np.mean(val_loss[e]['total'])
-                #     torch.save(model.state_dict(), osp.join(model_dir_path, 'best_val_loss.pth'))
-                # if np.nanmean(val_scores[e][score_name]) > best_val_score:                         # Due to kappa returning NaN in some cases, nanmean is used.      
-                #     best_val_score = np.nanmean(val_scores[e][score_name])
-                #     torch.save(model.state_dict(), osp.join(model_dir_path, 'best_val_score.pth'))
-                # # print(get_msg(val_loss, val_scores, e, dataset='val', args=args))              # Print validation set loss & score for each **epoch**. 
+                # best_set_loss, best_set_score = evaluate_save_model(model, val_loader, args, set_loss, 
+                #                                                     set_scores, model_dir_path, set_name,  
+                #                                                     metrics, e, awl, score_name, 
+                #                                                     best_set_loss, best_set_score)
+                # # _validate(model, val_loader, metrics, args, val_loss, val_scores, e, awl)
+                # # if np.mean(val_loss[e]['total']) < best_val_loss:
+                # #     best_val_loss = np.mean(val_loss[e]['total'])
+                # #     torch.save(model.state_dict(), osp.join(model_dir_path, 'best_val_loss.pth'))
+                # # if np.nanmean(val_scores[e][score_name]) > best_val_score:                         # Due to kappa returning NaN in some cases, nanmean is used.      
+                # #     best_val_score = np.nanmean(val_scores[e][score_name])
+                # #     torch.save(model.state_dict(), osp.join(model_dir_path, 'best_val_score.pth'))
+                # # # print(get_msg(val_loss, val_scores, e, dataset='val', args=args))              # Print validation set loss & score for each **epoch**. 
+                _validate(model, val_loader, metrics, args, set_loss, set_scores, e, awl)
+                if np.mean(set_loss[e]['total']) < best_set_loss:
+                    best_set_loss = np.mean(set_loss[e]['total'])
+                    torch.save(model.state_dict(), osp.join(model_dir_path, 'best_val_loss.pth'))
+                    print('best_loss_model at epoch: {}, loss: {:.2f}'.format(e, best_set_loss))
+                if np.nanmean(set_scores[e][score_name]) > best_set_score:                         # Due to kappa returning NaN in some cases, nanmean is used.      
+                    best_set_score = np.nanmean(set_scores[e][score_name])
+                    torch.save(model.state_dict(), osp.join(model_dir_path, 'best_val_score.pth'))
+                    print('best_score_model at epoch: {}, score: {:.2f}'.format(e, best_set_score))
+
             else:
                 # val_loss, val_scores = None, None
                 set_loss, set_scores = None, None
