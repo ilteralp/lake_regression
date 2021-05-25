@@ -548,8 +548,9 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, t
         # print('Epoch: {}, time: {:.2f} sec'.format(e, time.time() - epoch_start))
 
         
-        if e % 10 == 0:
+        if e % 5 == 0:
             print(get_msg(tr_loss, tr_scores, e, dataset='train', args=args))                  # Print train set loss & score for each **epoch**. 
+            print('best_loss: {:.2f}, best_score: {:.2f}'.format(best_set_loss, best_set_score))
             
         """ Evaluation, using test set for validation """
         if args['use_test_as_val']:
@@ -1070,7 +1071,7 @@ if __name__ == "__main__":
         random.seed(seed)    
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    args = {'max_epoch': 100,
+    args = {'max_epoch': 200,
             'device': device,
             'seed': seed,
             'test_per': 0.1,
