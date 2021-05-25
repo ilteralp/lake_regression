@@ -452,11 +452,12 @@ def evaluate_save_model(model, loader, args, set_loss, set_scores, model_dir_pat
         best_set_loss = np.mean(set_loss[e]['total'])
         torch.save(model.state_dict(), 
                    osp.join(model_dir_path, 'best_{}_loss.pth'.format(set_name)))
+        print('best_loss_model at epoch: {}, loss: {:.2f}'.format(e, best_set_loss))
     if np.nanmean(set_scores[e][score_name]) > best_set_score:                  # Due to kappa returning NaN in some cases, nanmean is used.      
         best_set_score = np.nanmean(set_scores[e][score_name])
         torch.save(model.state_dict(), 
                    osp.join(model_dir_path, 'best_{}_score.pth'.format(set_name)))
-        
+        print('best_score_model at epoch: {}, score: {:.2f}'.format(e, best_set_score))
     return best_set_loss, best_set_score
 
 """
@@ -1058,7 +1059,7 @@ if __name__ == "__main__":
             'reg_norm': True,                                                  # Normalize regression values
             'model': 'eadan',                                                   # Model name, can be {dandadadan, eanet, eadan}.
             'use_test_as_val': False,                                            # Uses test set for validation. 
-            'num_early_stop_epoch': 10,                                         # Number of consecutive epochs that model loss does not decrease. 
+            'num_early_stop_epoch': 5,                                         # Number of consecutive epochs that model loss does not decrease. 
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'val': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4},
@@ -1089,8 +1090,8 @@ if __name__ == "__main__":
         args['fold_setup'] = fold_setup
         args['pred_type'] = pred_type
         args['use_unlabeled_samples'] = unlabeled
-        args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
-        # args['num_folds'] = None
+        # args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
+        args['num_folds'] = None
         args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
         # args['create_val'] = False
         args['date_type'] = date_type
