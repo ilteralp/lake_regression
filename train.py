@@ -597,10 +597,10 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, t
                 # val_loss, val_scores = None, None
                 set_loss, set_scores = None, None
                 
-            if e % 5 == 0:
-                curr_loss = np.mean(set_loss[e]['total'])
-                curr_score = np.nanmean(set_scores[e][score_name])
-                print('best_loss: {:.2f}, (curr: {:.2f}), best_score: {:.2f}, (curr: {:.2f})'.format(best_set_loss, curr_loss, best_set_score, curr_score))
+        if e % 5 == 0:
+            curr_loss = np.mean(set_loss[e]['total'])
+            curr_score = np.nanmean(set_scores[e][score_name])
+            print('best_loss: {:.2f}, (curr: {:.2f}), best_score: {:.2f}, (curr: {:.2f})'.format(best_set_loss, curr_loss, best_set_score, curr_score))
               
         """ Plot loss & scores """
         plot(writer=writer, tr_loss=tr_loss, val_loss=set_loss, tr_scores=tr_scores, val_scores=set_scores, e=e)
