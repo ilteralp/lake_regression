@@ -550,7 +550,9 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, t
         
         if e % 5 == 0:
             print(get_msg(tr_loss, tr_scores, e, dataset='train', args=args))                  # Print train set loss & score for each **epoch**. 
-            print('best_loss: {:.2f}, (curr: {:.2f}), best_score: {:.2f}, (curr: {:.2f})'.format(best_set_loss, np.mean(set_loss[e]['total']), best_set_score, np.nanmean(set_scores[e][score_name])))
+            curr_loss = np.mean(set_loss[e]['total'])
+            curr_score = np.nanmean(set_scores[e][score_name])
+            print('best_loss: {:.2f}, (curr: {:.2f}), best_score: {:.2f}, (curr: {:.2f})'.format(best_set_loss, curr_loss, best_set_score, curr_score))
             
         """ Evaluation, using test set for validation """
         if args['use_test_as_val']:
@@ -1071,7 +1073,7 @@ if __name__ == "__main__":
         random.seed(seed)    
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    args = {'max_epoch': 200,
+    args = {'max_epoch': 15,
             'device': device,
             'seed': seed,
             'test_per': 0.1,
