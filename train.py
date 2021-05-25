@@ -550,8 +550,7 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, t
         
         if e % 5 == 0:
             print(get_msg(tr_loss, tr_scores, e, dataset='train', args=args))                  # Print train set loss & score for each **epoch**. 
-            print('best_loss: {:.2f}, (curr: {:.2f}), best_score: {:.2f}, (curr: {:.2f}))'.format(
-                best_set_loss, np.mean(set_loss[e]['total']), best_set_score, set_scores[e][score_name])
+            print('best_loss: {:.2f}, (curr: {:.2f}), best_score: {:.2f}, (curr: {:.2f})'.format(best_set_loss, np.mean(set_loss[e]['total']), best_set_score, np.nanmean(set_scores[e][score_name])))
             
         """ Evaluation, using test set for validation """
         if args['use_test_as_val']:
