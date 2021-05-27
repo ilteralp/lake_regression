@@ -26,7 +26,7 @@ class BaseLakeDataset(Dataset):
     """
     def __init__(self, learning, date_type, patch_size):
         if not self._verify(learning=learning, date_type=date_type, patch_size=patch_size):
-            raise Exception('Params should be one from each, learning: {labeled, unlabeled} and date_type: {month, season, year}.')
+            raise Exception('Params should be one from each, learning: {labeled, unlabeled}, date_type: {month, season, year}, and patch_size: {3, 5, 7, 9}.')
         self.learning = learning.lower()
         self.date_type = None if date_type is None else date_type.lower()
         self.patch_size = patch_size
