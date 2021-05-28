@@ -19,6 +19,7 @@ from sklearn.model_selection import KFold
 from datetime import datetime
 import itertools
 import time
+import pickle
 import constants as C
 from datasets import Lake2dDataset, Lake2dFoldDataset
 from metrics import Metrics
@@ -665,7 +666,7 @@ def train_random_on_folds(model, dataset, unlabeled_dataset, train_fn, args, rep
         """ Ensure each run has the sample ids in the same sequence in each fold """
         if fold_sample_ids is None:
             fold_sample_ids = _create_multi_fold_sample_ids(args=args, ids=np.array(indices))
-        
+           
         # kf = KFold(n_splits=args['num_folds'], shuffle=True, random_state=args['seed'])
         # for fold, (tr_index, test_index) in enumerate(kf.split(indices)):
         for fold in range(args['num_folds']):
@@ -772,8 +773,20 @@ def train_random_on_folds(model, dataset, unlabeled_dataset, train_fn, args, rep
     """ Plot test results """
     plot_fold_test_results(metrics=metrics)
     
+    """ Save all fold sample ids """
+    save_all_fold_sample_ids(fold_sample_ids=fold_sample_ids, args=args)
+    save_sample_ids_with_pickle(fold_sample_ids, args)
+    
     """ Return ids in order to use same ids in each run """
     return fold_sample_ids
+
+"""
+"""
+def save_sample_ids_with_pickle(fold_sample_ids, args):
+    path = osp.join(os.getcwd(), 'runs', args['run_name'], 'sample_ids.pickle')
+    pickle_obj = open(path, 'wb')
+    pickle.dump(fold_sample_ids, pickle_obj)
+    pickle_obj.close()
     
 """
 Saves sample ids of that fold to its folder. 
@@ -783,6 +796,16 @@ def save_sample_ids(args, fold, tr_ids, test_ids, val_ids):
     dict_sample_ids = {'tr_ids' : tr_ids, 'test_ids' : test_ids, 'val_ids' : val_ids if val_ids is not None else ''}
     with open(path, 'w') as f:
         f.write(str(dict_sample_ids))
+
+"""
+Saves samples ids of each fold to its folder. 
+"""
+def save_all_fold_sample_ids(fold_sample_ids, args):
+    for fold in range(args['num_folds']):
+        tr_ids = fold_sample_ids['tr_ids'][fold]
+        val_ids = fold_sample_ids['val_ids'][fold] if args['create_val'] else None
+        test_ids = fold_sample_ids['test_ids'][fold]
+        save_sample_ids(args=args, fold=fold, tr_ids=tr_ids, test_ids=test_ids, val_ids=val_ids)
      
 """
 Returns ids (pixel, image or year) of that fold setup that will be used to 
@@ -985,6 +1008,9 @@ def train_on_folds(args, report, fold_sample_ids):
     """ Plot test results """
     plot_fold_test_results(metrics=metrics)
     
+    """ Save all fold sample ids """
+    save_sample_ids_with_pickle(fold_sample_ids, args)
+
     """ Return ids in order to use same ids in each run """
     return fold_sample_ids
         
