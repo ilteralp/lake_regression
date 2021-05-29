@@ -453,12 +453,10 @@ def evaluate_save_model(model, loader, args, set_loss, set_scores, model_dir_pat
         best_set_loss = np.mean(set_loss[e]['total'])
         torch.save(model.state_dict(), 
                    osp.join(model_dir_path, 'best_{}_loss.pth'.format(set_name)))
-        print('best_loss_model at epoch: {}, loss: {:.2f}'.format(e, best_set_loss))
     if np.nanmean(set_scores[e][score_name]) > best_set_score:                  # Due to kappa returning NaN in some cases, nanmean is used.      
         best_set_score = np.nanmean(set_scores[e][score_name])
         torch.save(model.state_dict(), 
                    osp.join(model_dir_path, 'best_{}_score.pth'.format(set_name)))
-        print('best_score_model at epoch: {}, score: {:.2f}'.format(e, best_set_score))
     return best_set_loss, best_set_score
 
 """
@@ -549,7 +547,7 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, t
         # print('Epoch: {}, time: {:.2f} sec'.format(e, time.time() - epoch_start))
 
         
-        if e % 5 == 0:
+        if e % 10 == 0:
             print(get_msg(tr_loss, tr_scores, e, dataset='train', args=args))                  # Print train set loss & score for each **epoch**. 
             
         """ Evaluation, using test set for validation """
@@ -562,12 +560,12 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, t
             if np.mean(set_loss[e]['total']) < best_set_loss:
                 best_set_loss = np.mean(set_loss[e]['total'])
                 torch.save(model.state_dict(), osp.join(model_dir_path, 'best_test_loss.pth'))
-                print('best_loss_model at epoch: {}, loss: {:.2f}'.format(e, best_set_loss))
+                # print('best_loss_model at epoch: {}, loss: {:.2f}'.format(e, best_set_loss))
 
             if np.nanmean(set_scores[e][score_name]) > best_set_score:                         # Due to kappa returning NaN in some cases, nanmean is used.      
                 best_set_score = np.nanmean(set_scores[e][score_name])
                 torch.save(model.state_dict(), osp.join(model_dir_path, 'best_test_score.pth'))
-                print('best_score_model at epoch: {}, score: {:.2f}'.format(e, best_set_score))
+                # print('best_score_model at epoch: {}, score: {:.2f}'.format(e, best_set_score))
 
         # Evaluation, using validation set
         else:
@@ -588,21 +586,16 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, t
                 if np.mean(set_loss[e]['total']) < best_set_loss:
                     best_set_loss = np.mean(set_loss[e]['total'])
                     torch.save(model.state_dict(), osp.join(model_dir_path, 'best_val_loss.pth'))
-                    print('best_loss_model at epoch: {}, loss: {:.2f}'.format(e, best_set_loss))
+                    # print('best_loss_model at epoch: {}, loss: {:.2f}'.format(e, best_set_loss))
                 if np.nanmean(set_scores[e][score_name]) > best_set_score:                         # Due to kappa returning NaN in some cases, nanmean is used.      
                     best_set_score = np.nanmean(set_scores[e][score_name])
                     torch.save(model.state_dict(), osp.join(model_dir_path, 'best_val_score.pth'))
-                    print('best_score_model at epoch: {}, score: {:.2f}'.format(e, best_set_score))
+                    # print('best_score_model at epoch: {}, score: {:.2f}'.format(e, best_set_score))
 
             else:
                 # val_loss, val_scores = None, None
                 set_loss, set_scores = None, None
                 
-        if e % 5 == 0:
-            curr_loss = np.mean(set_loss[e]['total'])
-            curr_score = np.nanmean(set_scores[e][score_name])
-            print('best_loss: {:.2f}, (curr: {:.2f}), best_score: {:.2f}, (curr: {:.2f})'.format(best_set_loss, curr_loss, best_set_score, curr_score))
-              
         """ Plot loss & scores """
         plot(writer=writer, tr_loss=tr_loss, val_loss=set_loss, tr_scores=tr_scores, val_scores=set_scores, e=e)
     
