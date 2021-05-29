@@ -1101,7 +1101,7 @@ if __name__ == "__main__":
         random.seed(seed)    
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    args = {'max_epoch': 2,
+    args = {'max_epoch': 100,
             'device': device,
             'seed': seed,
             'test_per': 0.1,
@@ -1122,7 +1122,7 @@ if __name__ == "__main__":
     args['report_id'] = report.report_id
     
     """ Create experiment params """
-    loss_names = ['sum']
+    loss_names = ['awl']
     fold_setups = ['random']
     pred_types = ['reg', 'reg+class']
     using_unlabeled_samples = [False, True]
@@ -1136,7 +1136,7 @@ if __name__ == "__main__":
     fold_sample_ids, prev_setup_name = None, None
     for (loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer, patch_size) in itertools.product(loss_names, fold_setups, pred_types, using_unlabeled_samples, date_types, split_layers, patch_sizes):
         if pred_type == 'reg' and unlabeled:                    continue
-        if loss_name == 'awl' and pred_type != 'reg+class':     continue
+        if loss_name == 'awl' and pred_type != 'reg+class':     loss_name = 'sum' #continue
         args['loss_name'] = loss_name
         args['fold_setup'] = fold_setup
         args['pred_type'] = pred_type
