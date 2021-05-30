@@ -1112,7 +1112,7 @@ if __name__ == "__main__":
         random.seed(seed)    
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    args = {'max_epoch': 5,
+    args = {'max_epoch': 100,
             'device': device,
             'seed': seed,
             'test_per': 0.1,
