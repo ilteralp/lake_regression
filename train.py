@@ -1006,6 +1006,22 @@ def train_on_folds(args, report, fold_sample_ids):
 
     """ Return ids in order to use same ids in each run """
     return fold_sample_ids
+
+"""
+Loads and return fold sample ids from given path. 
+"""
+def load_fold_sample_ids_args(run_name):
+    run_path = osp.join(os.getcwd(), 'runs', run_name)
+    args_path, sample_ids_path = osp.join(run_path, 'args.txt'), osp.join(run_path, 'sample_ids.pickle')
+    if not osp.isfile(args_path) or not osp.isfile(sample_ids_path):
+        raise Exception('Given pickle file or sample ids file could not be found on {}.'.format(run_path))
+        
+    with open(sample_ids_path, 'rb') as f:                                      # Load sample ids    
+        fold_sample_ids = pickle.load(f)
+    with open(args_path, 'rb') as f:                                            # Load args        
+        args = eval(f.read())
+    return fold_sample_ids, args
+
         
 """
 Creates model.
@@ -1094,7 +1110,7 @@ if __name__ == "__main__":
         random.seed(seed)    
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    args = {'max_epoch': 100,
+    args = {'max_epoch': 5,
             'device': device,
             'seed': seed,
             'test_per': 0.1,
@@ -1117,16 +1133,19 @@ if __name__ == "__main__":
     """ Create experiment params """
     loss_names = ['awl']
     fold_setups = ['random']
-    pred_types = ['reg', 'reg+class']
-    using_unlabeled_samples = [False, True]
+    pred_types = ['reg']
+    using_unlabeled_samples = [False]
     date_types = ['month']
     # split_layers = [*range(1,3)]
     split_layers = [5]
     patch_sizes = [5]
     
+    RUN_NAME = '2021_05_29__23_59_42'
+    fold_sample_ids, _ = load_fold_sample_ids_args(RUN_NAME)
     
     """ Train model with each param """
-    fold_sample_ids, prev_setup_name = None, None
+    # fold_sample_ids, prev_setup_name = None, None
+    prev_setup_name = None
     for (loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer, patch_size) in itertools.product(loss_names, fold_setups, pred_types, using_unlabeled_samples, date_types, split_layers, patch_sizes):
         if pred_type == 'reg' and unlabeled:                    continue
         if loss_name == 'awl' and pred_type != 'reg+class':     loss_name = 'sum' #continue
