@@ -10,6 +10,8 @@ from torch.utils.data import Dataset, random_split, Subset, DataLoader
 from torch.optim import RMSprop
 import torch.nn as nn
 from torch.utils.tensorboard import SummaryWriter
+from torch.nn import MSELoss, CrossEntropyLoss
+from torch import device
 import numpy as np
 import random
 import h5py
