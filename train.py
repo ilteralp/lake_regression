@@ -1020,10 +1020,10 @@ def load_fold_sample_ids_args(run_name):
         
     with open(sample_ids_path, 'rb') as f:                                      # Load sample ids    
         fold_sample_ids = pickle.load(f)
-    with open(args_path, 'rb') as f:                                            # Load args        
-        args = eval(f.read())
-    return fold_sample_ids, args
-
+    # with open(args_path, 'rb') as f:                                            # Load args        
+    #     args = eval(f.read())
+    # return fold_sample_ids, args
+    return fold_sample_ids
         
 """
 Creates model.
@@ -1143,7 +1143,7 @@ if __name__ == "__main__":
     patch_sizes = [5]
     
     RUN_NAME = '2021_05_29__23_59_42'
-    fold_sample_ids, _ = load_fold_sample_ids_args(RUN_NAME)
+    fold_sample_ids = load_fold_sample_ids_args(RUN_NAME)
     
     """ Train model with each param """
     # fold_sample_ids, prev_setup_name = None, None
