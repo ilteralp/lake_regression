@@ -37,7 +37,8 @@ class EASeq(nn.Module):
         
         self.fc1 = nn.Sequential(nn.Flatten(start_dim=1),
                                  nn.Linear(in_features=64 * 3 * 3, out_features=128), # Still 3x3 since all convs except conv1 has 3x3 kernel. 
-                                 nn.Tanh(), nn.Dropout2d())
+                                 nn.Tanh())
+                                 # nn.Tanh(), nn.Dropout2d())
         
         out_features = 1 if self.num_classes is None else self.num_classes
         self.fc2 = nn.Linear(in_features=128, out_features=out_features)
