@@ -137,20 +137,21 @@ if __name__ == "__main__":
     # print('Total lake pixels: {}'.format(np.sum(lake_mask)))
     
     # ps, date_type = [5], 'year'
-    patch_size, date_type = 5, 'year'
+    patch_size, date_type = 3, 'year'
+    is_orig_model = False
     # for patch_size in ps:
-    labeled_2d_dataset = Lake2dDataset(learning='labeled', date_type=date_type, patch_size=patch_size)
+    labeled_2d_dataset = Lake2dDataset(learning='labeled', date_type=date_type, patch_size=patch_size, is_orig_model=is_orig_model)
     # train_set = Subset(labeled_2d_dataset, indices=[*range(0, 10)])
     # test_set = Subset(labeled_2d_dataset, indices=[*range(10, 20)])
     # val_set = Subset(labeled_2d_dataset, indices=[*range(20, 30)])
     # tr_indices = np.asarray([*range(10, 20)])
     # reg_min, reg_max = get_reg_min_max(labeled_2d_dataset.reg_vals[tr_indices])
-    labeled_2d_dataset.set_reg_min_max(reg_min=reg_min, reg_max=reg_max)
+    # labeled_2d_dataset.set_reg_min_max(reg_min=reg_min, reg_max=reg_max)
     
     # unlabeled_2d_dataset = Lake2dDataset(learning='unlabeled', date_type=date_type, patch_size=patch_size)
     # print('patch_size: {} lens, l: {}, u: {}'.format(patch_size, len(labeled_2d_dataset), len(unlabeled_2d_dataset)))
     # unlabeled_2d_dataset = Lake2dDataset(learning='unlabeled', date_type='year', patch_size=3)
-    # patch, date_type, reg_val, (img_idx, px, py) = labeled_2d_dataset[0]
+    patch, date_type, reg_val, (img_idx, px, py) = labeled_2d_dataset[0]
     
     labeled_args = {'batch_size': C.BATCH_SIZE,                                              # 12 in SegNet paper
                     'shuffle': False,
