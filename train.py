@@ -1152,8 +1152,8 @@ if __name__ == "__main__":
     
     RUN_NAME = '2021_05_29__23_59_42'
     fold_sample_ids = load_fold_sample_ids_args(RUN_NAME)
-    # mlp_cfgs = ['{}_hidden_layer'.format(i) for i in range(1, 5)] if args['model'] == 'mlp' else None
-    mlp_cfgs = ['1_hidden_layer']
+    mlp_cfgs = ['{}_hidden_layer'.format(i) for i in range(2, 5)] if args['model'] == 'mlp' else None
+    # mlp_cfgs = ['1_hidden_layer']
                 
     """ Train model with each param """
     # fold_sample_ids, prev_setup_name = None, None
