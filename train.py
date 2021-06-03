@@ -25,7 +25,7 @@ import pickle
 import constants as C
 from datasets import Lake2dDataset, Lake2dFoldDataset
 from metrics import Metrics
-from models import DandadaDAN, EANet, EADAN, EAOriginal
+from models import DandadaDAN, EANet, EADAN, EAOriginal, MultiLayerPerceptron
 from report import Report
 from losses import AutomaticWeightedLoss
 
@@ -137,6 +137,9 @@ def reset_model(m, args):
     
     elif args['model'] == 'eaoriginal':
         return m.apply(weight_bias_init)
+    
+    elif args['model'] == 'mlp':
+        return m.apply(weights_init)
 """
 Returns verbose message with loss and score.
 """
@@ -179,8 +182,8 @@ def verify_args(args):
         raise Exception('Test percent should be less than 0.5 since validation set has the same length with it.')
     if args['pred_type'] not in ['reg', 'class', 'reg+class']:
         raise Exception('Expected prediction type to be one of [\'reg\', \'class\', \'reg+class\']')
-    if args['model'] not in ['dandadadan', 'eanet', 'eadan', 'eaoriginal']:
-        raise Exception('Model can be one of [\'dandadadan\', \'eanet\', \'eadan\', \'eaoriginal\']')
+    if args['model'] not in ['dandadadan', 'eanet', 'eadan', 'eaoriginal', 'mlp']:
+        raise Exception('Model can be one of [\'dandadadan\', \'eanet\', \'eadan\', \'eaoriginal\', \'mlp\']')
     if args['use_unlabeled_samples'] and (args['pred_type'] == 'reg' or args['pred_type'] == 'class'):
         raise Exception('Unlabeled samples cannot be used with regression or classification. They can only be used with \'reg+class\'.')
     if args['num_folds'] is not None and args['fold_setup'] not in ['spatial', 'temporal_day', 'temporal_year', 'random']:
@@ -193,10 +196,10 @@ def verify_args(args):
         raise Exception('Cannot use as year as classification label since one of the years is used as test set and model has not seen all the year samples.')
     if args['loss_name'] == 'awl' and args['pred_type'] != 'reg+class':
         raise Exception('AWL loss only works with reg+class!')
-    if args['patch_size'] != 3 and args['model'] not in ['eadan', 'eaoriginal']:
-        raise Exception('Only model eadan and eaoriginal work with patch sizes different from 3. Given, {} to {}'.format(args['patch_size'], args['model']))
-    if args['model'] == 'eaoriginal' and args['pred_type'] != 'reg':
-        raise Exception('Model eaoriginal only works with regression! Given {}'.format(args['pred_type']))
+    if args['patch_size'] != 3 and args['model'] not in ['eadan', 'eaoriginal', 'mlp']:
+        raise Exception('Only model eadan, eaoriginal and mlp work with patch sizes different from 3. Given, {} to {}'.format(args['patch_size'], args['model']))
+    if args['model'] in ['eaoriginal', 'mlp'] and args['pred_type'] != 'reg':
+        raise Exception('Models eaoriginal and mlp only works with regression! Given {}'.format(args['pred_type']))
     if args['use_test_as_val'] and args['create_val']:
         raise Exception('Validation set should not be created for using test set as validation.')
         
@@ -1047,6 +1050,9 @@ def create_model(args):
     elif args['model'] == 'eaoriginal':
         model = EAOriginal(in_channels=args['in_channels'], patch_size=args['patch_size'])
         
+    elif args['model'] == 'mlp':
+        model = MultiLayerPerceptron(in_channels=args['in_channels'], patch_size=args['patch_size'], cfg=args['mlp_cfg'])
+        
     return model.to(args['device'])
 
 """
@@ -1100,7 +1106,8 @@ Help with params in case you need it.
 """
 def help():
     print('\'dandadan\' and \'eadan\' work with \'use_unlabeled_samples\'=[True, False], \'pred_type\'=[\'reg\', \'reg+class\', \'class\'] and \'date_type\'=[\'month\', \'season\', \'year\'].\n')
-    print('\'eanet\', \'eaoriginal\', (and \'easeq\') works with \'use_unlabeled_samples\'=False, \'pred_type\'=[\'reg\', \'class\'] and does not take \'date_type\'.\n')
+    print('\'eanet\', (and \'easeq\') work  with \'use_unlabeled_samples\'=False, \'pred_type\'=[\'reg\', \'class\'] and does not take \'date_type\'.\n')
+    print(' \'eaoriginal\' and  \'mlp\' work with \'use_unlabeled_samples\'=False, \'pred_type\'=\'reg\' and does not take \'date_type\'.\n')
     print('With \'date_type\'=\'year\', validation set cannot be created.')
     
     
@@ -1112,16 +1119,17 @@ if __name__ == "__main__":
         random.seed(seed)    
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    args = {'max_epoch': 100,
+    args = {'max_epoch': 5,
             'device': device,
             'seed': seed,
             'test_per': 0.1,
             'lr': 0.0001,                                                       # From EA's model, default is 1e-2.
             'patch_norm': True,                                                # Normalizes patches
             'reg_norm': True,                                                  # Normalize regression values
-            'model': 'eadan',                                                   # Model name, can be {dandadadan, eanet, eadan}.
+            'model': 'mlp',                                                   # Model name, can be {dandadadan, eanet, eadan}.
             'use_test_as_val': False,                                            # Uses test set for validation. 
             'num_early_stop_epoch': 5,                                         # Number of consecutive epochs that model loss does not decrease. 
+            'mlp_cfg': '1_hidden_layer',
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'val': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4},
@@ -1135,8 +1143,8 @@ if __name__ == "__main__":
     """ Create experiment params """
     loss_names = ['awl']
     fold_setups = ['random']
-    pred_types = ['reg+class']
-    using_unlabeled_samples = [False, True]
+    pred_types = ['reg']
+    using_unlabeled_samples = [False]
     date_types = ['month']
     # split_layers = [*range(1,3)]
     split_layers = [5]
