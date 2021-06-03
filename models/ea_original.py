@@ -67,6 +67,10 @@ class EAOriginal(nn.Module):
 if __name__ == "__main__":
     in_channels, patch_size = 1, 3
     model = EAOriginal(in_channels=in_channels, patch_size=3)
-    inp = torch.randn(2, 1, 12, 9)
-    outp = model(inp)
-    print('outp.shape:', outp.shape)
+    model_total_params = sum(p.numel() for p in model.parameters())
+    model_trainable_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print('total: {}, trainable: {}'.format(model_total_params, model_trainable_total_params))
+
+    # inp = torch.randn(2, 1, 12, 9)
+    # outp = model(inp)
+    # print('outp.shape:', outp.shape)
