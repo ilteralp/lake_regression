@@ -12,11 +12,11 @@ import os.path as osp
 import pickle
 import torch
 from torch.nn import MSELoss, CrossEntropyLoss
-from torch import device
+# from torch import device
 from datasets import Lake2dDataset, Lake2dFoldDataset
 from torch.utils.data import Subset, DataLoader
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
-from train import calc_mean_std, load_reg_min_max, get_reg_min_max
+from train import calc_mean_std, load_reg_min_max, get_reg_min_max, load_fold_sample_ids_args
 
 def basic_svr():
     # n_samples, n_features = 10, 5
@@ -32,21 +32,6 @@ def basic_svr():
         regressor.fit(X, y)
         print(f'kernel: {kernel}, R2: {regressor.score(X, y):.4f}')
         
-"""
-Loads and return fold sample ids from given path. 
-"""
-def load_fold_sample_ids_args(run_name):
-    run_path = osp.join(os.getcwd(), 'runs', run_name)
-    args_path, sample_ids_path = osp.join(run_path, 'args.txt'), osp.join(run_path, 'sample_ids.pickle')
-    if not osp.isfile(args_path) or not osp.isfile(sample_ids_path):
-        raise Exception('Given pickle file or sample ids file could not be found on {}.'.format(run_path))
-        
-    with open(sample_ids_path, 'rb') as f:                                      # Load sample ids    
-        fold_sample_ids = pickle.load(f)
-    with open(args_path, 'rb') as f:                                            # Load args        
-        args = eval(f.read())
-    return fold_sample_ids, args
-
 """
 Takes args and fold number. Loads and returns that fold's train and test samples
 in X, y format. 
@@ -125,7 +110,7 @@ def calc_scores(regressor, X_test, y_test, scores):
     y_pred = regressor.predict(X_test)
     rmse = mean_squared_error(y_true=y_test, y_pred=y_pred, squared=False)
     mae = mean_absolute_error(y_true=y_test, y_pred=y_pred)
-    for name, s in zip(['r', 'rmse', 'mae'], [r, rmse, mae]):
+    for name, s in zip(['r2', 'r', 'rmse', 'mae'], [r2, r, rmse, mae]):
         scores[name].append(s)
     
 """
@@ -133,7 +118,7 @@ Load data and train on folds.
 """
 def train_on_folds(run_name):
     fold_sample_ids, args = load_fold_sample_ids_args(run_name=run_name)
-    scores = {'r': [], 'mae': [], 'rmse': []}
+    scores = {'r2': [], 'r': [], 'mae': [], 'rmse': []}
     for fold in range(args['num_folds']):
         X_train, y_train, X_test, y_test = load_data(args=args, fold=fold, fold_sample_ids=fold_sample_ids)
         regressor = train(X_train=X_train, y_train=y_train)
@@ -145,7 +130,7 @@ def train_on_folds(run_name):
 if __name__ == "__main__":
     # basic_svr()
     
-    RUN_NAME = '2021_05_29__00_07_24'
+    RUN_NAME = '2021_05_29__23_59_42'
     train_on_folds(run_name=RUN_NAME)
     
     # ARGS_PATH = '/home/melike/repos/lake_regression/runs/2021_05_29__00_07_24/args.txt'
