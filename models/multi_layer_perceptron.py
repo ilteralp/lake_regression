@@ -38,8 +38,8 @@ class MultiLayerPerceptron(nn.Module):
         self.fcs = []
         in_features = self.in_features
         for i, out_features in enumerate(self.cfg):
-            activation = 'tanh' if i == len(self.cfg) - 1 else 'relu'
-            # activation = 'tanh'
+            # activation = 'tanh' if i == len(self.cfg) - 1 else 'relu'
+            activation = 'tanh'
             fc = self.__make_fc(in_features=in_features, out_features=out_features, activation=activation)
             self.fcs.append(fc)
             setattr(self, 'fc{}'.format(i+1), fc)
