@@ -32,15 +32,14 @@ class MultiLayerPerceptron(nn.Module):
     def __make_fc(self, in_features, out_features, activation):
         fc = nn.Linear(in_features=in_features, out_features=out_features)
         layers = [fc, nn.Tanh() if activation == 'tanh' else nn.ReLU()]
-        print('act is ', activation)
         return nn.Sequential(*layers)
     
     def __make_layers(self):
         self.fcs = []
         in_features = self.in_features
         for i, out_features in enumerate(self.cfg):
-            # activation = 'tanh' if i == len(self.cfg) - 1 else 'relu'
-            activation = 'tanh'
+            activation = 'tanh' if i == len(self.cfg) - 1 else 'relu'
+            # activation = 'tanh'
             fc = self.__make_fc(in_features=in_features, out_features=out_features, activation=activation)
             self.fcs.append(fc)
             setattr(self, 'fc{}'.format(i+1), fc)
