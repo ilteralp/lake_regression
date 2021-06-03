@@ -29,16 +29,18 @@ class MultiLayerPerceptron(nn.Module):
         if cfg not in ['{}_hidden_layer'.format(i) for i in range(1, 5)]:
             raise Exception('Configuration for multi layer perceptron can be one of {}'.format(['{}_hidden_layer'.format(i) for i in range(1, 5)]))
         
-    def __make_fc(self, in_features, out_features):
+    def __make_fc(self, in_features, out_features, activation):
         fc = nn.Linear(in_features=in_features, out_features=out_features)
-        layers = [fc, nn.Tanh()]
+        layers = [fc, nn.Tanh() if activation == 'tanh' else nn.ReLU()]
+        print('act is ', activation)
         return nn.Sequential(*layers)
     
     def __make_layers(self):
         self.fcs = []
         in_features = self.in_features
         for i, out_features in enumerate(self.cfg):
-            fc = self.__make_fc(in_features=in_features, out_features=out_features)
+            activation = 'tanh' if i == len(self.cfg) - 1 else 'relu'
+            fc = self.__make_fc(in_features=in_features, out_features=out_features, activation=activation)
             self.fcs.append(fc)
             setattr(self, 'fc{}'.format(i+1), fc)
             in_features = out_features
@@ -58,7 +60,8 @@ if __name__ == "__main__":
     inp = torch.randn(2, in_channels, patch_size, patch_size)
     for i in range(1, 5):
         model = MultiLayerPerceptron(in_channels=in_channels, patch_size=patch_size, cfg='{}_hidden_layer'.format(i))
-        outp = model(inp)
-        print(outp.shape)
+        # outp = model(inp)
+        # print(model)
+        # print(outp.shape)
         # count_parameters(model)
         print('*' * 72)
