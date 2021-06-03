@@ -15,6 +15,7 @@ import sys
 sys.path.append("..")
 import constants as C
 from models import EASeq
+# import count_parameters
 
 class EADAN(nn.Module):
     """
@@ -76,8 +77,12 @@ class EADAN(nn.Module):
 if __name__ == "__main__":
     in_channels, num_classes = 12, 4
     patch_size = 5
-    split_layer = 4
+    split_layer = 5
     model = EADAN(in_channels=in_channels, num_classes=num_classes, split_layer=split_layer, patch_size=patch_size)
-    inp = torch.randn(2, in_channels, patch_size, patch_size)
-    outp_reg, outp_class = model(inp)
-    print('shapes, reg: {}, class: {}'.format(outp_reg.shape, outp_class.shape))
+    model_total_params = sum(p.numel() for p in model.parameters())
+    model_trainable_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print('total: {}, trainable: {}'.format(model_total_params, model_trainable_total_params))
+    # count_parameters(model)
+    # inp = torch.randn(2, in_channels, patch_size, patch_size)
+    # outp_reg, outp_class = model(inp)
+    # print('shapes, reg: {}, class: {}'.format(outp_reg.shape, outp_class.shape))
