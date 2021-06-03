@@ -43,6 +43,11 @@ FOLD_SETUP_NUM_FOLDS = {'spatial': 10,
                         'temporal_year': 3,
                         'random': 10}
 
+MLP_CFGS = {'1_hidden_layer' : [673],
+            '2_hidden_layer' : [364, 256],
+            '3_hidden_layer' : [292, 256, 156],
+            '4_hidden_layer' : [256, 226, 192, 128]}
+
 """ ===================== Model params ===================== """
 BATCH_SIZE = 64
 UNLABELED_BATCH_SIZE = 16384
