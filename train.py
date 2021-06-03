@@ -1152,11 +1152,12 @@ if __name__ == "__main__":
     
     RUN_NAME = '2021_05_29__23_59_42'
     fold_sample_ids = load_fold_sample_ids_args(RUN_NAME)
+    mlp_cfgs = ['{}_hidden_layer'.format(i) for i in range(1, 5)] if args['model'] == 'mlp' else None
     
     """ Train model with each param """
     # fold_sample_ids, prev_setup_name = None, None
     prev_setup_name = None
-    for (loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer, patch_size) in itertools.product(loss_names, fold_setups, pred_types, using_unlabeled_samples, date_types, split_layers, patch_sizes):
+    for (loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer, patch_size, mlp_cfg) in itertools.product(loss_names, fold_setups, pred_types, using_unlabeled_samples, date_types, split_layers, patch_sizes, mlp_cfgs):
         if pred_type == 'reg' and unlabeled:                    continue
         if loss_name == 'awl' and pred_type != 'reg+class':     loss_name = 'sum' #continue
         args['loss_name'] = loss_name
@@ -1170,7 +1171,7 @@ if __name__ == "__main__":
         args['date_type'] = date_type
         args['split_layer'] = split_layer
         args['patch_size'] = patch_size
-        print('loss_name: {}, {}, {}, use_unlabeled: {}, date_type: {}, split_layer: {}, patch_size: {}'.format(loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer, patch_size))
+        print('loss_name: {}, {}, {}, use_unlabeled: {}, date_type: {}, split_layer: {}, patch_size: {}, mlp_cfg: {}'.format(loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer, patch_size, mlp_cfg))
         verify_args(args)
         
         if args['fold_setup'] != prev_setup_name:                               # New fold_setup, old sample ids are meaningless now.
