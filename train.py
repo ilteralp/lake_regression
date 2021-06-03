@@ -1119,7 +1119,7 @@ if __name__ == "__main__":
         random.seed(seed)    
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    args = {'max_epoch': 5,
+    args = {'max_epoch': 100,
             'device': device,
             'seed': seed,
             'test_per': 0.1,
@@ -1152,8 +1152,9 @@ if __name__ == "__main__":
     
     RUN_NAME = '2021_05_29__23_59_42'
     fold_sample_ids = load_fold_sample_ids_args(RUN_NAME)
-    mlp_cfgs = ['{}_hidden_layer'.format(i) for i in range(1, 5)] if args['model'] == 'mlp' else None
-    
+    # mlp_cfgs = ['{}_hidden_layer'.format(i) for i in range(1, 5)] if args['model'] == 'mlp' else None
+    mlp_cfgs = ['1_hidden_layer']
+                
     """ Train model with each param """
     # fold_sample_ids, prev_setup_name = None, None
     prev_setup_name = None
