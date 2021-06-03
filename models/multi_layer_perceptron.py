@@ -26,7 +26,7 @@ class MultiLayerPerceptron(nn.Module):
         self.out = nn.Linear(in_features=in_features, out_features=1)
 
     def __verify(self, cfg):
-        if cfg not in ['{}_hidden_layer'.format(i) for i in range(1, 5)]:
+        if cfg not in ['{}_hidden_layer'.format(i) for i in range(1, 7)]:
             raise Exception('Configuration for multi layer perceptron can be one of {}'.format(['{}_hidden_layer'.format(i) for i in range(1, 5)]))
         
     def __make_fc(self, in_features, out_features, activation):
@@ -58,10 +58,11 @@ if __name__ == "__main__":
     in_channels, patch_size = 12, 5
     in_features = in_channels * patch_size * patch_size
     inp = torch.randn(2, in_channels, patch_size, patch_size)
-    for i in range(1, 5):
-        model = MultiLayerPerceptron(in_channels=in_channels, patch_size=patch_size, cfg='{}_hidden_layer'.format(i))
-        # outp = model(inp)
-        # print(model)
-        # print(outp.shape)
-        # count_parameters(model)
-        print('*' * 72)
+    # for i in range(1, 5):
+    i = 6
+    model = MultiLayerPerceptron(in_channels=in_channels, patch_size=patch_size, cfg='{}_hidden_layer'.format(i))
+    # outp = model(inp)
+    # print(model)
+    # print(outp.shape)
+    # count_parameters(model)
+    print('*' * 72)
