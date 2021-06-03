@@ -1129,7 +1129,6 @@ if __name__ == "__main__":
             'model': 'mlp',                                                   # Model name, can be {dandadadan, eanet, eadan}.
             'use_test_as_val': False,                                            # Uses test set for validation. 
             'num_early_stop_epoch': 5,                                         # Number of consecutive epochs that model loss does not decrease. 
-            'mlp_cfg': '1_hidden_layer',
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'val': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4},
@@ -1172,6 +1171,7 @@ if __name__ == "__main__":
         args['date_type'] = date_type
         args['split_layer'] = split_layer
         args['patch_size'] = patch_size
+        args['mlp_cfg'] = mlp_cfg
         print('loss_name: {}, {}, {}, use_unlabeled: {}, date_type: {}, split_layer: {}, patch_size: {}, mlp_cfg: {}'.format(loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer, patch_size, mlp_cfg))
         verify_args(args)
         
