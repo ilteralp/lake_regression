@@ -17,16 +17,15 @@ from print_params import count_parameters
 from datasets import Lake2dDataset
 
 class WaterNet(nn.Module):
-    def __init__(self, in_channels, depth, patch_size):
+    def __init__(self, in_channels, patch_size):
         super(WaterNet, self).__init__()
-        self.__verify(in_channels, depth, patch_size)
+        self.__verify(in_channels, patch_size)
         self.in_channels = in_channels
         self.ps = patch_size
-        self.depth = depth
         
         padding2 = (0, 1, 1) if self.ps == 5 else (0, 0, 0)
         depth2 = (self.in_channels - 2) * 3
-        self.conv1 = nn.Conv3d(in_channels=self.depth, out_channels=3, kernel_size=(3, 1, 1))     # (bs, 1, 12, 5, 5) -> (bs, 3, 10, 5, 5)
+        self.conv1 = nn.Conv3d(in_channels=1, out_channels=3, kernel_size=(3, 1, 1))              # (bs, 1, 12, 5, 5) -> (bs, 3, 10, 5, 5)
         self.bn = nn.BatchNorm3d(depth2)
         self.conv2 = nn.Conv3d(in_channels=1, out_channels=10, 
                                kernel_size=(depth2, 3, 3), padding=padding2)                      # (bs, 1, 30, 5, 5) -> (bs, 10, 1, 5, 5)
@@ -36,13 +35,11 @@ class WaterNet(nn.Module):
         self.fc2 = nn.Linear(in_features=9, out_features=1)                                       # (bs, 9) -> (bs, 1)
         
         
-    def __verify(self, in_channels, depth, patch_size):
+    def __verify(self, in_channels, patch_size):
         if in_channels == 1:
             raise Exception('in_channels should be greater than 1 for WaterNet!')
         if patch_size not in [5, 7]:
             raise Exception('WaterNet convolution kernels only work for patch_size={5, 7}.')
-        if depth != 1:
-            raise Exception('Depth should be 1 for WaterNet!')
         
     """
     Changes indices 1 and 2 of input to use Batchnorm. 
@@ -76,8 +73,8 @@ class WaterNet(nn.Module):
         return x
 
 if __name__ == "__main__":
-    in_channels, patch_size, depth = 12, 5, 1                                   # Depth and channels are different due to convolution on channels.
-    model = WaterNet(in_channels=in_channels, patch_size=patch_size, depth=depth)
+    in_channels, patch_size = 12, 5                                             # Depth and channels are different due to convolution on channels.
+    model = WaterNet(in_channels=in_channels, patch_size=patch_size)
     # inp = torch.randn(2, in_channels, patch_size, patch_size)
     # outp = model(inp)
     
