@@ -1138,7 +1138,7 @@ if __name__ == "__main__":
             'lr': 0.0001,                                                       # From EA's model, default is 1e-2.
             'patch_norm': True,                                                # Normalizes patches
             'reg_norm': True,                                                  # Normalize regression values
-            'model': 'waternet',                                                   # Model name, can be {dandadadan, eanet, eadan}.
+            'model': 'eadan',                                                   # Model name, can be {dandadadan, eanet, eadan}.
             'use_test_as_val': False,                                            # Uses test set for validation. 
             'num_early_stop_epoch': 5,                                         # Number of consecutive epochs that model loss does not decrease. 
             
