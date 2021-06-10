@@ -13,7 +13,6 @@ from torch.utils.data import DataLoader, Subset
 import sys
 sys.path.append("..")
 import constants as C
-from print_params import count_parameters
 from datasets import Lake2dDataset
 
 class WaterNet(nn.Module):
@@ -36,8 +35,8 @@ class WaterNet(nn.Module):
         
         
     def __verify(self, in_channels, patch_size):
-        if in_channels == 1:
-            raise Exception('in_channels should be greater than 1 for WaterNet!')
+        if in_channels < 2:
+            raise Exception('in_channels should be greater than 2 for WaterNet!')
         if patch_size not in [5, 7]:
             raise Exception('WaterNet convolution kernels only work for patch_size={5, 7}.')
         
