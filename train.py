@@ -25,7 +25,7 @@ import pickle
 import constants as C
 from datasets import Lake2dDataset, Lake2dFoldDataset
 from metrics import Metrics
-from models import DandadaDAN, EANet, EADAN, EAOriginal, MultiLayerPerceptron
+from models import DandadaDAN, EANet, EADAN, EAOriginal, MultiLayerPerceptron, WaterNet
 from report import Report
 from losses import AutomaticWeightedLoss
 
@@ -140,6 +140,9 @@ def reset_model(m, args):
     
     elif args['model'] == 'mlp':
         return m.apply(weights_init)
+    
+    elif args['model'] == 'waternet':
+        return m.apply(weights_init)
 """
 Returns verbose message with loss and score.
 """
@@ -182,8 +185,8 @@ def verify_args(args):
         raise Exception('Test percent should be less than 0.5 since validation set has the same length with it.')
     if args['pred_type'] not in ['reg', 'class', 'reg+class']:
         raise Exception('Expected prediction type to be one of [\'reg\', \'class\', \'reg+class\']')
-    if args['model'] not in ['dandadadan', 'eanet', 'eadan', 'eaoriginal', 'mlp']:
-        raise Exception('Model can be one of [\'dandadadan\', \'eanet\', \'eadan\', \'eaoriginal\', \'mlp\']')
+    if args['model'] not in ['dandadadan', 'eanet', 'eadan', 'eaoriginal', 'mlp', 'waternet']:
+        raise Exception('Model can be one of [\'dandadadan\', \'eanet\', \'eadan\', \'eaoriginal\', \'mlp\', \'waternet\']')
     if args['use_unlabeled_samples'] and (args['pred_type'] == 'reg' or args['pred_type'] == 'class'):
         raise Exception('Unlabeled samples cannot be used with regression or classification. They can only be used with \'reg+class\'.')
     if args['num_folds'] is not None and args['fold_setup'] not in ['spatial', 'temporal_day', 'temporal_year', 'random']:
@@ -196,10 +199,10 @@ def verify_args(args):
         raise Exception('Cannot use as year as classification label since one of the years is used as test set and model has not seen all the year samples.')
     if args['loss_name'] == 'awl' and args['pred_type'] != 'reg+class':
         raise Exception('AWL loss only works with reg+class!')
-    if args['patch_size'] != 3 and args['model'] not in ['eadan', 'eaoriginal', 'mlp']:
-        raise Exception('Only model eadan, eaoriginal and mlp work with patch sizes different from 3. Given, {} to {}'.format(args['patch_size'], args['model']))
-    if args['model'] in ['eaoriginal', 'mlp'] and args['pred_type'] != 'reg':
-        raise Exception('Models eaoriginal and mlp only works with regression! Given {}'.format(args['pred_type']))
+    if args['patch_size'] != 3 and args['model'] not in ['eadan', 'eaoriginal', 'mlp', 'waternet']:
+        raise Exception('Only model eadan, eaoriginal, mlp and waternet work with patch sizes different from 3. Given, {} to {}'.format(args['patch_size'], args['model']))
+    if args['model'] in ['eaoriginal', 'mlp', 'waternet'] and args['pred_type'] != 'reg':
+        raise Exception('Models eaoriginal, mlp and waternet only works with regression! Given {}'.format(args['pred_type']))
     if args['use_test_as_val'] and args['create_val']:
         raise Exception('Validation set should not be created for using test set as validation.')
         
@@ -799,11 +802,17 @@ def save_sample_ids(args, fold, tr_ids, test_ids, val_ids):
 Saves samples ids of each fold to its folder. 
 """
 def save_all_fold_sample_ids(fold_sample_ids, args):
-    for fold in range(args['num_folds']):
+    if args['num_folds'] is not None:
+        for fold in range(args['num_folds']):
+            tr_ids = fold_sample_ids['tr_ids'][fold]
+            val_ids = fold_sample_ids['val_ids'][fold] if args['create_val'] else None
+            test_ids = fold_sample_ids['test_ids'][fold]
+    else:
+        fold = 0
         tr_ids = fold_sample_ids['tr_ids'][fold]
         val_ids = fold_sample_ids['val_ids'][fold] if args['create_val'] else None
         test_ids = fold_sample_ids['test_ids'][fold]
-        save_sample_ids(args=args, fold=fold, tr_ids=tr_ids, test_ids=test_ids, val_ids=val_ids)
+    save_sample_ids(args=args, fold=fold, tr_ids=tr_ids, test_ids=test_ids, val_ids=val_ids)
      
 """
 Returns ids (pixel, image or year) of that fold setup that will be used to 
@@ -1053,6 +1062,9 @@ def create_model(args):
     elif args['model'] == 'mlp':
         model = MultiLayerPerceptron(in_channels=args['in_channels'], patch_size=args['patch_size'], cfg=args['mlp_cfg'])
         
+    elif args['model'] == 'waternet':
+        model = WaterNet(in_channels=args['in_channels'], patch_size=args['patch_size'])
+        
     return model.to(args['device'])
 
 """
@@ -1107,7 +1119,7 @@ Help with params in case you need it.
 def help():
     print('\'dandadan\' and \'eadan\' work with \'use_unlabeled_samples\'=[True, False], \'pred_type\'=[\'reg\', \'reg+class\', \'class\'] and \'date_type\'=[\'month\', \'season\', \'year\'].\n')
     print('\'eanet\', (and \'easeq\') work  with \'use_unlabeled_samples\'=False, \'pred_type\'=[\'reg\', \'class\'] and does not take \'date_type\'.\n')
-    print(' \'eaoriginal\' and  \'mlp\' work with \'use_unlabeled_samples\'=False, \'pred_type\'=\'reg\' and does not take \'date_type\'.\n')
+    print(' \'eaoriginal\',  \'mlp\' and \'waternet\' work with \'use_unlabeled_samples\'=False, \'pred_type\'=\'reg\' and does not take \'date_type\'.\n')
     print('With \'date_type\'=\'year\', validation set cannot be created.')
     
     
@@ -1126,7 +1138,7 @@ if __name__ == "__main__":
             'lr': 0.0001,                                                       # From EA's model, default is 1e-2.
             'patch_norm': True,                                                # Normalizes patches
             'reg_norm': True,                                                  # Normalize regression values
-            'model': 'mlp',                                                   # Model name, can be {dandadadan, eanet, eadan}.
+            'model': 'waternet',                                                   # Model name, can be {dandadadan, eanet, eadan}.
             'use_test_as_val': False,                                            # Uses test set for validation. 
             'num_early_stop_epoch': 5,                                         # Number of consecutive epochs that model loss does not decrease. 
             
@@ -1151,28 +1163,27 @@ if __name__ == "__main__":
     
     RUN_NAME = '2021_05_29__23_59_42'
     fold_sample_ids = load_fold_sample_ids_args(RUN_NAME)
-    mlp_cfgs = ['{}_hidden_layer'.format(i) for i in range(7, 9)] if args['model'] == 'mlp' else None
+    # mlp_cfgs = ['{}_hidden_layer'.format(i) for i in range(7, 9)] if args['model'] == 'mlp' else None
     # mlp_cfgs = ['1_hidden_layer']
                 
     """ Train model with each param """
     # fold_sample_ids, prev_setup_name = None, None
     prev_setup_name = None
-    for (loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer, patch_size, mlp_cfg) in itertools.product(loss_names, fold_setups, pred_types, using_unlabeled_samples, date_types, split_layers, patch_sizes, mlp_cfgs):
+    for (loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer, patch_size) in itertools.product(loss_names, fold_setups, pred_types, using_unlabeled_samples, date_types, split_layers, patch_sizes):
         if pred_type == 'reg' and unlabeled:                    continue
         if loss_name == 'awl' and pred_type != 'reg+class':     loss_name = 'sum' #continue
         args['loss_name'] = loss_name
         args['fold_setup'] = fold_setup
         args['pred_type'] = pred_type
         args['use_unlabeled_samples'] = unlabeled
-        args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
-        # args['num_folds'] = None
+        # args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
+        args['num_folds'] = None
         args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
         # args['create_val'] = False
         args['date_type'] = date_type
         args['split_layer'] = split_layer
         args['patch_size'] = patch_size
-        args['mlp_cfg'] = mlp_cfg
-        print('loss_name: {}, {}, {}, use_unlabeled: {}, date_type: {}, split_layer: {}, patch_size: {}, mlp_cfg: {}'.format(loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer, patch_size, mlp_cfg))
+        print('loss_name: {}, {}, {}, use_unlabeled: {}, date_type: {}, split_layer: {}, patch_size: {}'.format(loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer, patch_size))
         verify_args(args)
         
         if args['fold_setup'] != prev_setup_name:                               # New fold_setup, old sample ids are meaningless now.
