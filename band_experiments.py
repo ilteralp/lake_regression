@@ -13,37 +13,41 @@ import numpy as np
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error, r2_score
 from baseline import load_data, load_fold_sample_ids_args
 
-def estimate_model_a_clus(X_train):
-    a, b = 80.7, 53.18
+""" ================ Band ratio models from Neil19. =============== """
+def estimate_model_a_clus(X_train, coeffs=None):
+    a, b = (80.7, 53.18) if coeffs is None else coeffs
     rrs_665, rrs_705 = X_train[:, 3], X_train[:, 4]
     rat = rrs_705 / rrs_665
     return a * rat + b
 
-def estimate_model_j_clus(X_train):
-    a, b, c = 19.31, 153.5, 105.4
+def estimate_model_j_clus(X_train, coeffs=None):
+    a, b, c = (19.31, 153.5, 105.4) if coeffs is None else coeffs
     rrs_665, rrs_705 = X_train[:, 3], X_train[:, 4]
     rat = (rrs_705 - rrs_665) / (rrs_705 + rrs_665)
     return a + b * rat + c * pow(rat, 2)
 
-def estimate_model_j_cal(X_train):
-    a, b, c = 18.44, 149.2, 374.9
+def estimate_model_j_cal(X_train, coeffs=None):
+    a, b, c = (18.44, 149.2, 374.9) if coeffs is None else coeffs
     rrs_665, rrs_705 = X_train[:, 3], X_train[:, 4]
     rat = (rrs_705 - rrs_665) / (rrs_705 + rrs_665)
     return a + b * rat + c * pow(rat, 2)
 
-def estimate_model_k_org(X_train):
-    # a, b, c = 14.039, 86.115, 194.33
-    # a, b, c = 0.90780541, -43.16215739, 260.78290038
-    # a, b, c = -15.15858496, 165.57192654, -454.95193805
-    a, b, c = -62.44481209, 3928.8857205, -28074.23623291
+def estimate_model_a_clus2(X_train, coeffs=None):
+    a, b = (53.29, -30.08) if coeffs is None else coeffs
+    rrs_665, rrs_705 = X_train[:, 3], X_train[:, 4]
+    return a * (rrs_705 / rrs_665) + b
+
+def estimate_model_k_org(X_train, coeffs=None):
+    a, b, c = (14.039, 86.115, 194.33) if coeffs is None else coeffs
     rrs_665, rrs_705,  =  X_train[:, 3], X_train[:, 4]
     rat = (rrs_705 - rrs_665) / (rrs_705 + rrs_665)
     return a + b * rat + c * pow(rat, 2)
     
-def estimate_model_a_clus2(X_train):
-    a, b = 53.29, -30.08
-    rrs_665, rrs_705 = X_train[:, 3], X_train[:, 4]
-    return a * (rrs_705 / rrs_665) + b
+def estimate_model_c_clus(X_train, coeffs=None):
+    a, b, c = (86.09, -517.5, 886.7) if coeffs is None else coeffs
+    rrs_665, rrs_705,  =  X_train[:, 3], X_train[:, 4]
+    rat = rrs_705 / rrs_665
+    return a * pow(rat, 2) + b * rat + c
 
 # def estimate_model_n_clus(X_train):
 #     a, b, c, d, e = 0.0536, 7.308, 116.2, 412.4, 463.5
@@ -62,7 +66,7 @@ def estimate_model_a_clus2(X_train):
 #     return pow(10, a + b * x + c * pow(x, 2) + d * pow(x, 3) + e * pow(x, 4))
 
 """
-Adds 1.0e-6 to zero values.  
+Adds 1.0e-6 to zero values due to division by zero.  
 """
 def elim_zeros(rrs):
     rrs[rrs == 0] = 1.0e-6
@@ -83,7 +87,7 @@ def init_scores():
     return {'r2': [], 'r': [], 'mae': [], 'rmse': []}
 
 """
-Estimate Chl-a valeus on folds
+Estimate Chl-a values on folds
 """
 def estimate_on_folds(run_name):
     fold_sample_ids, args = load_samples_set_args(run_name=run_name)
@@ -106,17 +110,28 @@ def estimate_on_folds(run_name):
         print(k, ':')
         for s, v in l.items():
             print('{}, mean: {:.4f}, std: {:.4f}'.format(s, np.mean(v), np.std(v)))
+            
+            
+"""
+Estimate Chl-a value on a band-based model.
+"""
+def estimate_model_on_folds(fold_sample_ids, model, name, args, coeffs):
+    scores = init_scores()
+    for fold in range(args['num_folds']): 
+        X_train, y_train, _, _ = load_data(args=args, fold=fold, fold_sample_ids=fold_sample_ids)
+        if X_train.shape != (256, 12):
+            raise Exception('Expected training set to be (256, 12). Given {}'.format(X_train.shape))
+        
+        y_pred = model(X_train=X_train, coeffs=coeffs)
+        calc_scores(y_true=y_train, y_pred=y_pred, scores=scores)
+        
+    print('model: {} with coeffs: {}'.format(name, coeffs))
+    for s, v in scores.items():
+        print('{}, mean: {:.4f}, std: {:.4f}'.format(s, np.mean(v), np.std(v)))
+            
     
-"""
-Band ratio models from Neil19. 
-"""
-def estimate_model_c_clus(X_train):
-    a, b, c = 86.09, -517.5, 886.7
-    # a, b, c = -2207.70406696, 5876.97668667, -3791.06652595
-    # a, b, c = -44.48564812, 180.04721124, -139.61928711
-    rrs_665, rrs_705,  =  X_train[:, 3], X_train[:, 4]
-    rat = rrs_705 / rrs_665
-    return a * pow(rat, 2) + b * rat + c
+""" ========= Find calibration coefficients of each model ========= """
+
 
 def solve_for_c_clus(X_train, y_train):
     num_vals = 3
@@ -124,8 +139,9 @@ def solve_for_c_clus(X_train, y_train):
     rat = rrs_705 / rrs_665
     xs = np.array([[rat[0] ** 2, rat[0], 1], [rat[1] ** 2, rat[1], 1], [rat[2] ** 2, rat[2], 1]])
     ys = np.asarray(regs)
-    cons = np.linalg.solve(xs, ys)
-    print(cons)
+    coeffs = np.linalg.solve(xs, ys)
+    print('c_clus, coeffs: {}, all_close: {}'.format(coeffs, np.allclose(np.dot(xs, coeffs), ys)))
+    return coeffs[0], coeffs[1], coeffs[2]
     
 def solve_for_k_org(X_train, y_train):
     num_vals = 3
@@ -133,29 +149,78 @@ def solve_for_k_org(X_train, y_train):
     rat = (rrs_705 - rrs_665) / (rrs_705 + rrs_665)
     xs = np.array([[1, rat[0], rat[0] ** 2], [1, rat[1], rat[1] ** 2], [1, rat[2], rat[2] ** 2]])
     ys = np.asarray(regs)
-    cons = np.linalg.solve(xs, ys)
-    print('xs', xs)
-    print('ys', ys)
-    print('cons', cons)
-    print('allclose:', np.allclose(np.dot(xs, cons), ys))
-    return xs, ys, cons
-    
+    coeffs = np.linalg.solve(xs, ys)
+    print('k_org, coeffs: {}, all_close: {}'.format(coeffs, np.allclose(np.dot(xs, coeffs), ys)))
+    return coeffs[0], coeffs[1], coeffs[2]
+
+def solve_for_a_clus2(X_train, y_train):
+    num_vals = 2
+    rrs_665, rrs_705, regs = X_train[0:num_vals, 3], X_train[0:num_vals, 4], y_train[0:num_vals]
+    rat = (rrs_705 / rrs_665)
+    xs = np.array([[rat[0], 1], [rat[1], 1]])
+    ys = np.asarray(regs)
+    coeffs = np.linalg.solve(xs, ys)
+    print('a_clus2, coeffs: {}, all_close: {}'.format(coeffs, np.allclose(np.dot(xs, coeffs), ys)))
+    return coeffs[0], coeffs[1]
+
+def solve_for_j_cal(X_train, y_train):
+    num_vals = 3
+    rrs_665, rrs_705, regs = X_train[0:num_vals, 3], X_train[0:num_vals, 4], y_train[0:num_vals]
+    rat = (rrs_705 - rrs_665) / (rrs_705 + rrs_665)
+    xs = [[1, rat[0], rat[0] ** 2], [1, rat[1], rat[1] ** 2], [1, rat[2], rat[2] ** 2]]
+    ys = np.asarray(regs)
+    coeffs = np.linalg.solve(xs, ys)
+    print('j_cal, coeffs: {}, all_close: {}'.format(coeffs, np.allclose(np.dot(xs, coeffs), ys)))
+    return coeffs[0], coeffs[1], coeffs[2]
+
+def solve_for_j_clus(X_train, y_train):
+    num_vals = 3
+    rrs_665, rrs_705, regs = X_train[0:num_vals, 3], X_train[0:num_vals, 4], y_train[0:num_vals]
+    rat = (rrs_705 - rrs_665) / (rrs_705 + rrs_665)
+    xs = [[1, rat[0], rat[0] ** 2], [1, rat[1], rat[1] ** 2], [1, rat[2], rat[2] ** 2]]
+    ys = np.asarray(regs)
+    coeffs = np.linalg.solve(xs, ys)
+    print('j_clus, coeffs: {}, all_close: {}'.format(coeffs, np.allclose(np.dot(xs, coeffs), ys)))
+    return coeffs[0], coeffs[1], coeffs[2]
+
+def solve_for_a_clus(X_train, y_train):
+    num_vals = 2
+    rrs_665, rrs_705, regs = X_train[0:num_vals, 3], X_train[0:num_vals, 4], y_train[0:num_vals]
+    rat = (rrs_705 / rrs_665)
+    xs = np.array([[rat[0], 1], [rat[1], 1]])
+    ys = np.asarray(regs)
+    coeffs = np.linalg.solve(xs, ys)
+    print('a_clus, coeffs: {}, all_close: {}'.format(coeffs, np.allclose(np.dot(xs, coeffs), ys)))
+    return coeffs[0], coeffs[1]
+
 def load_samples_set_args(run_name):
     fold_sample_ids, args = load_fold_sample_ids_args(run_name=run_name)
-    args['patch_norm'], args['reg_norm'] = False, True                                                 # Don't normalize image and Chl-a values. 
+    args['patch_norm'], args['reg_norm'] = False, False                                                 # Don't normalize image and Chl-a values. 
     args['patch_size'] = 1
     return fold_sample_ids, args
     
 if __name__ == "__main__":
     run_name = '2021_05_29__23_59_42'
     
-    """ Calculate constants """
-    # fold_sample_ids, args = load_samples_set_args(run_name=run_name)
-    # X_train, y_train, _, _ = load_data(args=args, fold=0, fold_sample_ids=fold_sample_ids)
-    # # solve_for_c_clus(X_train, y_train)
-    # xs, ys, cons = solve_for_k_org(X_train, y_train)
+    fold_sample_ids, args = load_samples_set_args(run_name=run_name)
+    X_train, y_train, _, _ = load_data(args=args, fold=0, fold_sample_ids=fold_sample_ids)
+    print('patch norm: {}, reg norm: {}'.format(args['patch_norm'], args['reg_norm']))
+    models = {'c_clus': {'solver': solve_for_c_clus,
+                          'model': estimate_model_c_clus},
+              'k_org': {'solver': solve_for_k_org,
+                        'model': estimate_model_k_org},
+              'a_clus2': {'solver': solve_for_a_clus2,
+                          'model': estimate_model_a_clus2},
+              'j_cal': {'solver': solve_for_j_cal,
+                          'model': estimate_model_j_cal},
+              'j_clus': {'solver': solve_for_j_clus,
+                          'model': estimate_model_j_clus}}
     
-    """ Estimate Chl-a values """
-    estimate_on_folds(run_name)
+    for fname, v in models.items():
+        coeffs = v['solver'](X_train, y_train)                                               # Calculate coefficients
+        for x in [coeffs, None]:                                                             # Calculate regression scores.
+            estimate_model_on_folds(fold_sample_ids=fold_sample_ids, model=v['model'], 
+                                    name=fname, args=args, coeffs=x)
+            print('=' * 72)
 
     
