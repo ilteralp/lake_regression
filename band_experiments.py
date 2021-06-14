@@ -10,6 +10,7 @@ import torch
 from torch.nn import MSELoss, CrossEntropyLoss
 from torch import device
 import numpy as np
+import itertools
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error, r2_score
 from baseline import load_data, load_fold_sample_ids_args
 
@@ -195,7 +196,7 @@ def solve_for_a_clus(X_train, y_train):
 
 def load_samples_set_args(run_name):
     fold_sample_ids, args = load_fold_sample_ids_args(run_name=run_name)
-    args['patch_norm'], args['reg_norm'] = False, False                                                 # Don't normalize image and Chl-a values. 
+    args['patch_norm'], args['reg_norm'] = False, False                                             # Don't normalize image and Chl-a values. 
     args['patch_size'] = 1
     return fold_sample_ids, args
     
@@ -204,7 +205,6 @@ if __name__ == "__main__":
     
     fold_sample_ids, args = load_samples_set_args(run_name=run_name)
     X_train, y_train, _, _ = load_data(args=args, fold=0, fold_sample_ids=fold_sample_ids)
-    print('patch norm: {}, reg norm: {}'.format(args['patch_norm'], args['reg_norm']))
     models = {'c_clus': {'solver': solve_for_c_clus,
                           'model': estimate_model_c_clus},
               'k_org': {'solver': solve_for_k_org,
@@ -214,13 +214,23 @@ if __name__ == "__main__":
               'j_cal': {'solver': solve_for_j_cal,
                           'model': estimate_model_j_cal},
               'j_clus': {'solver': solve_for_j_clus,
-                          'model': estimate_model_j_clus}}
+                          'model': estimate_model_j_clus},
+              'a_clus': {'solver': solve_for_a_clus,
+                         'model': estimate_model_a_clus}}
+    patch_norms = [False]
+    reg_norms = [True, False]
     
-    for fname, v in models.items():
-        coeffs = v['solver'](X_train, y_train)                                               # Calculate coefficients
-        for x in [coeffs, None]:                                                             # Calculate regression scores.
-            estimate_model_on_folds(fold_sample_ids=fold_sample_ids, model=v['model'], 
-                                    name=fname, args=args, coeffs=x)
-            print('=' * 72)
+    
+    for (patch_norm, reg_norm) in itertools.product(patch_norms, reg_norms):
+        args['patch_norm'] = patch_norm
+        args['reg_norm'] = reg_norm
+
+        for fname, v in models.items():
+            print('patch norm: {}, reg norm: {}'.format(args['patch_norm'], args['reg_norm']))
+            coeffs = v['solver'](X_train, y_train)                                               # Calculate coefficients
+            for x in [coeffs, None]:                                                             # Calculate regression scores.
+                estimate_model_on_folds(fold_sample_ids=fold_sample_ids, model=v['model'], 
+                                        name=fname, args=args, coeffs=x)
+                print('=' * 72)
 
     
