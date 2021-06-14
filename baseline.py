@@ -12,11 +12,11 @@ import os.path as osp
 import pickle
 import torch
 from torch.nn import MSELoss, CrossEntropyLoss
-# from torch import device
+from torch import device
 from datasets import Lake2dDataset, Lake2dFoldDataset
 from torch.utils.data import Subset, DataLoader
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
-from train import calc_mean_std, load_reg_min_max, get_reg_min_max, load_fold_sample_ids_args
+from train import calc_mean_std, load_reg_min_max, get_reg_min_max
 
 def basic_svr():
     # n_samples, n_features = 10, 5
@@ -31,6 +31,21 @@ def basic_svr():
         regressor = SVR(kernel=kernel)
         regressor.fit(X, y)
         print(f'kernel: {kernel}, R2: {regressor.score(X, y):.4f}')
+        
+"""
+Loads and return fold sample ids from given path. 
+"""
+def load_fold_sample_ids_args(run_name):
+    run_path = osp.join(os.getcwd(), 'runs', run_name)
+    args_path, sample_ids_path = osp.join(run_path, 'args.txt'), osp.join(run_path, 'sample_ids.pickle')
+    if not osp.isfile(args_path) or not osp.isfile(sample_ids_path):
+        raise Exception('Given pickle file or sample ids file could not be found on {}.'.format(run_path))
+        
+    with open(sample_ids_path, 'rb') as f:                                      # Load sample ids    
+        fold_sample_ids = pickle.load(f)
+    with open(args_path, 'rb') as f:                                            # Load args        
+        args = eval(f.read())
+    return fold_sample_ids, args
         
 """
 Takes args and fold number. Loads and returns that fold's train and test samples
