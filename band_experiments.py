@@ -32,8 +32,10 @@ def estimate_model_j_cal(X_train):
     return a + b * rat + c * pow(rat, 2)
 
 def estimate_model_k_org(X_train):
-    a, b, c = 14.039, 86.115, 194.33
+    # a, b, c = 14.039, 86.115, 194.33
     # a, b, c = 0.90780541, -43.16215739, 260.78290038
+    # a, b, c = -15.15858496, 165.57192654, -454.95193805
+    a, b, c = -62.44481209, 3928.8857205, -28074.23623291
     rrs_665, rrs_705,  =  X_train[:, 3], X_train[:, 4]
     rat = (rrs_705 - rrs_665) / (rrs_705 + rrs_665)
     return a + b * rat + c * pow(rat, 2)
@@ -84,14 +86,12 @@ def init_scores():
 Estimate Chl-a valeus on folds
 """
 def estimate_on_folds(run_name):
-    fold_sample_ids, args = load_fold_sample_ids_args(run_name=run_name)
-    args['patch_norm'], args['reg_norm'] = False, False                                                 # Don't normalize image and Chl-a values. 
-    args['patch_size'] = 1                                                                              # Patch size is 1 since only pixels are used. 
+    fold_sample_ids, args = load_samples_set_args(run_name=run_name)
     # fs = [estimate_model_c_clus, estimate_model_a_clus, estimate_model_j_clus, estimate_model_j_cal, 
     #         estimate_model_k_org, estimate_model_a_clus2]
     # fnames = ['c_clus', 'a_clus', 'j_clus', 'j_cal', 'k_org', 'a_clus2']
-    fs = [estimate_model_k_org]
-    fnames = ['k_org']
+    fs = [estimate_model_c_clus]
+    fnames = ['c_clus']
     scores = { k: init_scores() for k in fnames}
     for fold in range(args['num_folds']):
         X_train, y_train, _, _ = load_data(args=args, fold=fold, fold_sample_ids=fold_sample_ids)       # There is no test set since a model is not trained. 
@@ -140,14 +140,22 @@ def solve_for_k_org(X_train, y_train):
     print('allclose:', np.allclose(np.dot(xs, cons), ys))
     return xs, ys, cons
     
+def load_samples_set_args(run_name):
+    fold_sample_ids, args = load_fold_sample_ids_args(run_name=run_name)
+    args['patch_norm'], args['reg_norm'] = False, True                                                 # Don't normalize image and Chl-a values. 
+    args['patch_size'] = 1
+    return fold_sample_ids, args
     
 if __name__ == "__main__":
     run_name = '2021_05_29__23_59_42'
-    estimate_on_folds(run_name)
-    # fold_sample_ids, args = load_fold_sample_ids_args(run_name=run_name)
-    # args['patch_norm'], args['reg_norm'] = False, True                                                 # Don't normalize image and Chl-a values. 
-    # args['patch_size'] = 1
+    
+    """ Calculate constants """
+    # fold_sample_ids, args = load_samples_set_args(run_name=run_name)
     # X_train, y_train, _, _ = load_data(args=args, fold=0, fold_sample_ids=fold_sample_ids)
     # # solve_for_c_clus(X_train, y_train)
     # xs, ys, cons = solve_for_k_org(X_train, y_train)
+    
+    """ Estimate Chl-a values """
+    estimate_on_folds(run_name)
+
     
