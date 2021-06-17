@@ -1131,15 +1131,15 @@ if __name__ == "__main__":
         random.seed(seed)    
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    args = {'max_epoch': 100,
+    args = {'max_epoch': 200,
             'device': device,
             'seed': seed,
             'test_per': 0.1,
             'lr': 0.0001,                                                       # From EA's model, default is 1e-2.
-            'patch_norm': True,                                                # Normalizes patches
-            'reg_norm': True,                                                  # Normalize regression values
-            'model': 'eadan',                                                   # Model name, can be {dandadadan, eanet, eadan}.
-            'use_test_as_val': False,                                            # Uses test set for validation. 
+            'patch_norm': False,                                                # Normalizes patches
+            'reg_norm': False,                                                  # Normalize regression values
+            'model': 'eaoriginal',                                                   # Model name, can be {dandadadan, eanet, eadan}.
+            'use_test_as_val': True,                                            # Uses test set for validation. 
             'num_early_stop_epoch': 5,                                         # Number of consecutive epochs that model loss does not decrease. 
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
@@ -1152,14 +1152,14 @@ if __name__ == "__main__":
     args['report_id'] = report.report_id
     
     """ Create experiment params """
-    loss_names = ['awl']
+    loss_names = ['sum']
     fold_setups = ['random']
     pred_types = ['reg']
     using_unlabeled_samples = [False]
     date_types = ['month']
     # split_layers = [*range(1,3)]
     split_layers = [5]
-    patch_sizes = [5]
+    patch_sizes = [3]
     
     RUN_NAME = '2021_05_29__23_59_42'
     fold_sample_ids = load_fold_sample_ids_args(RUN_NAME)
@@ -1178,8 +1178,8 @@ if __name__ == "__main__":
         args['use_unlabeled_samples'] = unlabeled
         args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
         # args['num_folds'] = None
-        args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
-        # args['create_val'] = False
+        # args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
+        args['create_val'] = False
         args['date_type'] = date_type
         args['split_layer'] = split_layer
         args['patch_size'] = patch_size
