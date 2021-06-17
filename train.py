@@ -1159,7 +1159,7 @@ if __name__ == "__main__":
     date_types = ['month']
     # split_layers = [*range(1,3)]
     split_layers = [5]
-    patch_sizes = [3]
+    patch_sizes = [5]
     
     RUN_NAME = '2021_05_29__23_59_42'
     fold_sample_ids = load_fold_sample_ids_args(RUN_NAME)
