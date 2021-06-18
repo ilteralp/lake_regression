@@ -1137,11 +1137,11 @@ if __name__ == "__main__":
         np.random.seed(seed)
         random.seed(seed)
         
-    SAMPLE_IDS_FROM_RUN_NAME = '2021_06_18__16_08_05'
+    SAMPLE_IDS_FROM_RUN_NAME = '2021_06_18__21_14_55'
     fold_sample_ids = load_fold_sample_ids_args(SAMPLE_IDS_FROM_RUN_NAME)
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    args = {'max_epoch': 2,
+    args = {'max_epoch': 200,
             'device': device,
             'seed': seed,
             'test_per': 0.1,
