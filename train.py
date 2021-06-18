@@ -1138,7 +1138,7 @@ if __name__ == "__main__":
             'lr': 0.0001,                                                       # From EA's model, default is 1e-2.
             # 'patch_norm': True,                                                # Normalizes patches
             'reg_norm': True,                                                  # Normalize regression values
-            'model': 'eaoriginal',                                                   # Model name, can be {dandadadan, eanet, eadan}.
+            'model': 'eadan',                                                   # Model name, can be {dandadadan, eanet, eadan}.
             'use_test_as_val': False,                                            # Uses test set for validation. 
             'num_early_stop_epoch': 5,                                         # Number of consecutive epochs that model loss does not decrease. 
             
@@ -1152,9 +1152,9 @@ if __name__ == "__main__":
     args['report_id'] = report.report_id
     
     """ Create experiment params """
-    loss_names = ['sum']
+    loss_names = ['sum', 'awl']
     fold_setups = ['random']
-    pred_types = ['reg']
+    pred_types = ['reg', 'reg+class']
     using_unlabeled_samples = [False]
     date_types = ['month']
     # split_layers = [*range(1,3)]
@@ -1162,7 +1162,7 @@ if __name__ == "__main__":
     patch_sizes = [3]
     patch_norms = [False]
     
-    RUN_NAME = '2021_06_18__16_08_05'
+    RUN_NAME = '2021_06_18__17_39_35'
     fold_sample_ids = load_fold_sample_ids_args(RUN_NAME)
     # mlp_cfgs = ['{}_hidden_layer'.format(i) for i in range(7, 9)] if args['model'] == 'mlp' else None
     # mlp_cfgs = ['1_hidden_layer']
