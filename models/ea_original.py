@@ -29,8 +29,11 @@ class EAOriginal(nn.Module):
         self.conv4 = self.__make_layer(in_channels=64, out_channels=64)
         
         """ FC layers """
-        self.fc1 = nn.Linear(in_features=64 * self.patch_size * self.patch_size * 12,  # A sample is (1, 12, 9) or (1, 20, 15)
-                             out_features=128)
+        # self.fc1 = nn.Linear(in_features=64 * self.patch_size * self.patch_size * 12,  # A sample is (1, 12, 9) or (1, 20, 15)
+        #                      out_features=128)
+        self.fc1 = nn.Sequential(nn.Flatten(start_dim=1),
+                                 nn.Linear(in_features=64 * self.patch_size * self.patch_size * 12, out_features=128), 
+                                 nn.Tanh())
         self.fc2 = nn.Linear(in_features=128, out_features=1)
         
         """ Init all layer's weight & bias """
@@ -58,8 +61,9 @@ class EAOriginal(nn.Module):
         x = self.conv3(x)
         x = self.conv4(x)
         
-        x = torch.flatten(x, 1)                                                        # Flatten all dimensions except batch
-        x = torch.tanh(self.fc1(x))
+        # x = torch.flatten(x, 1)                                                        # Flatten all dimensions except batch
+        # x = torch.tanh(self.fc1(x))
+        x = self.fc1(x)
         x = self.fc2(x)
         return x
                 
