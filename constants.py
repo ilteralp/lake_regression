@@ -34,7 +34,7 @@ SEASONS = {"'spring'" : 0, "'summer'" : 1, "'autumn'" : 2, "'winter'" : 3}
 YEARS = {'2017' : 0, '2018' : 1, '2019' : 2}
 DATE_TYPES = {'month' : 0, 'season' : 1, 'year' : 2}
 NUM_CLASSES = {'month' : 12, 'season' : len(SEASONS), 'year' : len(YEARS)}
-DAN_MODELS = ['dandadadan', 'eadan']
+DAN_MODELS = ['dandadadan', 'eadan', 'eaoriginaldan']
 YEAR_IMG_ID = {0: [1, 2, 3, 4, 5, 6, 7],                                  # 2017, Careful this is year-img_name mapping, not year-img_id
                1: [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21], # 2018, mapping. So it's *NOT* continuous in [0, 31] range and 
                2: [24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34]}           # 2019, can *NOT* be used to index img_names list. 
