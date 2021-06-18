@@ -142,7 +142,7 @@ class Report:
         sheet.write(rid, 13, 'True' if args['reg_norm'] == 1 else 'False')
         sheet.write(rid, 14, '' if args['pred_type'] == 'reg' else args['date_type'])
         sheet.write(rid, 15, args['model'])
-        sheet.write(rid, 16, args['split_layer'] if args['model'] == 'eadan' else '')
+        sheet.write(rid, 16, args['split_layer'] if args['model'] in C.DAN_MODELS else '')
         sheet.write(rid, 17, args['loss_name'])
         idx = self._test_result_to_sheet(test_result=test_result, sheet=sheet, rid=rid, idx=18)
         sheet.write(rid, idx, self.report_id)
