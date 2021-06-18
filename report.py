@@ -85,6 +85,7 @@ class Report:
         idx = self.__init_sheet_for_scores(sheet=sheet, header=header, idx=17)
         sheet.write(0, idx, 'ReportId', header)
         sheet.write(0, idx + 1, 'PatchSize', header)
+        sheet.write(0, idx + 2, 'SampleIdsFromRun', header)
         wb.save(self.path)
 
     """
@@ -146,6 +147,7 @@ class Report:
         idx = self._test_result_to_sheet(test_result=test_result, sheet=sheet, rid=rid, idx=18)
         sheet.write(rid, idx, self.report_id)
         sheet.write(rid, idx + 1, args['patch_size'])
+        sheet.write(rid, idx + 2, args['sample_ids_from_run'] if args['sample_ids_from_run'] is not None else '')
         wb.save(self.path)
         
     # """
