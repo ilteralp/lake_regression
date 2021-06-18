@@ -1124,21 +1124,21 @@ def help():
     
     
 if __name__ == "__main__":
-    seed = 42
+    seed = None
     if seed is not None:
         torch.manual_seed(seed)
         np.random.seed(seed)
         random.seed(seed)    
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    args = {'max_epoch': 100,
+    args = {'max_epoch': 200,
             'device': device,
             'seed': seed,
             'test_per': 0.1,
             'lr': 0.0001,                                                       # From EA's model, default is 1e-2.
-            'patch_norm': True,                                                # Normalizes patches
+            # 'patch_norm': True,                                                # Normalizes patches
             'reg_norm': True,                                                  # Normalize regression values
-            'model': 'eadan',                                                   # Model name, can be {dandadadan, eanet, eadan}.
+            'model': 'eaoriginal',                                                   # Model name, can be {dandadadan, eanet, eadan}.
             'use_test_as_val': True,                                            # Uses test set for validation. 
             'num_early_stop_epoch': 5,                                         # Number of consecutive epochs that model loss does not decrease. 
             
@@ -1152,24 +1152,25 @@ if __name__ == "__main__":
     args['report_id'] = report.report_id
     
     """ Create experiment params """
-    loss_names = ['awl']
+    loss_names = ['sum']
     fold_setups = ['random']
-    pred_types = ['reg', 'reg+class']
+    pred_types = ['reg']
     using_unlabeled_samples = [False]
     date_types = ['month']
     # split_layers = [*range(1,3)]
     split_layers = [5]
-    patch_sizes = [5]
+    patch_sizes = [3]
+    patch_norms = [False, True]
     
-    RUN_NAME = '2021_05_29__23_59_42'
-    fold_sample_ids = load_fold_sample_ids_args(RUN_NAME)
+    # RUN_NAME = '2021_05_29__23_59_42'
+    # fold_sample_ids = load_fold_sample_ids_args(RUN_NAME)
     # mlp_cfgs = ['{}_hidden_layer'.format(i) for i in range(7, 9)] if args['model'] == 'mlp' else None
     # mlp_cfgs = ['1_hidden_layer']
                 
     """ Train model with each param """
-    # fold_sample_ids, prev_setup_name = None, None
-    prev_setup_name = None
-    for (loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer, patch_size) in itertools.product(loss_names, fold_setups, pred_types, using_unlabeled_samples, date_types, split_layers, patch_sizes):
+    fold_sample_ids, prev_setup_name = None, None
+    # prev_setup_name = None
+    for (loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer, patch_size, patch_norm) in itertools.product(loss_names, fold_setups, pred_types, using_unlabeled_samples, date_types, split_layers, patch_sizes, patch_norms):
         if pred_type == 'reg' and unlabeled:                    continue
         if loss_name == 'awl' and pred_type != 'reg+class':     loss_name = 'sum' #continue
         args['loss_name'] = loss_name
