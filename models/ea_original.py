@@ -17,10 +17,11 @@ sys.path.append("..")
 import constants as C
 
 class EAOriginal(nn.Module):
-    def __init__(self, in_channels, patch_size):
+    def __init__(self, in_channels, patch_size, num_classes=1):
         super(EAOriginal, self).__init__()
         self.__verify(in_channels=in_channels)
         self.patch_size = patch_size
+        self.num_classes = num_classes
         
         """ Convolution layers """
         self.conv1 = self.__make_layer(in_channels=in_channels, out_channels=64)
@@ -34,7 +35,7 @@ class EAOriginal(nn.Module):
         self.fc1 = nn.Sequential(nn.Flatten(start_dim=1),
                                  nn.Linear(in_features=64 * self.patch_size * self.patch_size * 12, out_features=128), 
                                  nn.Tanh())
-        self.fc2 = nn.Linear(in_features=128, out_features=1)
+        self.fc2 = nn.Linear(in_features=128, out_features=self.num_classes)
         
         """ Init all layer's weight & bias """
         self.__init_weight_bias()
