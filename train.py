@@ -25,7 +25,7 @@ import pickle
 import constants as C
 from datasets import Lake2dDataset, Lake2dFoldDataset
 from metrics import Metrics
-from models import DandadaDAN, EANet, EADAN, EAOriginal, MultiLayerPerceptron, WaterNet
+from models import DandadaDAN, EANet, EADAN, EAOriginal, MultiLayerPerceptron, WaterNet, EAOriginalDAN
 from report import Report
 from losses import AutomaticWeightedLoss
 
@@ -143,6 +143,9 @@ def reset_model(m, args):
     
     elif args['model'] == 'waternet':
         return m.apply(weights_init)
+    
+    elif args['model'] == 'eaoriginaldan':
+        return m.apply(weight_bias_init)
 """
 Returns verbose message with loss and score.
 """
@@ -185,8 +188,8 @@ def verify_args(args):
         raise Exception('Test percent should be less than 0.5 since validation set has the same length with it.')
     if args['pred_type'] not in ['reg', 'class', 'reg+class']:
         raise Exception('Expected prediction type to be one of [\'reg\', \'class\', \'reg+class\']')
-    if args['model'] not in ['dandadadan', 'eanet', 'eadan', 'eaoriginal', 'mlp', 'waternet']:
-        raise Exception('Model can be one of [\'dandadadan\', \'eanet\', \'eadan\', \'eaoriginal\', \'mlp\', \'waternet\']')
+    if args['model'] not in ['dandadadan', 'eanet', 'eadan', 'eaoriginal', 'mlp', 'waternet', 'eaoriginaldan']:
+        raise Exception('Model can be one of [\'dandadadan\', \'eanet\', \'eadan\', \'eaoriginal\', \'mlp\', \'waternet\', \'eaoriginaldan\']')
     if args['use_unlabeled_samples'] and (args['pred_type'] == 'reg' or args['pred_type'] == 'class'):
         raise Exception('Unlabeled samples cannot be used with regression or classification. They can only be used with \'reg+class\'.')
     if args['num_folds'] is not None and args['fold_setup'] not in ['spatial', 'temporal_day', 'temporal_year', 'random']:
@@ -199,8 +202,8 @@ def verify_args(args):
         raise Exception('Cannot use as year as classification label since one of the years is used as test set and model has not seen all the year samples.')
     if args['loss_name'] == 'awl' and args['pred_type'] != 'reg+class':
         raise Exception('AWL loss only works with reg+class!')
-    if args['patch_size'] != 3 and args['model'] not in ['eadan', 'eaoriginal', 'mlp', 'waternet']:
-        raise Exception('Only model eadan, eaoriginal, mlp and waternet work with patch sizes different from 3. Given, {} to {}'.format(args['patch_size'], args['model']))
+    if args['patch_size'] != 3 and args['model'] not in ['eadan', 'eaoriginal', 'mlp', 'waternet', 'eaoriginaldan']:
+        raise Exception('Only model eadan, eaoriginal, mlp, waternet and eaoriginaldan work with patch sizes different from 3. Given, {} to {}'.format(args['patch_size'], args['model']))
     if args['model'] in ['eaoriginal', 'mlp', 'waternet'] and args['pred_type'] != 'reg':
         raise Exception('Models eaoriginal, mlp and waternet only works with regression! Given {}'.format(args['pred_type']))
     if args['use_test_as_val'] and args['create_val']:
@@ -838,7 +841,7 @@ def _base_train_on_folds(ids, tr_ids, test_ids, val_ids, model, fold, metrics):
                             'date_type': args['date_type'],
                             'fold_setup': args['fold_setup'],
                             'patch_size': args['patch_size'],
-                            'is_orig_model': args['model'] == 'eaoriginal'}
+                            'is_orig_model': args['model'] == 'eaoriginal' or args['model'] == 'eaoriginaldan'}
     
     """ Create validation set """
     val_set, val_loader = None, None
@@ -861,7 +864,7 @@ def _base_train_on_folds(ids, tr_ids, test_ids, val_ids, model, fold, metrics):
         unlabeled_set = Lake2dFoldDataset(learning='unlabeled', date_type=args['date_type'],
                                           fold_setup=args['fold_setup'], ids=unlabeled_ids,
                                           patch_size=args['patch_size'], 
-                                          is_orig_model=args['model'] == 'eaoriginal')
+                                          is_orig_model=args['model'] == 'eaoriginal' or args['model'] == 'eaoriginaldan')
     
     """ Normalize patches on all datasets """
     if args['patch_norm']:
@@ -1065,14 +1068,18 @@ def create_model(args):
     elif args['model'] == 'waternet':
         model = WaterNet(in_channels=args['in_channels'], patch_size=args['patch_size'])
         
+    elif args['model'] == 'eaoriginaldan':
+        model = EAOriginalDAN(in_channels=args['in_channels'], patch_size=args['patch_size'], 
+                              split_layer=args['split_layer'], num_classes=args['num_classes'])
+        
     return model.to(args['device'])
 
 """
 Creates loss functions depending on prediction type and adds model params.
 """
 def create_model_params(args):
-    args['in_channels'] = 1 if args['model'] == 'eaoriginal' else 12
-    args['num_classes'] = C.NUM_CLASSES[args['date_type']] if args['pred_type'] != 'reg' else None
+    args['in_channels'] = 1 if args['model'] == 'eaoriginal' or args['model'] == 'eaoriginaldan' else 12
+    args['num_classes'] = C.NUM_CLASSES[args['date_type']] if args['pred_type'] != 'reg' else 1
     
     if args['pred_type'] == 'reg' or args['pred_type'] == 'reg+class':
         loss_fn_reg = torch.nn.MSELoss().to(args['device'])                     # Regression loss function
@@ -1090,12 +1097,12 @@ def run(args, report, fold_sample_ids):
     """ Create labeled and unlabeled datasets. """
     labeled_set = Lake2dDataset(learning='labeled', date_type=args['date_type'], 
                                 patch_size=args['patch_size'],
-                                is_orig_model=args['model'] == 'eaoriginal')
+                                is_orig_model=args['model'] == 'eaoriginal' or args['model'] == 'eaoriginaldan')
     unlabeled_set = None
     if args['use_unlabeled_samples']:
         unlabeled_set = Lake2dDataset(learning='unlabeled', date_type=args['date_type'], 
                                       patch_size=args['patch_size'], 
-                                      is_orig_model=args['model'] == 'eaoriginal')
+                                      is_orig_model=args['model'] == 'eaoriginal' or args['model'] == 'eaoriginaldan')
    
     """ Create regression and/or classification losses and model params. """
     args = create_model_params(args=args)
@@ -1117,7 +1124,7 @@ def run(args, report, fold_sample_ids):
 Help with params in case you need it. 
 """
 def help():
-    print('\'dandadan\' and \'eadan\' work with \'use_unlabeled_samples\'=[True, False], \'pred_type\'=[\'reg\', \'reg+class\', \'class\'] and \'date_type\'=[\'month\', \'season\', \'year\'].\n')
+    print('\'dandadan\', \'eadan\' and \'eaoriginaldan\' work with \'use_unlabeled_samples\'=[True, False], \'pred_type\'=[\'reg\', \'reg+class\', \'class\'] and \'date_type\'=[\'month\', \'season\', \'year\'].\n')
     print('\'eanet\', (and \'easeq\') work  with \'use_unlabeled_samples\'=False, \'pred_type\'=[\'reg\', \'class\'] and does not take \'date_type\'.\n')
     print(' \'eaoriginal\',  \'mlp\' and \'waternet\' work with \'use_unlabeled_samples\'=False, \'pred_type\'=\'reg\' and does not take \'date_type\'.\n')
     print('With \'date_type\'=\'year\', validation set cannot be created.')
@@ -1134,15 +1141,15 @@ if __name__ == "__main__":
     fold_sample_ids = load_fold_sample_ids_args(SAMPLE_IDS_FROM_RUN_NAME)
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    args = {'max_epoch': 200,
+    args = {'max_epoch': 2,
             'device': device,
             'seed': seed,
             'test_per': 0.1,
             'lr': 0.0001,                                                       # From EA's model, default is 1e-2.
             # 'patch_norm': True,                                                # Normalizes patches
             'reg_norm': True,                                                  # Normalize regression values
-            'model': 'eaoriginal',                                                   # Model name, can be {dandadadan, eanet, eadan}.
-            'use_test_as_val': True,                                            # Uses test set for validation. 
+            'model': 'eaoriginaldan',                                                   # Model name, can be {dandadadan, eanet, eadan}.
+            'use_test_as_val': False,                                            # Uses test set for validation. 
             'num_early_stop_epoch': 5,                                         # Number of consecutive epochs that model loss does not decrease. 
             'sample_ids_from_run': SAMPLE_IDS_FROM_RUN_NAME,
             
@@ -1156,14 +1163,14 @@ if __name__ == "__main__":
     args['report_id'] = report.report_id
     
     """ Create experiment params """
-    loss_names = ['sum']
+    loss_names = ['sum', 'awl']
     fold_setups = ['random']
-    pred_types = ['reg']
+    pred_types = ['reg+class']
     using_unlabeled_samples = [False]
     date_types = ['month']
     # split_layers = [*range(1,3)]
-    split_layers = [5]
-    patch_sizes = [3]
+    split_layers = [4, 5]
+    patch_sizes = [3, 5]
     patch_norms = [False]
     
     # mlp_cfgs = ['{}_hidden_layer'.format(i) for i in range(7, 9)] if args['model'] == 'mlp' else None
@@ -1181,8 +1188,8 @@ if __name__ == "__main__":
         args['use_unlabeled_samples'] = unlabeled
         args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
         # args['num_folds'] = None
-        # args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
-        args['create_val'] = False
+        args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
+        # args['create_val'] = False
         args['date_type'] = date_type
         args['split_layer'] = split_layer
         args['patch_size'] = patch_size
