@@ -1169,8 +1169,8 @@ if __name__ == "__main__":
     using_unlabeled_samples = [False]
     date_types = ['month']
     # split_layers = [*range(1,3)]
-    split_layers = [5]
-    patch_sizes = [3]
+    split_layers = [3]
+    patch_sizes = [5]
     patch_norms = [False]
     
     # mlp_cfgs = ['{}_hidden_layer'.format(i) for i in range(7, 9)] if args['model'] == 'mlp' else None
