@@ -1169,7 +1169,7 @@ if __name__ == "__main__":
     using_unlabeled_samples = [False]
     date_types = ['month']
     # split_layers = [*range(1,3)]
-    split_layers = [4]
+    split_layers = [5]
     patch_sizes = [3]
     patch_norms = [False]
     
