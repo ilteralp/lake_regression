@@ -86,6 +86,7 @@ class Report:
         sheet.write(0, idx, 'ReportId', header)
         sheet.write(0, idx + 1, 'PatchSize', header)
         sheet.write(0, idx + 2, 'SampleIdsFromRun', header)
+        sheet.write(0, idx + 3, 'UnlabeledBatchSize', header)
         wb.save(self.path)
 
     """
@@ -148,6 +149,7 @@ class Report:
         sheet.write(rid, idx, self.report_id)
         sheet.write(rid, idx + 1, args['patch_size'])
         sheet.write(rid, idx + 2, args['sample_ids_from_run'] if args['sample_ids_from_run'] is not None else '')
+        sheet.write(rid, idx + 3, args['unlabeled']['batch_size'] if args['use_unlabeled_samples'] else '')
         wb.save(self.path)
         
     # """
