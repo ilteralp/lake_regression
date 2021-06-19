@@ -1171,7 +1171,7 @@ if __name__ == "__main__":
     # split_layers = [*range(1,3)]
     split_layers = [5]
     patch_sizes = [3]
-    patch_norms = [False]
+    patch_norms = [True]
     
     # mlp_cfgs = ['{}_hidden_layer'.format(i) for i in range(7, 9)] if args['model'] == 'mlp' else None
     # mlp_cfgs = ['1_hidden_layer']
