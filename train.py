@@ -443,13 +443,13 @@ def create_optimizer_loss(model, args):
     if args['loss_name'] == 'awl':
         if args['pred_type'] == 'reg+class':
             awl = AutomaticWeightedLoss(num=2)
-            optimizer = SGD([
+            optimizer = RMSprop([
                 {'params': model.parameters(), 'lr': args['lr']},
                 {'params': awl.parameters(), 'weight_decay': 0}
             ])
             return optimizer, awl
     elif args['loss_name'] == 'sum':
-        optimizer = SGD(params=model.parameters(), lr=args['lr'])
+        optimizer = RMSprop(params=model.parameters(), lr=args['lr'])
         return optimizer, None
     
 """
@@ -1141,14 +1141,14 @@ if __name__ == "__main__":
     fold_sample_ids = load_fold_sample_ids_args(SAMPLE_IDS_FROM_RUN_NAME)
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    args = {'max_epoch': 200,
+    args = {'max_epoch': 2,
             'device': device,
             'seed': seed,
             'test_per': 0.1,
-            'lr': 0.001,                                                       # From EA's model, default is 1e-2.
+            'lr': 0.0001,                                                       # From EA's model, default is 1e-2.
             # 'patch_norm': True,                                                # Normalizes patches
             'reg_norm': True,                                                  # Normalize regression values
-            'model': 'eaoriginal',                                                   # Model name, can be {dandadadan, eanet, eadan}.
+            'model': 'eaoriginaldan',                                                   # Model name, can be {dandadadan, eanet, eadan}.
             'use_test_as_val': False,                                            # Uses test set for validation. 
             'num_early_stop_epoch': 5,                                         # Number of consecutive epochs that model loss does not decrease. 
             'sample_ids_from_run': SAMPLE_IDS_FROM_RUN_NAME,
@@ -1163,13 +1163,13 @@ if __name__ == "__main__":
     args['report_id'] = report.report_id
     
     """ Create experiment params """
-    loss_names = ['sum']
+    loss_names = ['awl']
     fold_setups = ['random']
-    pred_types = ['reg']
+    pred_types = ['reg+class']
     using_unlabeled_samples = [True]
     date_types = ['month']
     # split_layers = [*range(1,3)]
-    split_layers = [5]
+    split_layers = [4]
     patch_sizes = [3]
     patch_norms = [False]
     
@@ -1186,8 +1186,8 @@ if __name__ == "__main__":
         args['fold_setup'] = fold_setup
         args['pred_type'] = pred_type
         args['use_unlabeled_samples'] = unlabeled
-        # args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
-        args['num_folds'] = None
+        args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
+        # args['num_folds'] = None
         args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
         # args['create_val'] = False
         args['date_type'] = date_type
