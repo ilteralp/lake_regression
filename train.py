@@ -1151,7 +1151,7 @@ if __name__ == "__main__":
             'reg_norm': True,                                                  # Normalize regression values
             'model': 'eaoriginaldan',                                                   # Model name, can be {dandadadan, eanet, eadan}.
             'use_test_as_val': False,                                            # Uses test set for validation. 
-            'num_early_stop_epoch': 5,                                         # Number of consecutive epochs that model loss does not decrease. 
+            'num_early_stop_epoch': 3,                                         # Number of consecutive epochs that model loss does not decrease. 
             'sample_ids_from_run': SAMPLE_IDS_FROM_RUN_NAME,
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
