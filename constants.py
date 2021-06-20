@@ -23,7 +23,7 @@ if ROG_ENV:
     ROOT_DIR = '/home/rog/rs/balik_golu'
     MODEL_DIR_PATH = '/home/rog/repos/lake_regression/model_files'
     
-MASK_PATH = osp.join(ROOT_DIR, 'lake_mask_small.png')
+MASK_PATH = osp.join(ROOT_DIR, 'lake_mask_small_45.png')
 IMG_DIR_PATH = osp.join(ROOT_DIR, 'balik')
 GT_PATH = osp.join(ROOT_DIR, 'ground_truth32.txt')
 DATE_LABELS_PATH = osp.join(ROOT_DIR, 'date_labels.txt')
@@ -54,4 +54,4 @@ MLP_CFGS = {'1_hidden_layer' : [673],
 
 """ ===================== Model params ===================== """
 BATCH_SIZE = 64
-UNLABELED_BATCH_SIZE = 1024
+UNLABELED_BATCH_SIZE = 8192
