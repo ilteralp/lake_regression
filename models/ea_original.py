@@ -34,7 +34,7 @@ class EAOriginal(nn.Module):
         #                      out_features=128)
         self.fc1 = nn.Sequential(nn.Flatten(start_dim=1),
                                  nn.Linear(in_features=64 * self.patch_size * self.patch_size * 12, out_features=128), 
-                                 nn.Tanh(), nn.Dropout())
+                                 nn.Tanh())
         self.fc2 = nn.Linear(in_features=128, out_features=self.num_classes)
         
         """ Init all layer's weight & bias """
