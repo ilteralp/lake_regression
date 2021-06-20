@@ -1195,7 +1195,7 @@ if __name__ == "__main__":
         args['split_layer'] = split_layer
         args['patch_size'] = patch_size
         args['patch_norm'] = patch_norm
-        print('loss_name: {}, {}, {}, use_unlabeled: {}, date_type: {}, split_layer: {}, patch_size: {}'.format(loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer, patch_size))
+        print('loss_name: {}, {}, {}, use_unlabeled: {}, date_type: {}, split_layer: {}, patch_size: {}, patch_norm: {}'.format(loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer, patch_size, patch_norm))
         verify_args(args)
         
         if args['fold_setup'] != prev_setup_name:                               # New fold_setup, old sample ids are meaningless now.
