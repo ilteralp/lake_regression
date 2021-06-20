@@ -54,4 +54,4 @@ MLP_CFGS = {'1_hidden_layer' : [673],
 
 """ ===================== Model params ===================== """
 BATCH_SIZE = 64
-UNLABELED_BATCH_SIZE = 3584
+UNLABELED_BATCH_SIZE = 3328
