@@ -1142,7 +1142,7 @@ if __name__ == "__main__":
     fold_sample_ids = load_fold_sample_ids_args(SAMPLE_IDS_FROM_RUN_NAME)
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    args = {'max_epoch': 200,
+    args = {'max_epoch': 2000,
             'device': device,
             'seed': seed,
             'test_per': 0.1,
@@ -1172,7 +1172,7 @@ if __name__ == "__main__":
     # split_layers = [*range(1,3)]
     split_layers = [5]
     patch_sizes = [3]
-    patch_norms = [False, True]
+    patch_norms = [True]
     
     # mlp_cfgs = ['{}_hidden_layer'.format(i) for i in range(7, 9)] if args['model'] == 'mlp' else None
     # mlp_cfgs = ['1_hidden_layer']
@@ -1187,8 +1187,8 @@ if __name__ == "__main__":
         args['fold_setup'] = fold_setup
         args['pred_type'] = pred_type
         args['use_unlabeled_samples'] = unlabeled
-        args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
-        # args['num_folds'] = None
+        # args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
+        args['num_folds'] = None
         args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
         # args['create_val'] = False
         args['date_type'] = date_type
