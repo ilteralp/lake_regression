@@ -1142,11 +1142,11 @@ if __name__ == "__main__":
     fold_sample_ids = load_fold_sample_ids_args(SAMPLE_IDS_FROM_RUN_NAME)
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    args = {'max_epoch': 2000,
+    args = {'max_epoch': 1000,
             'device': device,
             'seed': seed,
             'test_per': 0.1,
-            'lr': 0.0001,                                                       # From EA's model, default is 1e-2.
+            'lr': 0.001,                                                       # From EA's model, default is 1e-2.
             # 'patch_norm': True,                                                # Normalizes patches
             'reg_norm': False,                                                  # Normalize regression values
             'model': 'eaoriginal',                                                   # Model name, can be {dandadadan, eanet, eadan}.
