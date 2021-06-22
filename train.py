@@ -1179,8 +1179,9 @@ if __name__ == "__main__":
                 
     """ Train model with each param """
     # fold_sample_ids, prev_setup_name = None, None
-    # prev_setup_name = None
+    prev_setup_name = None 
     for (loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer, patch_size, patch_norm) in itertools.product(loss_names, fold_setups, pred_types, using_unlabeled_samples, date_types, split_layers, patch_sizes, patch_norms):
+        if SAMPLE_IDS_FROM_RUN_NAME is not None and len(fold_setups) > 1:   raise Exception('Previous fold sample ids cannot be used with different fold setups!')
         if pred_type == 'reg' and unlabeled:                    continue
         if loss_name == 'awl' and pred_type != 'reg+class':     loss_name = 'sum' #continue
         args['loss_name'] = loss_name
@@ -1198,9 +1199,9 @@ if __name__ == "__main__":
         print('loss_name: {}, {}, {}, use_unlabeled: {}, date_type: {}, split_layer: {}, patch_size: {}, patch_norm: {}'.format(loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer, patch_size, patch_norm))
         verify_args(args)
         
-        # if args['fold_setup'] != prev_setup_name:                               # New fold_setup, old sample ids are meaningless now.
-        #     print('fold_sample_ids are None due to moving from {} to {}.'.format(prev_setup_name, args['fold_setup']))
-        #     fold_sample_ids = None
+        if SAMPLE_IDS_FROM_RUN_NAME is None and args['fold_setup'] != prev_setup_name:                                 # New fold_setup, old sample ids are meaningless now.
+            print('fold_sample_ids are None due to moving from {} to {}.'.format(prev_setup_name, args['fold_setup'])) # Only works if SAMPLE_IDS_FROM_RUN_NAME is not given. 
+            fold_sample_ids = None
             
         if args['fold_setup'] == 'random':
             fold_sample_ids = run(args, report=report, fold_sample_ids=fold_sample_ids)
