@@ -1149,7 +1149,7 @@ if __name__ == "__main__":
             'lr': 0.001,                                                       # From EA's model, default is 1e-2.
             # 'patch_norm': True,                                                # Normalizes patches
             'reg_norm': False,                                                  # Normalize regression values
-            'model': 'eaoriginaldan',                                                   # Model name, can be {dandadadan, eanet, eadan}.
+            'model': 'eaoriginal',                                                   # Model name, can be {dandadadan, eanet, eadan}.
             'use_test_as_val': False,                                            # Uses test set for validation. 
             'num_early_stop_epoch': 3,                                         # Number of consecutive epochs that model loss does not decrease. 
             'sample_ids_from_run': SAMPLE_IDS_FROM_RUN_NAME,
@@ -1166,8 +1166,8 @@ if __name__ == "__main__":
     """ Create experiment params """
     loss_names = ['sum']
     fold_setups = ['random']
-    pred_types = ['reg+class']
-    using_unlabeled_samples = [True]
+    pred_types = ['reg']
+    using_unlabeled_samples = [False]
     date_types = ['month']
     # split_layers = [*range(1,3)]
     split_layers = [5]
