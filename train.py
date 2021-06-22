@@ -1142,7 +1142,7 @@ if __name__ == "__main__":
     fold_sample_ids = load_fold_sample_ids_args(SAMPLE_IDS_FROM_RUN_NAME)
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    args = {'max_epoch': 1000,
+    args = {'max_epoch': 200,
             'device': device,
             'seed': seed,
             'test_per': 0.1,
@@ -1170,7 +1170,7 @@ if __name__ == "__main__":
     using_unlabeled_samples = [False]
     date_types = ['month']
     # split_layers = [*range(1,3)]
-    split_layers = [4]
+    split_layers = [3]
     patch_sizes = [3]
     patch_norms = [True]
     
@@ -1179,7 +1179,7 @@ if __name__ == "__main__":
                 
     """ Train model with each param """
     # fold_sample_ids, prev_setup_name = None, None
-    prev_setup_name = None
+    prev_setup_name = args['fold_setup'] if SAMPLE_IDS_FROM_RUN_NAME is not None else None
     for (loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer, patch_size, patch_norm) in itertools.product(loss_names, fold_setups, pred_types, using_unlabeled_samples, date_types, split_layers, patch_sizes, patch_norms):
         if pred_type == 'reg' and unlabeled:                    continue
         if loss_name == 'awl' and pred_type != 'reg+class':     loss_name = 'sum' #continue
@@ -1187,8 +1187,8 @@ if __name__ == "__main__":
         args['fold_setup'] = fold_setup
         args['pred_type'] = pred_type
         args['use_unlabeled_samples'] = unlabeled
-        # args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
-        args['num_folds'] = None
+        args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
+        # args['num_folds'] = None
         args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
         # args['create_val'] = False
         args['date_type'] = date_type
