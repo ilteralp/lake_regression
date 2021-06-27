@@ -1166,8 +1166,8 @@ if __name__ == "__main__":
     """ Create experiment params """
     loss_names = ['sum']
     fold_setups = ['random']
-    pred_types = ['reg+class']
-    using_unlabeled_samples = [True]
+    pred_types = ['reg']
+    using_unlabeled_samples = [False]
     date_types = ['month']
     # split_layers = [*range(1,3)]
     split_layers = [4]
