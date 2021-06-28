@@ -1152,7 +1152,7 @@ if __name__ == "__main__":
             'test_per': 0.1,
             'lr': 0.0001,                                                       # From EA's model, default is 1e-2.
             # 'patch_norm': True,                                                # Normalizes patches
-            'reg_norm': True,                                                  # Normalize regression values
+            # 'reg_norm': True,                                                  # Normalize regression values
             'model': 'eaoriginaldan',                                                   # Model name, can be {dandadadan, eanet, eadan}.
             'use_test_as_val': False,                                            # Uses test set for validation. 
             'num_early_stop_epoch': 3,                                         # Number of consecutive epochs that model loss does not decrease. 
@@ -1168,15 +1168,16 @@ if __name__ == "__main__":
     args['report_id'] = report.report_id
     
     """ Create experiment params """
-    loss_names = ['sum']
+    loss_names = ['sum', 'awl']
     fold_setups = ['random']
-    pred_types = ['reg']
+    pred_types = ['reg+class']
     using_unlabeled_samples = [False]
     date_types = ['month']
     # split_layers = [*range(1,3)]
-    split_layers = [4]
+    split_layers = [3, 4, 5]
     patch_sizes = [3]
-    patch_norms = [True]
+    patch_norms = [False, True]
+    reg_norms = [False, True]
     
     # mlp_cfgs = ['{}_hidden_layer'.format(i) for i in range(7, 9)] if args['model'] == 'mlp' else None
     # mlp_cfgs = ['1_hidden_layer']
@@ -1184,7 +1185,7 @@ if __name__ == "__main__":
     """ Train model with each param """
     # fold_sample_ids, prev_setup_name = None, None
     prev_setup_name = None
-    for (loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer, patch_size, patch_norm) in itertools.product(loss_names, fold_setups, pred_types, using_unlabeled_samples, date_types, split_layers, patch_sizes, patch_norms):
+    for (loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer, patch_size, patch_norm, reg_norm) in itertools.product(loss_names, fold_setups, pred_types, using_unlabeled_samples, date_types, split_layers, patch_sizes, patch_norms, reg_norms):
         if SAMPLE_IDS_FROM_RUN_NAME is not None and len(fold_setups) > 1: raise Exception('Previous fold sample ids cannot be used with different fold setups!')
         if pred_type == 'reg' and unlabeled:                    continue
         if loss_name == 'awl' and pred_type != 'reg+class':     loss_name = 'sum' #continue
@@ -1200,7 +1201,8 @@ if __name__ == "__main__":
         args['split_layer'] = split_layer
         args['patch_size'] = patch_size
         args['patch_norm'] = patch_norm
-        print('loss_name: {}, {}, {}, use_unlabeled: {}, date_type: {}, split_layer: {}, patch_size: {}, patch_norm: {}'.format(loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer, patch_size, patch_norm))
+        args['reg_norm'] = reg_norm
+        print('loss_name: {}, {}, {}, use_unlabeled: {}, date_type: {}, split_layer: {}, patch_size: {}, patch_norm: {}, reg_norm: {}'.format(loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer, patch_size, patch_norm, reg_norm))
         verify_args(args)
         
         # if args['fold_setup'] != prev_setup_name:                               # New fold_setup, old sample ids are meaningless now.
