@@ -7,7 +7,7 @@ Created on Wed Feb 24 16:56:33 2021
 """
 import torch
 from torch.utils.data import Dataset, random_split, Subset, DataLoader
-from torch.optim import RMSprop
+from torch.optim import RMSprop, SGD
 import torch.nn as nn
 from torch.utils.tensorboard import SummaryWriter
 from torch.nn import MSELoss, CrossEntropyLoss
@@ -554,8 +554,9 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, t
             """ Visualize model """
             if batch_id == 1 and e == 0:
                 writer.add_graph(model=model, input_to_model=l_patches)
-            
-        # print('Epoch: {}, time: {:.2f} sec'.format(e, time.time() - epoch_start))
+        
+        if e == 0:
+            print('Epoch: {}, time: {:.2f} sec'.format(e, time.time() - epoch_start))
 
         
         if e % 10 == 0:
@@ -1171,7 +1172,7 @@ if __name__ == "__main__":
     # split_layers = [*range(1,3)]
     split_layers = [3]
     patch_sizes = [3]
-    patch_norms = [True]
+    patch_norms = [False]
     
     # mlp_cfgs = ['{}_hidden_layer'.format(i) for i in range(7, 9)] if args['model'] == 'mlp' else None
     # mlp_cfgs = ['1_hidden_layer']
