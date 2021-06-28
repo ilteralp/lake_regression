@@ -1146,9 +1146,9 @@ if __name__ == "__main__":
             'device': device,
             'seed': seed,
             'test_per': 0.1,
-            'lr': 0.0001,                                                       # From EA's model, default is 1e-2.
+            'lr': 0.001,                                                       # From EA's model, default is 1e-2.
             # 'patch_norm': True,                                                # Normalizes patches
-            'reg_norm': True,                                                  # Normalize regression values
+            'reg_norm': False,                                                  # Normalize regression values
             'model': 'eaoriginaldan',                                                   # Model name, can be {dandadadan, eanet, eadan}.
             'use_test_as_val': False,                                            # Uses test set for validation. 
             'num_early_stop_epoch': 3,                                         # Number of consecutive epochs that model loss does not decrease. 
@@ -1170,7 +1170,7 @@ if __name__ == "__main__":
     using_unlabeled_samples = [False]
     date_types = ['month']
     # split_layers = [*range(1,3)]
-    split_layers = [5]
+    split_layers = [4]
     patch_sizes = [3]
     patch_norms = [True]
     
