@@ -1168,7 +1168,7 @@ if __name__ == "__main__":
     args['report_id'] = report.report_id
     
     """ Create experiment params """
-    loss_names = ['sum', 'awl']
+    loss_names = ['sum']
     fold_setups = ['random']
     pred_types = ['reg+class']
     using_unlabeled_samples = [False]
