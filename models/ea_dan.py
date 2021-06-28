@@ -75,9 +75,9 @@ class EADAN(nn.Module):
             raise Exception("EASeq has {} layers, therefore split layer can be in [1, {}]".format(len_easeq, len_easeq - 1))
             
 if __name__ == "__main__":
-    in_channels, num_classes = 12, 4
-    patch_size = 5
-    split_layer = 5
+    in_channels, num_classes = 12, 12
+    patch_size = 3
+    split_layer = 4
     model = EADAN(in_channels=in_channels, num_classes=num_classes, split_layer=split_layer, patch_size=patch_size)
     model_total_params = sum(p.numel() for p in model.parameters())
     model_trainable_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
