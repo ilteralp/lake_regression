@@ -1232,7 +1232,8 @@ if __name__ == "__main__":
         print('loss_name: {}, {}, {}, use_unlabeled: {}, date_type: {}, split_layer: {}, patch_size: {}, patch_norm: {}'.format(loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer, patch_size, patch_norm))
         verify_args(args)
         
-        if SAMPLE_IDS_FROM_RUN_NAME is None and args['fold_setup'] != prev_setup_name:                                 # New fold_setup, old sample ids are meaningless now.
+        # if SAMPLE_IDS_FROM_RUN_NAME is None and args['fold_setup'] != prev_setup_name:                                 # New fold_setup, old sample ids are meaningless now.
+        if args['fold_setup'] != prev_setup_name:
             print('fold_sample_ids are None due to moving from {} to {}.'.format(prev_setup_name, args['fold_setup'])) # Only works if SAMPLE_IDS_FROM_RUN_NAME is not given. 
             fold_sample_ids = None
             
@@ -1241,7 +1242,7 @@ if __name__ == "__main__":
         else:
             fold_sample_ids = train_on_folds(args=args, report=report, fold_sample_ids=fold_sample_ids)
 
-        # prev_setup_name = args['fold_setup']
+        prev_setup_name = args['fold_setup']
         """ Save args """
         save_args(args)
         print('*' * 72)
