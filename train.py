@@ -664,7 +664,7 @@ def train_random_on_folds(model, dataset, unlabeled_dataset, train_fn, args, rep
     indices = [*range(len(dataset))]                                                              # Sample indices
     np.random.shuffle(indices)
     create_run_folder(args=args)
-
+    
     """ Train & test with cross-validation """
     if args['num_folds'] is not None:
         
@@ -676,6 +676,10 @@ def train_random_on_folds(model, dataset, unlabeled_dataset, train_fn, args, rep
         # for fold, (tr_index, test_index) in enumerate(kf.split(indices)):
         for fold in range(args['num_folds']):
             print('\nFold#{}'.format(fold))
+            print('checking ids, \ttr: {}\n\tval: {}\n\ttest: {}'.format(fold_sample_ids['tr_ids'][fold][0:5],
+                                                                         fold_sample_ids['val_ids'][fold][0:5],
+                                                                         fold_sample_ids['test_ids'][fold][0:5]))
+
             
             """ Create train and validation set """
             val_loader = None
