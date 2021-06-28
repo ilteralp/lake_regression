@@ -1150,7 +1150,7 @@ if __name__ == "__main__":
             'device': device,
             'seed': seed,
             'test_per': 0.1,
-            'lr': 0.0001,                                                       # From EA's model, default is 1e-2.
+            'lr': 0.001,                                                       # From EA's model, default is 1e-2.
             # 'patch_norm': True,                                                # Normalizes patches
             # 'reg_norm': True,                                                  # Normalize regression values
             'model': 'eaoriginaldan',                                                   # Model name, can be {dandadadan, eanet, eadan}.
@@ -1168,7 +1168,7 @@ if __name__ == "__main__":
     args['report_id'] = report.report_id
     
     """ Create experiment params """
-    loss_names = ['awl']
+    loss_names = ['sum']
     fold_setups = ['random']
     pred_types = ['reg+class']
     using_unlabeled_samples = [False]
