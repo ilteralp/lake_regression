@@ -676,9 +676,9 @@ def train_random_on_folds(model, dataset, unlabeled_dataset, train_fn, args, rep
         # for fold, (tr_index, test_index) in enumerate(kf.split(indices)):
         for fold in range(args['num_folds']):
             print('\nFold#{}'.format(fold))
-            print('checking ids, \ttr: {}\n\tval: {}\n\ttest: {}'.format(fold_sample_ids['tr_ids'][fold][0:5],
-                                                                         fold_sample_ids['val_ids'][fold][0:5],
-                                                                         fold_sample_ids['test_ids'][fold][0:5]))
+            # print('checking ids, \ttr: {}\n\tval: {}\n\ttest: {}'.format(fold_sample_ids['tr_ids'][fold][0:5],
+            #                                                              fold_sample_ids['val_ids'][fold][0:5],
+            #                                                              fold_sample_ids['test_ids'][fold][0:5]))
 
             
             """ Create train and validation set """
@@ -1136,7 +1136,7 @@ def help():
     
     
 if __name__ == "__main__":
-    seed = None
+    seed = 42
     if seed is not None:
         torch.manual_seed(seed)
         np.random.seed(seed)
