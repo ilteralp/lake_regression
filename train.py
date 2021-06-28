@@ -1146,9 +1146,9 @@ if __name__ == "__main__":
             'device': device,
             'seed': seed,
             'test_per': 0.1,
-            'lr': 0.001,                                                       # From EA's model, default is 1e-2.
+            'lr': 0.0001,                                                       # From EA's model, default is 1e-2.
             # 'patch_norm': True,                                                # Normalizes patches
-            'reg_norm': False,                                                  # Normalize regression values
+            'reg_norm': True,                                                  # Normalize regression values
             'model': 'eaoriginaldan',                                                   # Model name, can be {dandadadan, eanet, eadan}.
             'use_test_as_val': False,                                            # Uses test set for validation. 
             'num_early_stop_epoch': 3,                                         # Number of consecutive epochs that model loss does not decrease. 
@@ -1181,6 +1181,7 @@ if __name__ == "__main__":
     # fold_sample_ids, prev_setup_name = None, None
     prev_setup_name = None
     for (loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer, patch_size, patch_norm) in itertools.product(loss_names, fold_setups, pred_types, using_unlabeled_samples, date_types, split_layers, patch_sizes, patch_norms):
+        if SAMPLE_IDS_FROM_RUN_NAME is not None and len(fold_setups) > 1: raise Exception('Previous fold sample ids cannot be used with different fold setups!')
         if pred_type == 'reg' and unlabeled:                    continue
         if loss_name == 'awl' and pred_type != 'reg+class':     loss_name = 'sum' #continue
         args['loss_name'] = loss_name
@@ -1198,7 +1199,8 @@ if __name__ == "__main__":
         print('loss_name: {}, {}, {}, use_unlabeled: {}, date_type: {}, split_layer: {}, patch_size: {}, patch_norm: {}'.format(loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer, patch_size, patch_norm))
         verify_args(args)
         
-        if args['fold_setup'] != prev_setup_name:                               # New fold_setup, old sample ids are meaningless now.
+        # if args['fold_setup'] != prev_setup_name:                               # New fold_setup, old sample ids are meaningless now.
+        if SAMPLE_IDS_FROM_RUN_NAME is None and args['fold_setup'] != prev_setup_name:
             print('fold_sample_ids are None due to moving from {} to {}.'.format(prev_setup_name, args['fold_setup']))
             fold_sample_ids = None
             
