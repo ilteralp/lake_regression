@@ -88,6 +88,8 @@ class Report:
         sheet.write(0, idx + 2, 'SampleIdsFromRun', header)
         sheet.write(0, idx + 3, 'UnlabeledBatchSize', header)
         sheet.write(0, idx + 4, 'LearningRate', header)
+        sheet.write(0, idx + 5, 'LR_Reg', header)
+        sheet.write(0, idx + 6, 'LR_Class', header)
         wb.save(self.path)
 
     """
@@ -152,6 +154,8 @@ class Report:
         sheet.write(rid, idx + 2, args['sample_ids_from_run'] if args['sample_ids_from_run'] is not None else '')
         sheet.write(rid, idx + 3, args['unlabeled']['batch_size'] if args['use_unlabeled_samples'] else '')
         sheet.write(rid, idx + 4, args['lr'])
+        sheet.write(rid, idx + 5, args['lr_reg'] if args['lr_reg'] is not None else '')
+        sheet.write(rid, idx + 6, args['lr_class'] if args['lr_class'] is not None else '')
         wb.save(self.path)
         
     # """
