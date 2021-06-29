@@ -1161,7 +1161,7 @@ if __name__ == "__main__":
     fold_sample_ids = load_fold_sample_ids_args(SAMPLE_IDS_FROM_RUN_NAME)
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    args = {'max_epoch': 50,
+    args = {'max_epoch': 200,
             'device': device,
             'seed': seed,
             'test_per': 0.1,
