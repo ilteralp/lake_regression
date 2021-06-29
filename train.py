@@ -443,13 +443,28 @@ def create_optimizer_loss(model, args):
     if args['loss_name'] == 'awl':
         if args['pred_type'] == 'reg+class':
             awl = AutomaticWeightedLoss(num=2)
-            optimizer = RMSprop([
-                {'params': model.parameters(), 'lr': args['lr']},
-                {'params': awl.parameters(), 'weight_decay': 0}
-            ])
+            if args['pred_type'] == 'reg+class':
+                optimizer = RMSprop([
+                    {'params': model.feature.parameters(), 'lr': args['lr']},
+                    {'params': model.classifier.parameters(), 'lr': args['lr_class']},
+                    {'params': model.regressor.parameters(), 'lr': args['lr_reg']},
+                    {'params': awl.parameters(), 'weight_decay': 0}
+                ])
+            else:
+                optimizer = RMSprop([
+                    {'params': model.parameters(), 'lr': args['lr']},
+                    {'params': awl.parameters(), 'weight_decay': 0}
+                ])
             return optimizer, awl
     elif args['loss_name'] == 'sum':
-        optimizer = RMSprop(params=model.parameters(), lr=args['lr'])
+        if args['pred_type'] == 'reg+class':
+            optimizer = RMSprop([
+                {'params': model.feature.parameters(), 'lr': args['lr']},
+                {'params': model.classifier.parameters(), 'lr': args['lr_class']},
+                {'params': model.regressor.parameters(), 'lr': args['lr_reg']}
+                ])
+        else:
+            optimizer = RMSprop(params=model.parameters(), lr=args['lr'])
         return optimizer, None
     
 """
@@ -1150,7 +1165,7 @@ if __name__ == "__main__":
             'device': device,
             'seed': seed,
             'test_per': 0.1,
-            'lr': 0.0001,                                                       # From EA's model, default is 1e-2.
+            'lr': C.BASE_LR,                                                       # From EA's model, default is 1e-2.
             # 'patch_norm': True,                                                # Normalizes patches
             # 'reg_norm': True,                                                  # Normalize regression values
             'model': 'eaoriginaldan',                                                   # Model name, can be {dandadadan, eanet, eadan}.
@@ -1202,6 +1217,9 @@ if __name__ == "__main__":
         args['patch_size'] = patch_size
         args['patch_norm'] = patch_norm
         args['reg_norm'] = reg_norm
+        if args['pred_type'] == 'reg+class':
+            args['lr_reg'] = C.BASE_LR * 2.5
+            args['lr_class'] = C.BASE_LR        
         print('loss_name: {}, {}, {}, use_unlabeled: {}, date_type: {}, split_layer: {}, patch_size: {}, patch_norm: {}, reg_norm: {}'.format(loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer, patch_size, patch_norm, reg_norm))
         verify_args(args)
         
