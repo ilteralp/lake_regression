@@ -1218,7 +1218,7 @@ if __name__ == "__main__":
         args['patch_norm'] = patch_norm
         args['reg_norm'] = reg_norm
         if args['pred_type'] == 'reg+class':
-            args['lr_reg'] = C.BASE_LR * 2
+            args['lr_reg'] = C.BASE_LR
             args['lr_class'] = C.BASE_LR        
         print('loss_name: {}, {}, {}, use_unlabeled: {}, date_type: {}, split_layer: {}, patch_size: {}, patch_norm: {}, reg_norm: {}'.format(loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer, patch_size, patch_norm, reg_norm))
         verify_args(args)
