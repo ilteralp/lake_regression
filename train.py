@@ -1161,7 +1161,7 @@ if __name__ == "__main__":
     fold_sample_ids = load_fold_sample_ids_args(SAMPLE_IDS_FROM_RUN_NAME)
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
-    args = {'max_epoch': 200,
+    args = {'max_epoch': 400,
             'device': device,
             'seed': seed,
             'test_per': 0.1,
@@ -1186,7 +1186,7 @@ if __name__ == "__main__":
     loss_names = ['awl']
     fold_setups = ['random']
     pred_types = ['reg+class']
-    using_unlabeled_samples = [True]
+    using_unlabeled_samples = [False]
     date_types = ['month']
     # split_layers = [*range(1,3)]
     split_layers = [3]
@@ -1218,8 +1218,8 @@ if __name__ == "__main__":
         args['patch_norm'] = patch_norm
         args['reg_norm'] = reg_norm
         if args['pred_type'] == 'reg+class':
-            args['lr_reg'] = C.BASE_LR
-            args['lr_class'] = C.BASE_LR        
+            args['lr_reg'] = C.BASE_LR * 2
+            args['lr_class'] = C.BASE_LR
         print('loss_name: {}, {}, {}, use_unlabeled: {}, date_type: {}, split_layer: {}, patch_size: {}, patch_norm: {}, reg_norm: {}'.format(loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer, patch_size, patch_norm, reg_norm))
         verify_args(args)
         
