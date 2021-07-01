@@ -16,15 +16,17 @@ import sys
 sys.path.append("..")
 import constants as C
 from models import EAOriginal, EASeq
+# from print_params import count_parameters
 
 class EAOriginalDAN(nn.Module):
-    def __init__(self, in_channels, patch_size, split_layer, num_classes):
+    def __init__(self, in_channels, patch_size, split_layer, num_classes, use_atrous_conv=False):
         super(EAOriginalDAN, self).__init__()
         self.__verify(in_channels=in_channels, split_layer=split_layer, patch_size=patch_size)
         self.in_channels = in_channels
         self.patch_size = patch_size
         self.split_layer = split_layer
         self.num_classes = num_classes
+        self.use_atrous_conv = use_atrous_conv
         
         """ Feature Extractor """
         self.feature = self.create_model(start=0, end=split_layer)
@@ -51,7 +53,8 @@ class EAOriginalDAN(nn.Module):
     def create_model(self, start, end, num_classes=1):
         return nn.Sequential(*list(EAOriginal(in_channels=self.in_channels, 
                                               patch_size=self.patch_size,
-                                              num_classes=num_classes).children())[start:end])
+                                              num_classes=num_classes,
+                                              use_atrous_conv=self.use_atrous_conv).children())[start:end])
     
     def forward(self, x):
         x = self.feature(x)
@@ -61,11 +64,17 @@ class EAOriginalDAN(nn.Module):
     
 if __name__ == "__main__":
     in_channels, patch_size, num_classes = 1, 3, 12
-    for split_layer in range(1, 7):
-        model = EAOriginalDAN(in_channels=in_channels, patch_size=patch_size, 
-                              split_layer=split_layer, num_classes=num_classes)
-        print(model)
-        print('=' * 72)
+    # for split_layer in range(3, 6):
+    split_layer = 4
+    model = EAOriginalDAN(in_channels=in_channels, patch_size=patch_size, 
+                          split_layer=split_layer, num_classes=num_classes,
+                          use_atrous_conv=True)
+    # print(model)
+    # model_trainable_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    # print('split_layer: {}, trainable: {}'.format(split_layer, model_trainable_total_params))
+    # print('=' * 72)
+
+    # count_parameters(model)
     
     # feat_ext = model.create_model(start=0, end=split_layer, num_classes=1)
     # reg = model.create_model(start=split_layer, end=None, num_classes=1)
