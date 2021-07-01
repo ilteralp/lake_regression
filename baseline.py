@@ -145,7 +145,7 @@ def train_on_folds(run_name):
 if __name__ == "__main__":
     # basic_svr()
     
-    RUN_NAME = '2021_05_29__23_59_42'
+    RUN_NAME = '2021_07_01__11_23_50'
     train_on_folds(run_name=RUN_NAME)
     
     # ARGS_PATH = '/home/melike/repos/lake_regression/runs/2021_05_29__00_07_24/args.txt'
