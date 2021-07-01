@@ -15,7 +15,8 @@ import sys
 sys.path.append("..")
 import constants as C
 from models import EASeq
-# import count_parameters
+# from print_params import count_parameters
+
 
 class EADAN(nn.Module):
     """
