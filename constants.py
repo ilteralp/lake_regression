@@ -10,7 +10,7 @@ Created on Fri Feb 19 18:13:13 2021
 
 import os.path as osp
 
-LOCAL_ENV = False
+LOCAL_ENV = True
 ROG_ENV = not LOCAL_ENV
 
 """ Melike local """
@@ -23,7 +23,7 @@ if ROG_ENV:
     ROOT_DIR = '/home/rog/rs/balik_golu'
     MODEL_DIR_PATH = '/home/rog/repos/lake_regression/model_files'
     
-MASK_PATH = osp.join(ROOT_DIR, 'lake_mask_small_45.png')
+MASK_PATH = osp.join(ROOT_DIR, 'lake_mask_small.png')
 IMG_DIR_PATH = osp.join(ROOT_DIR, 'balik')
 GT_PATH = osp.join(ROOT_DIR, 'ground_truth32.txt')
 DATE_LABELS_PATH = osp.join(ROOT_DIR, 'date_labels.txt')
@@ -54,5 +54,5 @@ MLP_CFGS = {'1_hidden_layer' : [673],
 
 """ ===================== Model params ===================== """
 BATCH_SIZE = 64
-UNLABELED_BATCH_SIZE = 4568
-BASE_LR = 0.0001
+UNLABELED_BATCH_SIZE = 512
+BASE_LR = 0.00005
