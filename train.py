@@ -1175,6 +1175,7 @@ if __name__ == "__main__":
             'use_test_as_val': True,                                            # Uses test set for validation. 
             'num_early_stop_epoch': 3,                                         # Number of consecutive epochs that model loss does not decrease. 
             'sample_ids_from_run': SAMPLE_IDS_FROM_RUN_NAME,
+            'reshape_to_mosaic': False,
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'val': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4},
