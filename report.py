@@ -90,6 +90,7 @@ class Report:
         sheet.write(0, idx + 4, 'LearningRate', header)
         sheet.write(0, idx + 5, 'LR_Reg', header)
         sheet.write(0, idx + 6, 'LR_Class', header)
+        sheet.write(0, idx + 7, 'UseAtrousConv', header)
         wb.save(self.path)
 
     """
@@ -156,6 +157,7 @@ class Report:
         sheet.write(rid, idx + 4, args['lr'])
         sheet.write(rid, idx + 5, args['lr_reg'] if 'lr_reg' in args else '')
         sheet.write(rid, idx + 6, args['lr_class'] if 'lr_class' in args else '')
+        sheet.write(rid, idx + 7, args['use_atrous_conv'] if 'use_atrous_conv' in args else '')
         wb.save(self.path)
         
     # """
