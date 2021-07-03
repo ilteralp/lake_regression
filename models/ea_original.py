@@ -21,7 +21,7 @@ import constants as C
 class EAOriginal(nn.Module):
     def __init__(self, in_channels, patch_size, num_classes=1, use_atrous_conv=False):
         super(EAOriginal, self).__init__()
-        self.__verify(in_channels=in_channels)
+        self.__verify(in_channels=in_channels, use_atrous_conv=use_atrous_conv)
         self.patch_size = patch_size
         self.num_classes = num_classes
         self.use_atrous_conv = use_atrous_conv
@@ -32,7 +32,7 @@ class EAOriginal(nn.Module):
             self.conv2 = self.__make_layer(in_channels=64, out_channels=64)
             self.conv3 = self.__make_layer(in_channels=64, out_channels=64)
             self.conv4 = self.__make_layer(in_channels=64, out_channels=64)
-            self.fc1 = self.__make_first_fc(in_features=64 * self.patch_size * self.patch_size * 12, out_features=128)
+            self.fc1 = self.__make_first_fc(in_features=64 * self.patch_size * self.patch_size * 12, out_features=128)  # input/output is 12*patch_size^2. 
             
         else:
             self.conv1 = self.__make_atr_conv_layer(in_channels=in_channels, out_channels=64, dilation=3, kernel_size=3)
@@ -53,9 +53,13 @@ class EAOriginal(nn.Module):
         """ Init all layer's weight & bias """
         self.__init_weight_bias()
         
-    def __verify(self, in_channels):
-        if in_channels != 1:
-            raise Exception('Only works with 1 channel patches.')
+    def __verify(self, in_channels, use_atrous_conv):
+        if use_atrous_conv:                                                     # Only adopts mosaic-shaped input. 
+            if in_channels != 1:
+                raise Exception('Atrous convolution model only works with mosaic-shaped patches that has 1 channel. Given {}'.format(in_channels))
+        else:
+            if in_channels != 12:
+                raise Exception('EAOriginal model works with patches with 12 channels. Given {}'.format(in_channels))
             
     def __make_layer(self, in_channels, out_channels):
         conv2d = nn.Conv2d(in_channels=in_channels, out_channels=out_channels, 
@@ -108,6 +112,7 @@ if __name__ == "__main__":
     # print('total: {}, trainable: {}'.format(model_total_params, model_trainable_total_params))
 
     # print(count_parameters(model))
-    inp = torch.randn(2, 1, 12, 9)
+    # inp_mosaic = torch.randn(2, in_channels, 12, 9)
+    inp = torch.randn(2, in_channels, patch_size, patch_size)
     outp = model(inp)
     print('outp.shape:', outp.shape)
