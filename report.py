@@ -159,7 +159,7 @@ class Report:
         sheet.write(rid, idx + 5, args['lr_reg'] if 'lr_reg' in args else '')
         sheet.write(rid, idx + 6, args['lr_class'] if 'lr_class' in args else '')
         sheet.write(rid, idx + 7, args['use_atrous_conv'] if 'use_atrous_conv' in args else '')
-        sheet.write(rid, idx + 7, args['reshape_to_mosaic'])
+        sheet.write(rid, idx + 7, 'True' if args['reshape_to_mosaic'] == 1 else 'False')
         wb.save(self.path)
         
     # """
