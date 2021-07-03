@@ -1090,7 +1090,8 @@ def create_model(args):
         
     elif args['model'] == 'eaoriginaldan':
         model = EAOriginalDAN(in_channels=args['in_channels'], patch_size=args['patch_size'], 
-                              split_layer=args['split_layer'], num_classes=args['num_classes'])
+                              split_layer=args['split_layer'], num_classes=args['num_classes'],
+                              use_atrous_conv=args['use_atrous_conv'])
         
     return model.to(args['device'])
 
@@ -1195,6 +1196,8 @@ if __name__ == "__main__":
     patch_sizes = [3]
     patch_norms = [False]
     reg_norms = [True]
+    if args['model'] == 'eaoriginaldan':
+        args['use_atrous_conv'] = True
     
     # mlp_cfgs = ['{}_hidden_layer'.format(i) for i in range(7, 9)] if args['model'] == 'mlp' else None
     # mlp_cfgs = ['6_hidden_layer']
@@ -1220,7 +1223,7 @@ if __name__ == "__main__":
         args['patch_norm'] = patch_norm
         args['reg_norm'] = reg_norm
         if args['pred_type'] == 'reg+class':
-            args['lr_reg'] = C.BASE_LR
+            args['lr_reg'] = C.BASE_LR * 2
             args['lr_class'] = C.BASE_LR
         # args['mlp_cfg'] = mlp_cfg
         print('loss_name: {}, {}, {}, use_unlabeled: {}, date_type: {}, split_layer: {}, patch_size: {}, patch_norm: {}, reg_norm: {}'.format(loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer, patch_size, patch_norm, reg_norm))
