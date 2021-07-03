@@ -1123,6 +1123,7 @@ def run(args, report, fold_sample_ids):
         unlabeled_set = Lake2dDataset(learning='unlabeled', date_type=args['date_type'], 
                                       patch_size=args['patch_size'], 
                                       is_orig_model=args['model'] == 'eaoriginal' or args['model'] == 'eaoriginaldan')
+        print('len, unlabeled: {}'.format(len(unlabeled_set)))
    
     """ Create regression and/or classification losses and model params. """
     args = create_model_params(args=args)
