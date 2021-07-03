@@ -93,8 +93,8 @@ class BaseLakeDataset(Dataset):
     Loads lake mask of unlabeled samples. Within it, labeled samples are also false. 
     """
     def _load_unlabeled_mask(self):
-        # img = io.imread(C.MASK_PATH)
-        img = io.imread(osp.join(C.ROOT_DIR, 'eroded_bin_lake_mask_{}.png'.format(self.patch_size)))
+        img = io.imread(C.MASK_PATH)
+        # img = io.imread(osp.join(C.ROOT_DIR, 'eroded_bin_lake_mask_{}.png'.format(self.patch_size)))
         img = img[:,:,:3] if img.shape[2] == 4 else img                         # Check alpha channel    
         mask = np.all(img == (255, 0, 255), axis=-1)                            # Lake mask, 650x650
         # print('before', mask[C.LABELED_INDICES])
