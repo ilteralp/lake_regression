@@ -25,16 +25,16 @@ class Lake2dDataset(BaseLakeDataset):
     Args:
         learning (string): Type of samples. Should be one of {'labeled', 'unlabeled'}. 
         patch_size (int): Size of the patch that is centered on the sample pixel. Should be an odd number. 
-        is_orig_model (bool): Type of model. If true, reshapes patches to 1x12x9, otherwise 12x3x3
+        reshape_to_mosaic (bool): Type of input. If true, reshapes patches to 1x12x9, otherwise 12x3x3
         date_type (string): Type of date label that will be used for classification. 
         Should be one of {'month', 'season', 'year'}.
     """
     
-    def __init__(self, learning, date_type, is_orig_model, patch_size=3):
+    def __init__(self, learning, date_type, reshape_to_mosaic, patch_size=3):
         BaseLakeDataset.__init__(self, learning, date_type, patch_size)
         
         self.patch_size = patch_size
-        self.is_orig_model = is_orig_model
+        self.reshape_to_mosaic = reshape_to_mosaic
         if learning.lower() == 'unlabeled':
             self.unlabeled_mask = self._init_mask()
         
@@ -89,7 +89,7 @@ class Lake2dDataset(BaseLakeDataset):
             reg_val = self._get_regression_val(img_idx, px_idx)
             
         patch = data[:, px-pad : px+pad + 1, py-pad : py+pad+1]         # (12, 3, 3) or (12, 5, 5)
-        if self.is_orig_model:                                          # Only reshape for EAOriginal model.     
+        if self.reshape_to_mosaic:                                      # Only reshape for EAOriginal model.     
             patch = self.__reshape_patch(patch=patch)                   # (1, 12, 9) or (1, 20, 15)
         
         date_class = self.dates[img_idx][self.date_type]
@@ -139,9 +139,9 @@ if __name__ == "__main__":
     
     # ps, date_type = [5], 'year'
     patch_size, date_type = 5, 'year'
-    is_orig_model = False
+    reshape_to_mosaic = False
     # for patch_size in ps:
-    # labeled_2d_dataset = Lake2dDataset(learning='labeled', date_type=date_type, patch_size=patch_size, is_orig_model=is_orig_model)
+    # labeled_2d_dataset = Lake2dDataset(learning='labeled', date_type=date_type, patch_size=patch_size, reshape_to_mosaic=reshape_to_mosaic)
     # train_set = Subset(labeled_2d_dataset, indices=[*range(0, 10)])
     # test_set = Subset(labeled_2d_dataset, indices=[*range(10, 20)])
     # val_set = Subset(labeled_2d_dataset, indices=[*range(20, 30)])
@@ -149,7 +149,7 @@ if __name__ == "__main__":
     # reg_min, reg_max = get_reg_min_max(labeled_2d_dataset.reg_vals[tr_indices])
     # labeled_2d_dataset.set_reg_min_max(reg_min=reg_min, reg_max=reg_max)
     
-    unlabeled_2d_dataset = Lake2dDataset(learning='unlabeled', date_type=date_type, patch_size=patch_size, is_orig_model=is_orig_model)
+    unlabeled_2d_dataset = Lake2dDataset(learning='unlabeled', date_type=date_type, patch_size=patch_size, reshape_to_mosaic=reshape_to_mosaic)
     print(len(unlabeled_2d_dataset))
     # print('patch_size: {} lens, l: {}, u: {}'.format(patch_size, len(labeled_2d_dataset), len(unlabeled_2d_dataset)))
     # unlabeled_2d_dataset = Lake2dDataset(learning='unlabeled', date_type='year', patch_size=3)
