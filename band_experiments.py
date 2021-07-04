@@ -100,8 +100,8 @@ def estimate_on_folds(run_name):
     scores = { k: init_scores() for k in fnames}
     for fold in range(args['num_folds']):
         X_train, y_train, _, _ = load_data(args=args, fold=fold, fold_sample_ids=fold_sample_ids)       # There is no test set since a model is not trained. 
-        if X_train.shape != (256, 12):
-            raise Exception('Expected training set to be (256, 12). Given {}'.format(X_train.shape))
+        if X_train.shape != (288, 12):
+            raise Exception('Expected training set to be (288, 12). Given {}'.format(X_train.shape))
             
         for f, fname in zip(fs, fnames):
             y_pred = f(X_train=X_train)
@@ -120,8 +120,8 @@ def estimate_model_on_folds(fold_sample_ids, model, name, args, coeffs):
     scores = init_scores()
     for fold in range(args['num_folds']): 
         X_train, y_train, _, _ = load_data(args=args, fold=fold, fold_sample_ids=fold_sample_ids)
-        if X_train.shape != (256, 12):
-            raise Exception('Expected training set to be (256, 12). Given {}'.format(X_train.shape))
+        if X_train.shape != (288, 12):
+            raise Exception('Expected training set to be (288, 12). Given {}'.format(X_train.shape))
         
         y_pred = model(X_train=X_train, coeffs=coeffs)
         calc_scores(y_true=y_train, y_pred=y_pred, scores=scores)
@@ -201,7 +201,7 @@ def load_samples_set_args(run_name):
     return fold_sample_ids, args
     
 if __name__ == "__main__":
-    run_name = '2021_05_29__23_59_42'
+    run_name = '2021_06_18__16_08_05'
     
     fold_sample_ids, args = load_samples_set_args(run_name=run_name)
     X_train, y_train, _, _ = load_data(args=args, fold=0, fold_sample_ids=fold_sample_ids)
