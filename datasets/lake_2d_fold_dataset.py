@@ -31,8 +31,8 @@ class Lake2dFoldDataset(Lake2dDataset):
         cannot be indexed. For fold_setup='temporal_day' and fold_setup='temporal_year', ids [22, 23] should not be used. 
         patch_size (int, optional): Size of the patch that is centered on the sample pixel. Should be an odd number. 
     """
-    def __init__(self, learning, date_type, fold_setup, is_orig_model, ids=None, patch_size=3):
-        Lake2dDataset.__init__(self, learning=learning, date_type=date_type, patch_size=patch_size, is_orig_model=is_orig_model)
+    def __init__(self, learning, date_type, fold_setup, reshape_to_mosaic, ids=None, patch_size=3):
+        Lake2dDataset.__init__(self, learning=learning, date_type=date_type, patch_size=patch_size, reshape_to_mosaic=reshape_to_mosaic)
         self.verify(fold_setup, ids)
         self.fold_setup = fold_setup.lower()
         self.ids = ids                                                          # Can be pixel ids, image ids or year ids depending on setup.
