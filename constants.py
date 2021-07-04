@@ -58,4 +58,4 @@ if 'lake_mask_small.png' in MASK_PATH:
     UNLABELED_BATCH_SIZE = 512
 elif 'lake_mask_small_45.png' in MASK_PATH:
     UNLABELED_BATCH_SIZE = 4568
-BASE_LR = 0.0001
+BASE_LR = 0.00005
