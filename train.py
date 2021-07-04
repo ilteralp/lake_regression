@@ -1203,7 +1203,7 @@ if __name__ == "__main__":
     patch_norms = [False]
     reg_norms = [True]
     if args['model'] in ['eaoriginaldan', 'eaoriginal']:
-        args['use_atrous_conv'] = True
+        args['use_atrous_conv'] = False
     
     # mlp_cfgs = ['{}_hidden_layer'.format(i) for i in range(7, 9)] if args['model'] == 'mlp' else None
     # mlp_cfgs = ['6_hidden_layer']
