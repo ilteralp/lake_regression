@@ -58,11 +58,12 @@ if __name__ == "__main__":
     in_channels, patch_size = 12, 5
     in_features = in_channels * patch_size * patch_size
     inp = torch.randn(2, in_channels, patch_size, patch_size)
-    # for i in range(1, 5):
-    i = 8
+    # for i in range(1, 3):
+    i = 6
     model = MultiLayerPerceptron(in_channels=in_channels, patch_size=patch_size, cfg='{}_hidden_layer'.format(i))
+    print(model)
+    print('*' * 72)
     # outp = model(inp)
     # print(model)
     # print(outp.shape)
     # count_parameters(model)
-    print('*' * 72)
