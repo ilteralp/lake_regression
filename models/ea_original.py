@@ -12,6 +12,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torchvision import models
 import time
+import itertools
 import sys
 sys.path.append("..")
 import constants as C
@@ -19,12 +20,13 @@ import constants as C
 
 
 class EAOriginal(nn.Module):
-    def __init__(self, in_channels, patch_size, num_classes=1, use_atrous_conv=False):
+    def __init__(self, in_channels, patch_size, num_classes=1, use_atrous_conv=False, reshape_to_mosaic=False):
         super(EAOriginal, self).__init__()
-        self.__verify(in_channels=in_channels, use_atrous_conv=use_atrous_conv)
+        self.__verify(in_channels=in_channels, use_atrous_conv=use_atrous_conv, reshape_to_mosaic=reshape_to_mosaic)
         self.patch_size = patch_size
         self.num_classes = num_classes
         self.use_atrous_conv = use_atrous_conv
+        self.depth = 12 if reshape_to_mosaic else 1
         
         """ Convolution layers & 1st FC """
         if not self.use_atrous_conv:
@@ -32,7 +34,7 @@ class EAOriginal(nn.Module):
             self.conv2 = self.__make_layer(in_channels=64, out_channels=64)
             self.conv3 = self.__make_layer(in_channels=64, out_channels=64)
             self.conv4 = self.__make_layer(in_channels=64, out_channels=64)
-            self.fc1 = self.__make_first_fc(in_features=64 * self.patch_size * self.patch_size * 12, out_features=128)  # input/output is 12*patch_size^2. 
+            self.fc1 = self.__make_first_fc(in_features=64 * self.patch_size * self.patch_size * self.depth, out_features=128)  # input/output is 12*patch_size^2. 
             
         else:
             self.conv1 = self.__make_atr_conv_layer(in_channels=in_channels, out_channels=64, dilation=3, kernel_size=3)
@@ -53,13 +55,16 @@ class EAOriginal(nn.Module):
         """ Init all layer's weight & bias """
         self.__init_weight_bias()
         
-    def __verify(self, in_channels, use_atrous_conv):
-        if use_atrous_conv:                                                     # Only adopts mosaic-shaped input. 
+    def __verify(self, in_channels, use_atrous_conv, reshape_to_mosaic):
+        if use_atrous_conv and not reshape_to_mosaic:
+            raise Exception('Input patches should be mosaic-shaped to use atrous convolutions.')
+        
+        if reshape_to_mosaic:
             if in_channels != 1:
-                raise Exception('Atrous convolution model only works with mosaic-shaped patches that has 1 channel. Given {}'.format(in_channels))
-        else:
+                raise Exception('Mosaic-shaped patches should have 1 channel. Given: {}'.format(in_channels))
+        else:                                                                          # Regular-shaped input should be (2, 12, bs, bs) 
             if in_channels != 12:
-                raise Exception('EAOriginal model works with patches with 12 channels. Given {}'.format(in_channels))
+                raise Exception('Model works for patches with 12 channels. Given: {}'.format(in_channels))
             
     def __make_layer(self, in_channels, out_channels):
         conv2d = nn.Conv2d(in_channels=in_channels, out_channels=out_channels, 
@@ -96,8 +101,6 @@ class EAOriginal(nn.Module):
         x = self.conv4(x)
         # print('conv4: {}'.format(x.shape))
         
-        # x = torch.flatten(x, 1)                                                        # Flatten all dimensions except batch
-        # x = torch.tanh(self.fc1(x))
         x = self.fc1(x)
         # print('fc1: {}'.format(x.shape))
         x = self.fc2(x)
@@ -105,14 +108,36 @@ class EAOriginal(nn.Module):
                 
 
 if __name__ == "__main__":
-    in_channels, patch_size = 1, 3
-    model = EAOriginal(in_channels=in_channels, patch_size=3, use_atrous_conv=True)
+    # in_channels, patch_size = 12, 3
+    patch_size = 3
+    num_samples = 2
+    # model_for_mosaic = EAOriginal(in_channels=in_channels, patch_size=patch_size, 
+    #                               use_atrous_conv=True, reshape_to_mosaic=True)
+    # inp_mosaic = torch.randn(2, in_channels, 12, 9)
+    
+    atrous_convs = [False, True]
+    shapes = [False, True]
+
+    for (use_atrous_conv, reshape_to_mosaic) in itertools.product(atrous_convs, shapes):
+        if use_atrous_conv and not reshape_to_mosaic: continue
+        print('use_atrous_conv: {}, reshape_to_mosaic: {}'.format(use_atrous_conv, reshape_to_mosaic))
+        if reshape_to_mosaic: 
+            in_channels = 1
+            inp = torch.randn(num_samples, in_channels, 12, 9)
+        else:
+            in_channels = 12
+            inp = torch.randn(num_samples, in_channels, patch_size, patch_size)
+            
+            
+        model = EAOriginal(in_channels=in_channels, patch_size=patch_size, 
+                           use_atrous_conv=use_atrous_conv, 
+                           reshape_to_mosaic=reshape_to_mosaic)
+        outp = model(inp)
+        # print('')
+        # count_parameters(model)
+        print('=' * 72)
+    
     # model_total_params = sum(p.numel() for p in model.parameters())
     # model_trainable_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     # print('total: {}, trainable: {}'.format(model_total_params, model_trainable_total_params))
-
     # print(count_parameters(model))
-    # inp_mosaic = torch.randn(2, in_channels, 12, 9)
-    inp = torch.randn(2, in_channels, patch_size, patch_size)
-    outp = model(inp)
-    print('outp.shape:', outp.shape)
