@@ -54,10 +54,10 @@ MLP_CFGS = {'1_hidden_layer' : [673],
 
 """ ===================== Model params ===================== """
 BATCH_SIZE = 64
-if 'lake_mask_small.png' in MASK_PATH:
-    UNLABELED_BATCH_SIZE = 512
-elif 'lake_mask_small_45.png' in MASK_PATH:
-    UNLABELED_BATCH_SIZE = 4568
-elif 'lake_mask.png' in MASK_PATH:
-    UNLABELED_BATCH_SIZE = 16384
+# if 'lake_mask_small.png' in MASK_PATH:
+#     UNLABELED_BATCH_SIZE = 512
+# elif 'lake_mask_small_45.png' in MASK_PATH:
+#     UNLABELED_BATCH_SIZE = 4568
+# elif 'lake_mask.png' in MASK_PATH:
+UNLABELED_BATCH_SIZE = 16384
 BASE_LR = 0.0001
