@@ -17,7 +17,7 @@ import sys
 sys.path.append("..")
 import constants as C
 from models import EAOriginal, EASeq
-from print_params import count_parameters
+# from print_params import count_parameters
 
 class EAOriginalDAN(nn.Module):
     def __init__(self, in_channels, patch_size, split_layer, num_classes, use_atrous_conv=False, reshape_to_mosaic=False):
@@ -87,8 +87,8 @@ if __name__ == "__main__":
                               reshape_to_mosaic=reshape_to_mosaic)
         
         outp = model(inp)
-        print('')
-        count_parameters(model)
+        # print('')
+        # count_parameters(model)
         print('=' * 72)
         
     # print(model)
