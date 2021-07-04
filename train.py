@@ -861,7 +861,7 @@ def _base_train_on_folds(ids, tr_ids, test_ids, val_ids, model, fold, metrics):
                             'date_type': args['date_type'],
                             'fold_setup': args['fold_setup'],
                             'patch_size': args['patch_size'],
-                            'is_orig_model': args['model'] == 'eaoriginal' or args['model'] == 'eaoriginaldan'}
+                            'reshape_to_mosaic': args['reshape_to_mosaic']}
     
     """ Create validation set """
     val_set, val_loader = None, None
@@ -884,7 +884,7 @@ def _base_train_on_folds(ids, tr_ids, test_ids, val_ids, model, fold, metrics):
         unlabeled_set = Lake2dFoldDataset(learning='unlabeled', date_type=args['date_type'],
                                           fold_setup=args['fold_setup'], ids=unlabeled_ids,
                                           patch_size=args['patch_size'], 
-                                          is_orig_model=args['model'] == 'eaoriginal' or args['model'] == 'eaoriginaldan')
+                                          reshape_to_mosaic=args['reshape_to_mosaic'])
     
     """ Normalize patches on all datasets """
     if args['patch_norm']:
@@ -1080,7 +1080,10 @@ def create_model(args):
                       split_layer=args['split_layer'], patch_size=args['patch_size'])
         
     elif args['model'] == 'eaoriginal':
-        model = EAOriginal(in_channels=args['in_channels'], patch_size=args['patch_size'])
+        model = EAOriginal(in_channels=args['in_channels'], patch_size=args['patch_size'],
+                           use_atrous_conv=args['use_atrous_conv'], 
+                           reshape_to_mosaic=args['reshape_to_mosaic'], 
+                           num_classes=args['num_classes'])
         
     elif args['model'] == 'mlp':
         model = MultiLayerPerceptron(in_channels=args['in_channels'], patch_size=args['patch_size'], cfg=args['mlp_cfg'])
@@ -1091,7 +1094,8 @@ def create_model(args):
     elif args['model'] == 'eaoriginaldan':
         model = EAOriginalDAN(in_channels=args['in_channels'], patch_size=args['patch_size'], 
                               split_layer=args['split_layer'], num_classes=args['num_classes'],
-                              use_atrous_conv=args['use_atrous_conv'])
+                              use_atrous_conv=args['use_atrous_conv'], 
+                              reshape_to_mosaic=args['reshape_to_mosaic'])
         
     return model.to(args['device'])
 
@@ -1099,7 +1103,8 @@ def create_model(args):
 Creates loss functions depending on prediction type and adds model params.
 """
 def create_model_params(args):
-    args['in_channels'] = 1 if args['model'] == 'eaoriginal' or args['model'] == 'eaoriginaldan' else 12
+    # args['in_channels'] = 1 if args['model'] == 'eaoriginal' or args['model'] == 'eaoriginaldan' else 12
+    args['in_channels'] = 1 if args['reshape_to_mosaic'] else 12
     args['num_classes'] = C.NUM_CLASSES[args['date_type']] if args['pred_type'] != 'reg' else 1
     
     if args['pred_type'] == 'reg' or args['pred_type'] == 'reg+class':
@@ -1118,12 +1123,12 @@ def run(args, report, fold_sample_ids):
     """ Create labeled and unlabeled datasets. """
     labeled_set = Lake2dDataset(learning='labeled', date_type=args['date_type'], 
                                 patch_size=args['patch_size'],
-                                is_orig_model=args['model'] == 'eaoriginal' or args['model'] == 'eaoriginaldan')
+                                reshape_to_mosaic=args['reshape_to_mosaic'])
     unlabeled_set = None
     if args['use_unlabeled_samples']:
         unlabeled_set = Lake2dDataset(learning='unlabeled', date_type=args['date_type'], 
                                       patch_size=args['patch_size'], 
-                                      is_orig_model=args['model'] == 'eaoriginal' or args['model'] == 'eaoriginaldan')
+                                      reshape_to_mosaic=args['reshape_to_mosaic'])
         print('len, unlabeled: {}'.format(len(unlabeled_set)))
    
     """ Create regression and/or classification losses and model params. """
@@ -1175,7 +1180,7 @@ if __name__ == "__main__":
             'use_test_as_val': True,                                            # Uses test set for validation. 
             'num_early_stop_epoch': 3,                                         # Number of consecutive epochs that model loss does not decrease. 
             'sample_ids_from_run': SAMPLE_IDS_FROM_RUN_NAME,
-            'reshape_to_mosaic': False,
+            'reshape_to_mosaic': True,
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'val': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4},
@@ -1197,8 +1202,8 @@ if __name__ == "__main__":
     patch_sizes = [3]
     patch_norms = [False]
     reg_norms = [True]
-    if args['model'] == 'eaoriginaldan':
-        args['use_atrous_conv'] = True
+    if args['model'] in ['eaoriginaldan', 'eaoriginal']:
+        args['use_atrous_conv'] = False
     
     # mlp_cfgs = ['{}_hidden_layer'.format(i) for i in range(7, 9)] if args['model'] == 'mlp' else None
     # mlp_cfgs = ['6_hidden_layer']
