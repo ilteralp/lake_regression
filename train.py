@@ -1180,7 +1180,7 @@ if __name__ == "__main__":
             'use_test_as_val': True,                                            # Uses test set for validation. 
             'num_early_stop_epoch': 3,                                         # Number of consecutive epochs that model loss does not decrease. 
             'sample_ids_from_run': SAMPLE_IDS_FROM_RUN_NAME,
-            'reshape_to_mosaic': True,
+            'reshape_to_mosaic': False,
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'val': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4},
@@ -1229,7 +1229,7 @@ if __name__ == "__main__":
         args['patch_norm'] = patch_norm
         args['reg_norm'] = reg_norm
         if args['pred_type'] == 'reg+class':
-            args['lr_reg'] = C.BASE_LR * 2
+            args['lr_reg'] = C.BASE_LR
             args['lr_class'] = C.BASE_LR
         # args['mlp_cfg'] = mlp_cfg
         print('loss_name: {}, {}, {}, use_unlabeled: {}, date_type: {}, split_layer: {}, patch_size: {}, patch_norm: {}, reg_norm: {}'.format(loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer, patch_size, patch_norm, reg_norm))
