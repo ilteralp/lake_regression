@@ -23,7 +23,7 @@ if ROG_ENV:
     ROOT_DIR = '/home/rog/rs/balik_golu'
     MODEL_DIR_PATH = '/home/rog/repos/lake_regression/model_files'
     
-MASK_PATH = osp.join(ROOT_DIR, 'lake_mask_small_45.png')
+MASK_PATH = osp.join(ROOT_DIR, 'lake_mask.png')
 IMG_DIR_PATH = osp.join(ROOT_DIR, 'balik')
 GT_PATH = osp.join(ROOT_DIR, 'ground_truth32.txt')
 DATE_LABELS_PATH = osp.join(ROOT_DIR, 'date_labels.txt')
@@ -58,4 +58,6 @@ if 'lake_mask_small.png' in MASK_PATH:
     UNLABELED_BATCH_SIZE = 512
 elif 'lake_mask_small_45.png' in MASK_PATH:
     UNLABELED_BATCH_SIZE = 4568
+elif 'lake_mask.png' in MASK_PATH:
+    UNLABELED_BATCH_SIZE = 6852
 BASE_LR = 0.0001
