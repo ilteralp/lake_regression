@@ -12,21 +12,24 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torchvision import models
 import time
+import itertools
 import sys
 sys.path.append("..")
 import constants as C
 from models import EAOriginal, EASeq
-# from print_params import count_parameters
+from print_params import count_parameters
 
 class EAOriginalDAN(nn.Module):
-    def __init__(self, in_channels, patch_size, split_layer, num_classes, use_atrous_conv=False):
+    def __init__(self, in_channels, patch_size, split_layer, num_classes, use_atrous_conv=False, reshape_to_mosaic=False):
         super(EAOriginalDAN, self).__init__()
-        self.__verify(in_channels=in_channels, split_layer=split_layer, patch_size=patch_size)
+        self.__verify(in_channels=in_channels, split_layer=split_layer, patch_size=patch_size,
+                      use_atrous_conv=use_atrous_conv, reshape_to_mosaic=reshape_to_mosaic)
         self.in_channels = in_channels
         self.patch_size = patch_size
         self.split_layer = split_layer
         self.num_classes = num_classes
         self.use_atrous_conv = use_atrous_conv
+        self.reshape_to_mosaic = reshape_to_mosaic
         
         """ Feature Extractor """
         self.feature = self.create_model(start=0, end=split_layer)
@@ -40,10 +43,10 @@ class EAOriginalDAN(nn.Module):
     """
     Check in_channels and split_layer are valid. 
     """
-    def __verify(self, in_channels, patch_size, split_layer):
-        if in_channels != 1:
-            raise Exception('Only works with 1 channel patches.')
-        len_ea_org = len([*EAOriginal(in_channels=in_channels, patch_size=patch_size).children()])
+    def __verify(self, in_channels, patch_size, split_layer, use_atrous_conv, reshape_to_mosaic):
+        len_ea_org = len([*EAOriginal(in_channels=in_channels, patch_size=patch_size, 
+                                      use_atrous_conv=use_atrous_conv, 
+                                      reshape_to_mosaic=reshape_to_mosaic).children()])
         if split_layer > len_ea_org - 1 or split_layer < 1:
             raise Exception('EAOriginal has {} layers, therefore split layer can be in [1, {}]. Given: {}'.format(len_ea_org, len_ea_org - 1, split_layer))
         
@@ -54,7 +57,8 @@ class EAOriginalDAN(nn.Module):
         return nn.Sequential(*list(EAOriginal(in_channels=self.in_channels, 
                                               patch_size=self.patch_size,
                                               num_classes=num_classes,
-                                              use_atrous_conv=self.use_atrous_conv).children())[start:end])
+                                              use_atrous_conv=self.use_atrous_conv,
+                                              reshape_to_mosaic=self.reshape_to_mosaic).children())[start:end])
     
     def forward(self, x):
         x = self.feature(x)
@@ -63,12 +67,30 @@ class EAOriginalDAN(nn.Module):
         return reg_out, class_out
     
 if __name__ == "__main__":
-    in_channels, patch_size, num_classes = 1, 3, 12
-    # for split_layer in range(3, 6):
-    split_layer = 4
-    model = EAOriginalDAN(in_channels=in_channels, patch_size=patch_size, 
-                          split_layer=split_layer, num_classes=num_classes,
-                          use_atrous_conv=True)
+    patch_size, num_classes, split_layer, num_samples = 3, 12, 3, 2
+    atrous_convs = [False, True]
+    shapes = [False, True]
+    
+    for (use_atrous_conv, reshape_to_mosaic) in itertools.product(atrous_convs, shapes):
+        if use_atrous_conv and not reshape_to_mosaic: continue
+        print('use_atrous_conv: {}, reshape_to_mosaic: {}'.format(use_atrous_conv, reshape_to_mosaic))
+        if reshape_to_mosaic: 
+            in_channels = 1
+            inp = torch.randn(num_samples, in_channels, 12, 9)
+        else:
+            in_channels = 12
+            inp = torch.randn(num_samples, in_channels, patch_size, patch_size)
+    
+        model = EAOriginalDAN(in_channels=in_channels, patch_size=patch_size, 
+                              split_layer=split_layer, num_classes=num_classes,
+                              use_atrous_conv=use_atrous_conv,
+                              reshape_to_mosaic=reshape_to_mosaic)
+        
+        outp = model(inp)
+        print('')
+        count_parameters(model)
+        print('=' * 72)
+        
     # print(model)
     # model_trainable_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     # print('split_layer: {}, trainable: {}'.format(split_layer, model_trainable_total_params))
