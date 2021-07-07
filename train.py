@@ -689,7 +689,7 @@ def train_random_on_folds(model, dataset, unlabeled_dataset, train_fn, args, rep
            
         # kf = KFold(n_splits=args['num_folds'], shuffle=True, random_state=args['seed'])
         # for fold, (tr_index, test_index) in enumerate(kf.split(indices)):
-        for fold in range(args['num_folds']):
+        for fold in range(args['start_fold'], args['num_folds']):
             print('\nFold#{}'.format(fold))
             # print('checking ids, \ttr: {}\n\tval: {}\n\ttest: {}'.format(fold_sample_ids['tr_ids'][fold][0:5],
             #                                                              fold_sample_ids['val_ids'][fold][0:5],
@@ -1181,6 +1181,7 @@ if __name__ == "__main__":
             'num_early_stop_epoch': 3,                                         # Number of consecutive epochs that model loss does not decrease. 
             'sample_ids_from_run': SAMPLE_IDS_FROM_RUN_NAME,
             'reshape_to_mosaic': False,
+            'start_fold': 0,
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'val': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4},
