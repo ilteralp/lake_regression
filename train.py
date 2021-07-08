@@ -1207,8 +1207,8 @@ if __name__ == "__main__":
     using_unlabeled_samples = [True]
     date_types = ['month']
     # split_layers = [*range(1,3)]
-    split_layers = [1, 2, 3, 4, 5]
-    patch_sizes = [3]
+    split_layers = [4]
+    patch_sizes = [3, 5, 7, 9]
     patch_norms = [False]
     reg_norms = [True]
     if args['model'] in ['eaoriginaldan', 'eaoriginal']:
