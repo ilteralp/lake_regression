@@ -138,7 +138,7 @@ if __name__ == "__main__":
     # print('Total lake pixels: {}'.format(np.sum(lake_mask)))
     
     # ps, date_type = [5], 'year'
-    patch_size, date_type = 5, 'year'
+    patch_size, date_type = 3, 'month'
     reshape_to_mosaic = False
     # for patch_size in ps:
     # labeled_2d_dataset = Lake2dDataset(learning='labeled', date_type=date_type, patch_size=patch_size, reshape_to_mosaic=reshape_to_mosaic)
