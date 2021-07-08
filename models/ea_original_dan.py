@@ -67,9 +67,9 @@ class EAOriginalDAN(nn.Module):
         return reg_out, class_out
     
 if __name__ == "__main__":
-    patch_size, num_classes, split_layer, num_samples = 3, 12, 3, 2
-    atrous_convs = [False, True]
-    shapes = [False, True]
+    patch_size, num_classes, split_layer, num_samples = 3, 12, 5, 2
+    atrous_convs = [False]
+    shapes = [False]
     
     for (use_atrous_conv, reshape_to_mosaic) in itertools.product(atrous_convs, shapes):
         if use_atrous_conv and not reshape_to_mosaic: continue
@@ -87,8 +87,9 @@ if __name__ == "__main__":
                               reshape_to_mosaic=reshape_to_mosaic)
         
         outp = model(inp)
-        # print('')
         # count_parameters(model)
+        print('')
+        print(model)
         print('=' * 72)
         
     # print(model)
