@@ -1172,9 +1172,9 @@ if __name__ == "__main__":
         np.random.seed(seed)
         random.seed(seed)
         
-    # SAMPLE_IDS_FROM_RUN_NAME = '2021_07_01__11_23_50'
-    # fold_sample_ids = load_fold_sample_ids_args(SAMPLE_IDS_FROM_RUN_NAME)
-    fold_sample_ids, SAMPLE_IDS_FROM_RUN_NAME = None, None
+    SAMPLE_IDS_FROM_RUN_NAME = '2021_07_08__17_35_09'
+    fold_sample_ids = load_fold_sample_ids_args(SAMPLE_IDS_FROM_RUN_NAME)
+    # fold_sample_ids, SAMPLE_IDS_FROM_RUN_NAME = None, None
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
     args = {'max_epoch': 200,
@@ -1201,10 +1201,10 @@ if __name__ == "__main__":
     args['report_id'] = report.report_id
     
     """ Create experiment params """
-    loss_names = ['awl']
+    loss_names = ['sum']
     fold_setups = ['random']
-    pred_types = ['reg+class']
-    using_unlabeled_samples = [True]
+    pred_types = ['reg']
+    using_unlabeled_samples = [False]
     date_types = ['month']
     # split_layers = [*range(1,3)]
     split_layers = [4]
