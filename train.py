@@ -208,6 +208,11 @@ def verify_args(args):
         raise Exception('Models eaoriginal, mlp and waternet only works with regression! Given {}'.format(args['pred_type']))
     if args['use_test_as_val'] and args['create_val']:
         raise Exception('Validation set should not be created for using test set as validation.')
+    if args['start_fold'] != 0 and args['num_folds'] is None:
+        raise Exception('Start fold different than 0 is given for case without folds!')
+    if args['start_fold'] != 0 and args['num_folds'] <= args['start_fold']:
+        raise Exception('Start fold can be at most {}. Given: {}'.format(args['num_folds'] - 1, args['start_fold']))
+        
         
     
 def plot_fold_test_results(metrics):
@@ -991,7 +996,7 @@ def train_on_folds(args, report, fold_sample_ids):
         if fold_sample_ids is None:
             fold_sample_ids = _create_multi_fold_sample_ids(args=args, ids=ids)
                 
-        for fold in range(args['num_folds']):
+        for fold in range(args['start_fold'], args['num_folds']):
             print('\nFold#{}'.format(fold))
             len_tr, len_test, len_val, len_unlabeled = _base_train_on_folds(ids=ids,
                                                                             tr_ids=fold_sample_ids['tr_ids'][fold],
@@ -1184,7 +1189,7 @@ if __name__ == "__main__":
             'num_early_stop_epoch': 3,                                         # Number of consecutive epochs that model loss does not decrease. 
             'sample_ids_from_run': SAMPLE_IDS_FROM_RUN_NAME,
             'reshape_to_mosaic': False,
-            'start_fold': 4,
+            'start_fold': 0,
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'val': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4},
