@@ -56,7 +56,7 @@ def load_data(args, fold, fold_sample_ids):
     dataset_dict = {'learning': 'labeled',
                     'date_type': args['date_type'],
                     'patch_size': args['patch_size'],
-                    'is_orig_model': False }
+                    'reshape_to_mosaic': False }
 
     tr_ids = fold_sample_ids['tr_ids'][fold]
     test_ids = fold_sample_ids['test_ids'][fold]
