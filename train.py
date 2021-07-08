@@ -1181,7 +1181,7 @@ if __name__ == "__main__":
             'num_early_stop_epoch': 3,                                         # Number of consecutive epochs that model loss does not decrease. 
             'sample_ids_from_run': SAMPLE_IDS_FROM_RUN_NAME,
             'reshape_to_mosaic': False,
-            'start_fold': 9,
+            'start_fold': 4,
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'val': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4},
@@ -1199,7 +1199,7 @@ if __name__ == "__main__":
     using_unlabeled_samples = [True]
     date_types = ['month']
     # split_layers = [*range(1,3)]
-    split_layers = [5]
+    split_layers = [4]
     patch_sizes = [3]
     patch_norms = [False]
     reg_norms = [True]
