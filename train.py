@@ -1097,6 +1097,9 @@ def create_model(args):
                               use_atrous_conv=args['use_atrous_conv'], 
                               reshape_to_mosaic=args['reshape_to_mosaic'])
         
+    model_trainable_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    args['total_model_params'] = model_trainable_total_params
+        
     return model.to(args['device'])
 
 """

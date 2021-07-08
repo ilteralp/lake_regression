@@ -93,6 +93,7 @@ class Report:
         sheet.write(0, idx + 7, 'UseAtrousConv', header)
         sheet.write(0, idx + 8, 'ReshapeToMosaic', header)
         sheet.write(0, idx + 9, 'StartFold', header)
+        sheet.write(0, idx + 10, 'TotalModelParams', header)
         wb.save(self.path)
 
     """
@@ -162,6 +163,7 @@ class Report:
         sheet.write(rid, idx + 7, '' if 'use_atrous_conv' not in args else 'True' if args['use_atrous_conv'] else 'False')
         sheet.write(rid, idx + 8, 'True' if args['reshape_to_mosaic'] == 1 else 'False')
         sheet.write(rid, idx + 9, args['start_fold'])
+        sheet.write(rid, idx + 10, args['total_model_params'])
         wb.save(self.path)
         
     # """
