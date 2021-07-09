@@ -1172,7 +1172,7 @@ if __name__ == "__main__":
         np.random.seed(seed)
         random.seed(seed)
         
-    SAMPLE_IDS_FROM_RUN_NAME = '2021_07_08__17_35_09'
+    SAMPLE_IDS_FROM_RUN_NAME = '2021_07_01__11_23_50'
     fold_sample_ids = load_fold_sample_ids_args(SAMPLE_IDS_FROM_RUN_NAME)
     # fold_sample_ids, SAMPLE_IDS_FROM_RUN_NAME = None, None
     
@@ -1185,7 +1185,7 @@ if __name__ == "__main__":
             # 'patch_norm': True,                                                # Normalizes patches
             # 'reg_norm': True,                                                  # Normalize regression values
             'model': 'eaoriginaldan',                                                   # Model name, can be {dandadadan, eanet, eadan}.
-            'use_test_as_val': False,                                            # Uses test set for validation. 
+            'use_test_as_val': True,                                            # Uses test set for validation. 
             'num_early_stop_epoch': 3,                                         # Number of consecutive epochs that model loss does not decrease. 
             'sample_ids_from_run': SAMPLE_IDS_FROM_RUN_NAME,
             'reshape_to_mosaic': False,
@@ -1201,13 +1201,13 @@ if __name__ == "__main__":
     args['report_id'] = report.report_id
     
     """ Create experiment params """
-    loss_names = ['sum']
+    loss_names = ['awl']
     fold_setups = ['random']
-    pred_types = ['reg']
-    using_unlabeled_samples = [False]
+    pred_types = ['reg+class']
+    using_unlabeled_samples = [True]
     date_types = ['month']
     # split_layers = [*range(1,3)]
-    split_layers = [4]
+    split_layers = [3]
     patch_sizes = [3]
     patch_norms = [False]
     reg_norms = [True]
@@ -1230,8 +1230,8 @@ if __name__ == "__main__":
         args['use_unlabeled_samples'] = unlabeled
         args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
         # args['num_folds'] = None
-        args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
-        # args['create_val'] = False
+        # args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
+        args['create_val'] = False
         args['date_type'] = date_type
         args['split_layer'] = split_layer
         args['patch_size'] = patch_size
