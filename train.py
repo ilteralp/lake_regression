@@ -1208,7 +1208,7 @@ if __name__ == "__main__":
     date_types = ['month']
     # split_layers = [*range(1,3)]
     split_layers = [3]
-    patch_sizes = [7]
+    patch_sizes = [9]
     patch_norms = [False]
     reg_norms = [True]
     if args['model'] in ['eaoriginaldan', 'eaoriginal']:
