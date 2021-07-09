@@ -867,6 +867,7 @@ def _base_train_on_folds(ids, tr_ids, test_ids, val_ids, model, fold, metrics):
                             'fold_setup': args['fold_setup'],
                             'patch_size': args['patch_size'],
                             'reshape_to_mosaic': args['reshape_to_mosaic']}
+    set_name = 'test' if args['use_test_as_val'] else 'val'
     
     """ Create validation set """
     val_set, val_loader = None, None
@@ -923,9 +924,11 @@ def _base_train_on_folds(ids, tr_ids, test_ids, val_ids, model, fold, metrics):
 
     """ Test """
     print('\nTest')
-    model_names = ['model_last_epoch.pth']
-    if args['create_val']: model_names += ['best_val_loss.pth', 'best_val_score.pth']
-    for model_name in model_names:
+    # model_names = ['model_last_epoch.pth']
+    # if args['create_val']: model_names += ['best_val_loss.pth', 'best_val_score.pth']
+    # for model_name in model_names:
+    for model_name in ['best_{}_loss.pth'.format(set_name), 'model_last_epoch.pth', 
+                       'best_{}_score.pth'.format(set_name), 'model_early_stopping.pth']:
         _test(test_loader=test_loader, model_name=model_name, metrics=metrics, 
               args=args, fold=fold, awl=awl)
         
@@ -1172,9 +1175,9 @@ if __name__ == "__main__":
         np.random.seed(seed)
         random.seed(seed)
         
-    SAMPLE_IDS_FROM_RUN_NAME = '2021_07_01__11_23_50'
-    fold_sample_ids = load_fold_sample_ids_args(SAMPLE_IDS_FROM_RUN_NAME)
-    # fold_sample_ids, SAMPLE_IDS_FROM_RUN_NAME = None, None
+    # SAMPLE_IDS_FROM_RUN_NAME = '2021_07_01__11_23_50'
+    # fold_sample_ids = load_fold_sample_ids_args(SAMPLE_IDS_FROM_RUN_NAME)
+    fold_sample_ids, SAMPLE_IDS_FROM_RUN_NAME = None, None
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
     args = {'max_epoch': 200,
@@ -1202,7 +1205,7 @@ if __name__ == "__main__":
     
     """ Create experiment params """
     loss_names = ['awl']
-    fold_setups = ['random']
+    fold_setups = ['spatial']
     pred_types = ['reg+class']
     using_unlabeled_samples = [True]
     date_types = ['month']
