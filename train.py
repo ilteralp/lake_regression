@@ -1175,9 +1175,9 @@ if __name__ == "__main__":
         np.random.seed(seed)
         random.seed(seed)
         
-    SAMPLE_IDS_FROM_RUN_NAME = '2021_07_01__11_23_50'
-    fold_sample_ids = load_fold_sample_ids_args(SAMPLE_IDS_FROM_RUN_NAME)
-    # fold_sample_ids, SAMPLE_IDS_FROM_RUN_NAME = None, None
+    # SAMPLE_IDS_FROM_RUN_NAME = '2021_07_08__17_35_09'
+    # fold_sample_ids = load_fold_sample_ids_args(SAMPLE_IDS_FROM_RUN_NAME)
+    fold_sample_ids, SAMPLE_IDS_FROM_RUN_NAME = None, None
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
     args = {'max_epoch': 200,
@@ -1204,8 +1204,8 @@ if __name__ == "__main__":
     args['report_id'] = report.report_id
     
     """ Create experiment params """
-    loss_names = ['sum']
-    fold_setups = ['random']
+    loss_names = ['awl']
+    fold_setups = ['temporal_day']
     pred_types = ['reg+class']
     using_unlabeled_samples = [True]
     date_types = ['month']
@@ -1231,8 +1231,8 @@ if __name__ == "__main__":
         args['fold_setup'] = fold_setup
         args['pred_type'] = pred_type
         args['use_unlabeled_samples'] = unlabeled
-        args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
-        # args['num_folds'] = None
+        # args['num_folds'] = C.FOLD_SETUP_NUM_FOLDS[args['fold_setup']]
+        args['num_folds'] = None
         # args['create_val'] = False if args['fold_setup'] == 'temporal_year' else True
         args['create_val'] = False
         args['date_type'] = date_type
