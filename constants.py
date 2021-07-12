@@ -43,14 +43,20 @@ FOLD_SETUP_NUM_FOLDS = {'spatial': 10,
                         'temporal_year': 3,
                         'random': 10}
 
-MLP_CFGS = {'1_hidden_layer' : [673],
-            '2_hidden_layer' : [364, 256],
-            '3_hidden_layer' : [292, 256, 156],
-            '4_hidden_layer' : [256, 226, 192, 128],
-            '5_hidden_layer' : [226, 210, 192, 156, 110],
-            '6_hidden_layer' : [128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128],
-            '7_hidden_layer' : [256, 256, 256],
-            '8_hidden_layer' : [192, 192, 192, 192, 192] }
+# MLP_CFGS = {'1_hidden_layer' : [673],
+#             '2_hidden_layer' : [364, 256],
+#             '3_hidden_layer' : [292, 256, 156],
+#             '4_hidden_layer' : [256, 226, 192, 128],
+#             '5_hidden_layer' : [226, 210, 192, 156, 110],
+#             '6_hidden_layer' : [128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128],
+#             '7_hidden_layer' : [256, 256, 256],
+#             '8_hidden_layer' : [192, 192, 192, 192, 192] }
+
+MLP_CFGS = {'2_hidden_layer' : [468, 460],
+            '3_hidden_layer' : [340, 338, 338], 
+            '4_hidden_layer' : [282, 280, 280, 278],
+            '5_hidden_layer' : [250, 250, 242, 240, 240]}
+
 
 """ ===================== Model params ===================== """
 BATCH_SIZE = 64

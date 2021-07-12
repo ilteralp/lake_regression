@@ -55,11 +55,11 @@ class MultiLayerPerceptron(nn.Module):
         return x
 
 if __name__ == "__main__":
-    in_channels, patch_size = 12, 5
+    in_channels, patch_size = 12, 3
     in_features = in_channels * patch_size * patch_size
     inp = torch.randn(2, in_channels, patch_size, patch_size)
     # for i in range(1, 3):
-    i = 6
+    i = 5
     model = MultiLayerPerceptron(in_channels=in_channels, patch_size=patch_size, cfg='{}_hidden_layer'.format(i))
     print(model)
     print('*' * 72)
