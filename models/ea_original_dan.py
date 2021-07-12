@@ -67,7 +67,7 @@ class EAOriginalDAN(nn.Module):
         return reg_out, class_out
     
 if __name__ == "__main__":
-    patch_size, num_classes, split_layer, num_samples = 3, 12, 5, 2
+    patch_size, num_classes, split_layer, num_samples = 3, 12, 4, 2
     atrous_convs = [False]
     shapes = [False]
     
