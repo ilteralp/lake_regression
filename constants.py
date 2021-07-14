@@ -10,7 +10,7 @@ Created on Fri Feb 19 18:13:13 2021
 
 import os.path as osp
 
-LOCAL_ENV = False
+LOCAL_ENV = True
 ROG_ENV = not LOCAL_ENV
 
 """ Melike local """
@@ -65,5 +65,5 @@ BATCH_SIZE = 64
 # elif 'lake_mask_small_45.png' in MASK_PATH:
 #     UNLABELED_BATCH_SIZE = 4568
 # elif 'lake_mask.png' in MASK_PATH:
-UNLABELED_BATCH_SIZE = 12318
+UNLABELED_BATCH_SIZE = 8192
 BASE_LR = 0.0001
