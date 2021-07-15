@@ -68,7 +68,8 @@ class EAOriginal(nn.Module):
             
     def __make_layer(self, in_channels, out_channels):
         conv2d = nn.Conv2d(in_channels=in_channels, out_channels=out_channels, 
-                           kernel_size=3, padding=1)                                   # Padding is 1 due to kernel_size is 3, so 3 // 2 = 1. 
+                           kernel_size=1)                                   # Padding is 1 due to kernel_size is 3, so 3 // 2 = 1. 
+                           # kernel_size=3, padding=1
         layers = [conv2d, nn.Tanh()]
         return nn.Sequential(*layers)
     
@@ -109,14 +110,14 @@ class EAOriginal(nn.Module):
 
 if __name__ == "__main__":
     # in_channels, patch_size = 12, 3
-    patch_size = 3
+    patch_size = 1
     num_samples = 2
     # model_for_mosaic = EAOriginal(in_channels=in_channels, patch_size=patch_size, 
     #                               use_atrous_conv=True, reshape_to_mosaic=True)
     # inp_mosaic = torch.randn(2, in_channels, 12, 9)
     
-    atrous_convs = [False, True]
-    shapes = [False, True]
+    atrous_convs = [False]
+    shapes = [False]
 
     for (use_atrous_conv, reshape_to_mosaic) in itertools.product(atrous_convs, shapes):
         if use_atrous_conv and not reshape_to_mosaic: continue
@@ -133,6 +134,7 @@ if __name__ == "__main__":
                            use_atrous_conv=use_atrous_conv, 
                            reshape_to_mosaic=reshape_to_mosaic)
         outp = model(inp)
+        # print(model)
         # print('')
         # count_parameters(model)
         print('=' * 72)
