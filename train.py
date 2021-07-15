@@ -1217,8 +1217,8 @@ if __name__ == "__main__":
     if args['model'] in ['eaoriginaldan', 'eaoriginal']:
         args['use_atrous_conv'] = False
     
-    # mlp_cfgs = ['{}_hidden_layer'.format(i) for i in range(7, 9)] if args['model'] == 'mlp' else None
-    mlp_cfgs = ['5_hidden_layer']
+    mlp_cfgs = ['{}_hidden_layer'.format(i) for i in range(2, 5)] if args['model'] == 'mlp' else None
+    # mlp_cfgs = ['5_hidden_layer']
                 
     """ Train model with each param """
     # fold_sample_ids, prev_setup_name = None, None
