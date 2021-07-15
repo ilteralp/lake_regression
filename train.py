@@ -1175,9 +1175,9 @@ if __name__ == "__main__":
         np.random.seed(seed)
         random.seed(seed)
         
-    # SAMPLE_IDS_FROM_RUN_NAME = '2021_07_08__17_35_09'
-    # fold_sample_ids = load_fold_sample_ids_args(SAMPLE_IDS_FROM_RUN_NAME)
-    fold_sample_ids, SAMPLE_IDS_FROM_RUN_NAME = None, None
+    SAMPLE_IDS_FROM_RUN_NAME = '2021_07_01__11_23_50'
+    fold_sample_ids = load_fold_sample_ids_args(SAMPLE_IDS_FROM_RUN_NAME)
+    # fold_sample_ids, SAMPLE_IDS_FROM_RUN_NAME = None, None
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     # Use GPU if available
     args = {'max_epoch': 200,
@@ -1187,7 +1187,7 @@ if __name__ == "__main__":
             'lr': C.BASE_LR,                                                       # From EA's model, default is 1e-2.
             # 'patch_norm': True,                                                # Normalizes patches
             # 'reg_norm': True,                                                  # Normalize regression values
-            'model': 'eaoriginaldan',                                                   # Model name, can be {dandadadan, eanet, eadan}.
+            'model': 'mlp',                                                   # Model name, can be {dandadadan, eanet, eadan}.
             'use_test_as_val': True,                                            # Uses test set for validation. 
             'num_early_stop_epoch': 3,                                         # Number of consecutive epochs that model loss does not decrease. 
             'sample_ids_from_run': SAMPLE_IDS_FROM_RUN_NAME,
@@ -1206,24 +1206,24 @@ if __name__ == "__main__":
     """ Create experiment params """
     loss_names = ['awl']
     fold_setups = ['random']
-    pred_types = ['reg+class']
-    using_unlabeled_samples = [True]
+    pred_types = ['reg']
+    using_unlabeled_samples = [False]
     date_types = ['month']
     # split_layers = [*range(1,3)]
     split_layers = [4]
-    patch_sizes = [7]
+    patch_sizes = [3]
     patch_norms = [False]
     reg_norms = [True]
     if args['model'] in ['eaoriginaldan', 'eaoriginal']:
         args['use_atrous_conv'] = False
     
     # mlp_cfgs = ['{}_hidden_layer'.format(i) for i in range(7, 9)] if args['model'] == 'mlp' else None
-    # mlp_cfgs = ['6_hidden_layer']
+    mlp_cfgs = ['5_hidden_layer']
                 
     """ Train model with each param """
     # fold_sample_ids, prev_setup_name = None, None
     prev_setup_name = None
-    for (loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer, patch_size, patch_norm, reg_norm) in itertools.product(loss_names, fold_setups, pred_types, using_unlabeled_samples, date_types, split_layers, patch_sizes, patch_norms, reg_norms):
+    for (loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer, patch_size, patch_norm, reg_norm, mlp_cfg) in itertools.product(loss_names, fold_setups, pred_types, using_unlabeled_samples, date_types, split_layers, patch_sizes, patch_norms, reg_norms, mlp_cfgs):
         if SAMPLE_IDS_FROM_RUN_NAME is not None and len(fold_setups) > 1: raise Exception('Previous fold sample ids cannot be used with different fold setups!')
         if pred_type == 'reg' and unlabeled:                    continue
         if loss_name == 'awl' and pred_type != 'reg+class':     loss_name = 'sum' #continue
@@ -1243,7 +1243,7 @@ if __name__ == "__main__":
         if args['pred_type'] == 'reg+class':
             args['lr_reg'] = C.BASE_LR
             args['lr_class'] = C.BASE_LR
-        # args['mlp_cfg'] = mlp_cfg
+        args['mlp_cfg'] = mlp_cfg
         print('loss_name: {}, {}, {}, use_unlabeled: {}, date_type: {}, split_layer: {}, patch_size: {}, patch_norm: {}, reg_norm: {}'.format(loss_name, fold_setup, pred_type, unlabeled, date_type, split_layer, patch_size, patch_norm, reg_norm))
         verify_args(args)
         
