@@ -1207,11 +1207,11 @@ if __name__ == "__main__":
     loss_names = ['awl']
     fold_setups = ['random']
     pred_types = ['reg+class']
-    using_unlabeled_samples = [False]
+    using_unlabeled_samples = [True]
     date_types = ['month']
     # split_layers = [*range(1,3)]
     split_layers = [4]
-    patch_sizes = [3]
+    patch_sizes = [5]
     patch_norms = [False]
     reg_norms = [True]
     if args['model'] in ['eaoriginaldan', 'eaoriginal']:
