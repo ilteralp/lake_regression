@@ -139,7 +139,8 @@ def unnorm_reg_val(r, reg_min, reg_max):
     
 if __name__ == "__main__":
     # generate_rand_heatmap()
-    RUN_NAME = '2021_07_18__13_56_46'
+    # RUN_NAME = '2021_07_18__13_56_46'
+    RUN_NAME = '2021_07_09__14_10_23'
     fold_sample_ids, args = load_fold_sample_ids_args(run_name=RUN_NAME)
     fold = 0
     
