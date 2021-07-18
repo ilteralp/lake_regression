@@ -50,13 +50,18 @@ def predict(model, loader, heatmap, reg_min, reg_max):
             patches, _, _, (img_ids, pxs, pys) = data
             patches = patches.to(args['device'])
             reg_preds, _ = model(patches)
-        
+            for j in range(len(reg_preds)):
+                unnorm_reg = unnorm_reg_val(r=reg_preds[j], reg_min=reg_min, reg_max=reg_max)
+                heatmap[pxs[j]][pys[j]] = unnorm_reg
+            if batch_id % 100 == 0:
+                print(batch_id)
+    return heatmap                
     
 """
 Takes an image, labeled and unlabeled datasets and model. Predicts image's 
 regression values with the model and creates its heat map. 
 """
-def generate_heatmap(img_id, labeled_dataset, unlabeled_dataset, model):
+def generate_heatmap(img_id, labeled_dataset, unlabeled_dataset, model, reg_min, reg_max):
     labeled_ids, unlabeled_ids = calc_image_sample_ids(img_id=img_id,                                   # Retrieve image's sample ids
                                                        len_labeled_dataset=len(labeled_dataset),
                                                        len_unlabeled_dataset=len(unlabeled_dataset))
@@ -66,10 +71,13 @@ def generate_heatmap(img_id, labeled_dataset, unlabeled_dataset, model):
     labeled_loader = DataLoader(labeled_subset, **args['test'])                                         # Both can be loaded with test params since no shuffle is required. 
     unlabeled_loader = DataLoader(unlabeled_subset, **args['test'])
     
-    heatmap = np.empty([650, 650])
+    heatmap = np.zeros([650, 650])
     for loader in [labeled_loader, unlabeled_loader]:
-        predict(model=model, loader=loader, heatmap=heatmap)
+        heatmap = predict(model=model, loader=loader, heatmap=heatmap, 
+                          reg_min=reg_min, reg_max=reg_max)
         
+    ax = sns.heatmap(heatmap, **HEAT_MAP_PARAMS)
+    plt.show()
     # train'den normalizasyon degerlerini al. 
     
 
@@ -147,14 +155,15 @@ if __name__ == "__main__":
                                        fold_sample_ids=fold_sample_ids, 
                                        labeled_dataset=labeled_dataset)
     print('reg values, min: {}, max: {}'.format(reg_min, reg_max))
-    for r in [-1.0, 0, 1.0]:
-        unnorm_r = unnorm_reg_val(r=r, reg_min=reg_min, reg_max=reg_max)
-        print('{} became {}'.format(r, unnorm_r))
+    # for r in [-1.0, 0, 1.0]:
+    #     unnorm_r = unnorm_reg_val(r=r, reg_min=reg_min, reg_max=reg_max)
+    #     print('{} became {}'.format(r, unnorm_r))
     
-    # """ Generate heatmap for given image """
-    # img_id = 3
-    # verify_image_id(img_id=img_id)
-    # generate_heatmap(img_id=img_id, model=model,
-    #                  labeled_dataset=labeled_dataset, 
-    #                  unlabeled_dataset=unlabeled_dataset)
+    """ Generate heatmap for given image """
+    img_id = 3
+    verify_image_id(img_id=img_id)
+    generate_heatmap(img_id=img_id, model=model,
+                      labeled_dataset=labeled_dataset, 
+                      unlabeled_dataset=unlabeled_dataset, 
+                      reg_min=reg_min, reg_max=reg_max)
     
