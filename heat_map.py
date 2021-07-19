@@ -122,8 +122,8 @@ def verify_args(args):
 Verify image id. 
 """
 def verify_image_id(img_id):
-    if img_id not in range(0, 10):
-        raise Exception('Image id can be in [0, 9] range. Given: {}'.format(img_id))
+    if img_id not in range(0, 32):
+        raise Exception('Image id can be in [0, 32] range. Given: {}'.format(img_id))
 
 """
 Takes a run name, args, model name and fold name, loads and returns the model. 
