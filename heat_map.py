@@ -95,10 +95,10 @@ def generate_heatmap(img_id, labeled_dataset, unlabeled_dataset, model, reg_min,
 Plots given heatmaps
 """
 def plot(heatmaps, args, img_ids):
-    if len(heatmaps) not in [4, 12]:
-        raise Exception('Number of heatmaps can be 4 or 12. Given: {}'.format(len(heatmaps)))
-    fig, axn = plt.subplots(len(heatmaps) // 4, 4, sharey=True)
-    # fig, axn = plt.subplots(1, 2, sharey=True)
+    # if len(heatmaps) not in [4, 12]:
+    #     raise Exception('Number of heatmaps can be 4 or 12. Given: {}'.format(len(heatmaps)))
+    # fig, axn = plt.subplots(len(heatmaps) // 4, 4, sharey=True)
+    fig, axn = plt.subplots(1, 2, sharey=True)
     # cbar_ax = fig.add_axes([.9, .3, .02, .4])
     cbar_ax = fig.add_axes([.9, .355, .02, .29])
     cbar_ax.tick_params(size=0)
@@ -109,7 +109,7 @@ def plot(heatmaps, args, img_ids):
                     cmap='Spectral_r',
                     cbar_ax=None if i else cbar_ax)
     fig.tight_layout(rect=[0, 0, .9, 1])
-    heatmap_path = osp.join(C.ROOT_DIR, 'heatmaps', args['run_name'] + 'img_ids_' + ''.join(['_{}'.format(str(i)) for i in img_ids]) + '.pdf')
+    heatmap_path = osp.join(C.ROOT_DIR, 'heatmaps', args['run_name'] + '_img_ids_' + ''.join(['_{}'.format(str(i)) for i in img_ids]) + '.pdf')
     # plt.savefig(heatmap_path, format='pdf', dpi=300)
     plt.savefig(heatmap_path, format='pdf')
 
@@ -179,17 +179,19 @@ if __name__ == "__main__":
     #     print('{} became {}'.format(r, unnorm_r))
     
     """ Generate heatmap for given image """
-    heatmaps = []
-    img_ids = [9, 13, 17, 23]
-    for img_id in img_ids:
-        verify_image_id(img_id=img_id)
-        heatmap = generate_heatmap(img_id=img_id, model=model,
-                                   labeled_dataset=labeled_dataset, 
-                                   unlabeled_dataset=unlabeled_dataset, 
-                                   reg_min=reg_min, reg_max=reg_max, args=args)
-        heatmaps.append(heatmap)
-    
-    """ Plot heatmaps """
-    plot(heatmaps=heatmaps, args=args, img_ids=img_ids)
-    # generate_rand_heatmap()
+    ids = [[0, 1], [2, 3]]
+    for img_ids in ids:
+        heatmaps = []
+        # img_ids = [9, 13, 17, 23]
+        for img_id in img_ids:
+            verify_image_id(img_id=img_id)
+            heatmap = generate_heatmap(img_id=img_id, model=model,
+                                       labeled_dataset=labeled_dataset, 
+                                       unlabeled_dataset=unlabeled_dataset, 
+                                       reg_min=reg_min, reg_max=reg_max, args=args)
+            heatmaps.append(heatmap)
+        
+        """ Plot heatmaps """
+        plot(heatmaps=heatmaps, args=args, img_ids=img_ids)
+        # generate_rand_heatmap()
     
