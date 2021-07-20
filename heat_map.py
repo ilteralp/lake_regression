@@ -95,10 +95,10 @@ def generate_heatmap(img_id, labeled_dataset, unlabeled_dataset, model, reg_min,
 Plots given heatmaps
 """
 def plot(heatmaps, args, img_ids):
-    # if len(heatmaps) not in [4, 12]:
-    #     raise Exception('Number of heatmaps can be 4 or 12. Given: {}'.format(len(heatmaps)))
-    # fig, axn = plt.subplots(len(heatmaps) // 4, 4, sharey=True)
-    fig, axn = plt.subplots(1, 2, sharey=True)
+    if len(heatmaps) not in [4, 12]:
+        raise Exception('Number of heatmaps can be 4 or 12. Given: {}'.format(len(heatmaps)))
+    fig, axn = plt.subplots(len(heatmaps) // 4, 4, sharey=True)
+    # fig, axn = plt.subplots(1, 2, sharey=True)
     # cbar_ax = fig.add_axes([.9, .3, .02, .4])
     cbar_ax = fig.add_axes([.9, .355, .02, .29])
     cbar_ax.tick_params(size=0)
@@ -109,7 +109,7 @@ def plot(heatmaps, args, img_ids):
                     cmap='Spectral_r',
                     cbar_ax=None if i else cbar_ax)
     fig.tight_layout(rect=[0, 0, .9, 1])
-    heatmap_path = osp.join(C.ROOT_DIR, 'heatmaps', args['run_name'] + ''.join(['_{}'.format(str(i)) for i in img_ids]) + '.pdf')
+    heatmap_path = osp.join(C.ROOT_DIR, 'heatmaps', args['run_name'] + '_' + ''.join(['_{}'.format(str(i)) for i in img_ids]) + '.pdf')
     plt.savefig(heatmap_path, format='pdf', dpi=300)
 
 """
