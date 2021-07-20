@@ -99,16 +99,18 @@ def plot(heatmaps, args, img_ids):
     #     raise Exception('Number of heatmaps can be 4 or 12. Given: {}'.format(len(heatmaps)))
     # fig, axn = plt.subplots(len(heatmaps) // 4, 4, sharey=True)
     fig, axn = plt.subplots(1, 2, sharey=True)
-    cbar_ax = fig.add_axes([.9, .3, .02, .4])
+    # cbar_ax = fig.add_axes([.9, .3, .02, .4])
+    cbar_ax = fig.add_axes([.9, .355, .02, .29])
     cbar_ax.tick_params(size=0)
     
     for i, ax in enumerate(axn.flat):
         sns.heatmap(heatmaps[i], ax=ax, cbar=i == 0,
                     square=True, xticklabels=False, yticklabels=False,
+                    cmap='Spectral_r',
                     cbar_ax=None if i else cbar_ax)
     fig.tight_layout(rect=[0, 0, .9, 1])
     heatmap_path = osp.join(C.ROOT_DIR, 'heatmaps', args['run_name'] + ''.join(['_{}'.format(str(i)) for i in img_ids]) + '.pdf')
-    plt.savefig(heatmap_path, format='pdf', dpi=600)
+    plt.savefig(heatmap_path, format='pdf', dpi=300)
 
 """
 Verify args.
