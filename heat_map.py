@@ -158,7 +158,7 @@ if __name__ == "__main__":
     # RUN_NAME = '2021_07_18__13_56_46'
     RUN_NAME = '2021_07_09__14_10_23'
     fold_sample_ids, args = load_fold_sample_ids_args(run_name=RUN_NAME)
-    args['test']['batch_size'] = 256
+    args['test']['batch_size'] = 512
     fold = 0
     
     """ Load model and datasets """
@@ -179,7 +179,7 @@ if __name__ == "__main__":
     
     """ Generate heatmap for given image """
     heatmaps = []
-    img_ids = [3, 16]
+    img_ids = [0, 7, 31, 19]
     for img_id in img_ids:
         verify_image_id(img_id=img_id)
         heatmap = generate_heatmap(img_id=img_id, model=model,
