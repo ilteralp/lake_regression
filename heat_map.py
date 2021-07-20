@@ -109,8 +109,9 @@ def plot(heatmaps, args, img_ids):
                     cmap='Spectral_r',
                     cbar_ax=None if i else cbar_ax)
     fig.tight_layout(rect=[0, 0, .9, 1])
-    heatmap_path = osp.join(C.ROOT_DIR, 'heatmaps', args['run_name'] + '_' + ''.join(['_{}'.format(str(i)) for i in img_ids]) + '.pdf')
-    plt.savefig(heatmap_path, format='pdf', dpi=300)
+    heatmap_path = osp.join(C.ROOT_DIR, 'heatmaps', args['run_name'] + 'img_ids_' + ''.join(['_{}'.format(str(i)) for i in img_ids]) + '.pdf')
+    # plt.savefig(heatmap_path, format='pdf', dpi=300)
+    plt.savefig(heatmap_path, format='pdf')
 
 """
 Verify args.
@@ -179,7 +180,7 @@ if __name__ == "__main__":
     
     """ Generate heatmap for given image """
     heatmaps = []
-    img_ids = [0, 7, 31, 19]
+    img_ids = [9, 13, 17, 23]
     for img_id in img_ids:
         verify_image_id(img_id=img_id)
         heatmap = generate_heatmap(img_id=img_id, model=model,
