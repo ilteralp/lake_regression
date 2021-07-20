@@ -158,7 +158,7 @@ if __name__ == "__main__":
     # RUN_NAME = '2021_07_18__13_56_46'
     RUN_NAME = '2021_07_09__14_10_23'
     fold_sample_ids, args = load_fold_sample_ids_args(run_name=RUN_NAME)
-    args['test']['batch_size'] = 32
+    args['test']['batch_size'] = 256
     fold = 0
     
     """ Load model and datasets """
