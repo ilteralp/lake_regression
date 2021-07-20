@@ -108,7 +108,7 @@ def plot(heatmaps, args, img_ids):
                     square=True, xticklabels=False, yticklabels=False,
                     cmap='Spectral_r', vmin=11.04, vmax=108.35,
                     cbar_ax=None if i else cbar_ax)
-    # fig.tight_layout(rect=[0, 0, .9, 1])
+    fig.tight_layout(rect=[0, 0, .9, 1])
     heatmap_path = osp.join(C.ROOT_DIR, 'heatmaps', args['run_name'] + '_untight_vmin_img_ids_' + ''.join(['_{}'.format(str(i)) for i in img_ids]) + '.pdf')
     # plt.savefig(heatmap_path, format='pdf', dpi=300)
     plt.savefig(heatmap_path, format='pdf')
@@ -179,7 +179,7 @@ if __name__ == "__main__":
     #     print('{} became {}'.format(r, unnorm_r))
     
     """ Generate heatmap for given image """
-    ids = [[0, 1], [2, 3]]
+    ids = [[4, 5]]
     for img_ids in ids:
         heatmaps = []
         # img_ids = [9, 13, 17, 23]
