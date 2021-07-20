@@ -95,14 +95,15 @@ def generate_heatmap(img_id, labeled_dataset, unlabeled_dataset, model, reg_min,
 Plots given heatmaps
 """
 def plot(heatmaps, args, img_ids):
-    if len(heatmaps) not in [4, 12]:
-        raise Exception('Number of heatmaps can be 4 or 12. Given: {}'.format(len(heatmaps)))
-    fig, axn = plt.subplots(len(heatmaps) // 4, 4, sharey=True)
+    # if len(heatmaps) not in [4, 12]:
+    #     raise Exception('Number of heatmaps can be 4 or 12. Given: {}'.format(len(heatmaps)))
+    # fig, axn = plt.subplots(len(heatmaps) // 4, 4, sharey=True)
+    fig, axn = plt.subplots(1, 2, sharey=True)
     cbar_ax = fig.add_axes([.9, .3, .02, .4])
     cbar_ax.tick_params(size=0)
     
     for i, ax in enumerate(axn.flat):
-        sns.heatmap(heatmaps[i], ax=ax, cbar=i == 0, vmin=11.04, vmax=108.35,
+        sns.heatmap(heatmaps[i], ax=ax, cbar=i == 0,
                     square=True, xticklabels=False, yticklabels=False,
                     cbar_ax=None if i else cbar_ax)
     fig.tight_layout(rect=[0, 0, .9, 1])
@@ -176,7 +177,7 @@ if __name__ == "__main__":
     
     """ Generate heatmap for given image """
     heatmaps = []
-    img_ids = [3, 8, 12, 16]
+    img_ids = [3, 16]
     for img_id in img_ids:
         verify_image_id(img_id=img_id)
         heatmap = generate_heatmap(img_id=img_id, model=model,
