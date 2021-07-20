@@ -179,7 +179,7 @@ if __name__ == "__main__":
     #     print('{} became {}'.format(r, unnorm_r))
     
     """ Generate heatmap for given image """
-    ids = [[16, 17], [18, 19], [20, 21], [22, 23], [24, 25]]
+    ids = [[26, 27], [28, 29], [30, 31]]
     for img_ids in ids:
         heatmaps = []
         # img_ids = [9, 13, 17, 23]
