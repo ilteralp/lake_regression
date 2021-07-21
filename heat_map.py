@@ -96,7 +96,7 @@ def generate_heatmap(img_id, labeled_dataset, unlabeled_dataset, model, reg_min,
 """
 Plots given heatmaps
 """
-def plot(heatmaps, args, img_ids):
+def plot(heatmaps, args, img_ids, fold):
     # if len(heatmaps) not in [4, 12]:
     #     raise Exception('Number of heatmaps can be 4 or 12. Given: {}'.format(len(heatmaps)))
     # fig, axn = plt.subplots(len(heatmaps) // 4, 4, sharey=True)
@@ -114,7 +114,7 @@ def plot(heatmaps, args, img_ids):
                     cmap='Spectral_r', vmin=11.04, vmax=108.35,
                     cbar_ax=None if i else cbar_ax)
     fig.tight_layout(rect=[0, 0, .9, 1])
-    heatmap_path = osp.join(C.ROOT_DIR, 'heatmaps', args['run_name'] + '_vmin_img_ids_' + ''.join(['_{}'.format(str(i)) for i in img_ids]) + '.png')
+    heatmap_path = osp.join(C.ROOT_DIR, 'heatmaps', args['run_name'] + '_vmin_fold{}_img_ids_'.format(fold) + ''.join(['_{}'.format(str(i)) for i in img_ids]) + '.png')
     # plt.savefig(heatmap_path, format='pdf', dpi=300)
     plt.savefig(heatmap_path, format='png')
 
@@ -165,7 +165,7 @@ if __name__ == "__main__":
     RUN_NAME = '2021_07_09__14_10_23'
     fold_sample_ids, args = load_fold_sample_ids_args(run_name=RUN_NAME)
     args['test']['batch_size'] = 2048
-    fold = 0
+    fold = 6
     
     """ Load model and datasets """
     model = load_model(run_name=RUN_NAME, args=args, fold=fold)
@@ -198,6 +198,6 @@ if __name__ == "__main__":
             heatmaps.append(heatmap)
         
         """ Plot heatmaps """
-        plot(heatmaps=heatmaps, args=args, img_ids=img_ids)
+        plot(heatmaps=heatmaps, args=args, img_ids=img_ids, fold=fold)
         # generate_rand_heatmap()
     
