@@ -109,9 +109,9 @@ def plot(heatmaps, args, img_ids):
                     cmap='Spectral_r', vmin=11.04, vmax=108.35,
                     cbar_ax=None if i else cbar_ax)
     fig.tight_layout(rect=[0, 0, .9, 1])
-    heatmap_path = osp.join(C.ROOT_DIR, 'heatmaps', args['run_name'] + '_vmin_img_ids_' + ''.join(['_{}'.format(str(i)) for i in img_ids]) + '.pdf')
+    heatmap_path = osp.join(C.ROOT_DIR, 'heatmaps', args['run_name'] + '_vmin_img_ids_' + ''.join(['_{}'.format(str(i)) for i in img_ids]) + '.png')
     # plt.savefig(heatmap_path, format='pdf', dpi=300)
-    plt.savefig(heatmap_path, format='pdf')
+    plt.savefig(heatmap_path, format='png')
 
 """
 Verify args.
@@ -171,24 +171,24 @@ if __name__ == "__main__":
     unlabeled_dataset = Lake2dDataset(learning='unlabeled', **dataset_params)
     
     reg_min, reg_max = get_fold_reg_minmax(fold=fold,
-                                           fold_sample_ids=fold_sample_ids, 
-                                           labeled_dataset=labeled_dataset)
+                                            fold_sample_ids=fold_sample_ids, 
+                                            labeled_dataset=labeled_dataset)
     print('reg values, min: {}, max: {}'.format(reg_min, reg_max))
     # for r in [-1.0, 0, 1.0]:
     #     unnorm_r = unnorm_reg_val(r=r, reg_min=reg_min, reg_max=reg_max)
     #     print('{} became {}'.format(r, unnorm_r))
     
     """ Generate heatmap for given image """
-    ids = [[26, 27], [28, 29], [30, 31]]
+    ids = [[26, 27]]
     for img_ids in ids:
         heatmaps = []
         # img_ids = [9, 13, 17, 23]
         for img_id in img_ids:
             verify_image_id(img_id=img_id)
             heatmap = generate_heatmap(img_id=img_id, model=model,
-                                       labeled_dataset=labeled_dataset, 
-                                       unlabeled_dataset=unlabeled_dataset, 
-                                       reg_min=reg_min, reg_max=reg_max, args=args)
+                                        labeled_dataset=labeled_dataset, 
+                                        unlabeled_dataset=unlabeled_dataset, 
+                                        reg_min=reg_min, reg_max=reg_max, args=args)
             heatmaps.append(heatmap)
         
         """ Plot heatmaps """
