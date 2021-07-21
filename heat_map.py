@@ -162,10 +162,11 @@ def unnorm_reg_val(r, reg_min, reg_max):
     
 if __name__ == "__main__":
     # RUN_NAME = '2021_07_18__13_56_46'
-    RUN_NAME = '2021_07_09__14_10_23'
+    # RUN_NAME = '2021_07_09__14_10_23'
+    RUN_NAME = '2021_07_07__23_02_22'
     fold_sample_ids, args = load_fold_sample_ids_args(run_name=RUN_NAME)
     args['test']['batch_size'] = 2048
-    fold = 6
+    fold = 8
     
     """ Load model and datasets """
     model = load_model(run_name=RUN_NAME, args=args, fold=fold)
