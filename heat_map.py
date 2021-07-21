@@ -113,7 +113,7 @@ def plot(heatmaps, args, img_ids, fold):
         # ax.set_title('img: {}, month: {}, {}, {}'.format(arr['img_ids'][i], arr['month'][i], arr['season'][i], arr['year'][i]))
         sns.heatmap(heatmaps[i], ax=ax, cbar=i == 0,
                     square=True, xticklabels=False, yticklabels=False,
-                    cmap='Spectral_r', vmin=11.04, vmax=108.35,
+                    cmap='jet', vmin=11.04, vmax=108.35,
                     cbar_ax=None if i else cbar_ax)
     fig.tight_layout(rect=[0, 0, .9, 1])
     heatmap_path = osp.join(C.ROOT_DIR, 'heatmaps', args['run_name'] + '_vmin_fold={}_img_ids_'.format(fold) + ''.join(['_{}'.format(str(i)) for i in img_ids]) + '.pdf')
