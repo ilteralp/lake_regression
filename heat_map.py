@@ -184,8 +184,8 @@ if __name__ == "__main__":
     #     print('{} became {}'.format(r, unnorm_r))
     
     """ Generate heatmap for given image """
-    # ids = [[*range(32)]]
-    ids = [[0, 1, 2, 3]]
+    ids = [[*range(32)]]
+    # ids = [[0, 1, 2, 3]]
     for img_ids in ids:
         heatmaps = []
         # img_ids = [9, 13, 17, 23]
