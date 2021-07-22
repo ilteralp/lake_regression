@@ -21,7 +21,7 @@ from baseline import load_fold_sample_ids_args
 import constants as C
 
 HEAT_MAP_PARAMS = {'linewidth': 0,
-                   'cmap': 'Spectral_r',
+                   'cmap': 'jet',
                    'xticklabels': False,
                    'yticklabels': False,
                    'cbar': False,
@@ -102,11 +102,11 @@ def plot(heatmaps, args, img_ids, fold):
     # if len(heatmaps) not in [4, 12]:
     #     raise Exception('Number of heatmaps can be 4 or 12. Given: {}'.format(len(heatmaps)))
     # fig, axn = plt.subplots(len(heatmaps) // 4, 4, sharey=True)
-    fig, axn = plt.subplots(1, 4, sharey=True)
-    # fig, axn = plt.subplots(4, 8, figsize=(32, 16), sharey=True)
+    # fig, axn = plt.subplots(1, 4, sharey=True)
+    fig, axn = plt.subplots(4, 8, figsize=(32, 16), sharey=True)
     # cbar_ax = fig.add_axes([.9, .3, .02, .4])
-    cbar_ax = fig.add_axes([.9, .355, .02, .29])
-    # cbar_ax = fig.add_axes([.95, .355, .02, .29])
+    # cbar_ax = fig.add_axes([.9, .355, .02, .29])
+    cbar_ax = fig.add_axes([.95, .355, .02, .29])
     cbar_ax.tick_params(size=0)
     
     for i, ax in enumerate(axn.flat):
@@ -116,9 +116,9 @@ def plot(heatmaps, args, img_ids, fold):
                     cmap='jet', vmin=11.04, vmax=108.35,
                     cbar_ax=None if i else cbar_ax)
     fig.tight_layout(rect=[0, 0, .9, 1])
-    heatmap_path = osp.join(C.ROOT_DIR, 'heatmaps', args['run_name'] + '_vmin_fold={}_img_ids_'.format(fold) + ''.join(['_{}'.format(str(i)) for i in img_ids]) + '.pdf')
+    heatmap_path = osp.join(C.ROOT_DIR, 'heatmaps', args['run_name'] + '_vmin_fold={}_img_ids_'.format(fold) + ''.join(['_{}'.format(str(i)) for i in img_ids]) + '.png')
     # plt.savefig(heatmap_path, format='pdf', dpi=300)
-    plt.savefig(heatmap_path, format='pdf')
+    plt.savefig(heatmap_path, format='png')
 
 """
 Verify args.
@@ -186,9 +186,9 @@ if __name__ == "__main__":
     #     print('{} became {}'.format(r, unnorm_r))
     
     """ Generate heatmap for given image """
-    # ids = [[*range(32)]]
+    ids = [[*range(32)]]
     # ids = [[0, 1, 2, 3]]
-    ids = [[0, 2, 5, 7]]
+    # ids = [[0, 2, 5, 7]]
     for img_ids in ids:
         heatmaps = []
         # img_ids = [9, 13, 17, 23]
