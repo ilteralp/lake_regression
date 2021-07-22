@@ -105,7 +105,8 @@ def plot(heatmaps, args, img_ids, fold):
     fig, axn = plt.subplots(1, 4, sharey=True)
     # fig, axn = plt.subplots(4, 8, figsize=(32, 16), sharey=True)
     # cbar_ax = fig.add_axes([.9, .3, .02, .4])
-    cbar_ax = fig.add_axes([.9, .355, .02, .27])
+    # cbar_ax = fig.add_axes([.9, .355, .02, .27])
+    cbar_ax = fig.add_axes([.9, .378, .02, .25])
     # cbar_ax = fig.add_axes([.95, .355, .02, .29])
     cbar_ax.tick_params(size=0)
     
