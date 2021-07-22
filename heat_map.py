@@ -27,7 +27,7 @@ HEAT_MAP_PARAMS = {'linewidth': 0,
                    'cbar': False,
                    'square': True}
 
-arr = {'img_ids': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34], 'month': [4, 6, 7, 7, 9, 10, 12, 2, 3, 5, 6, 6, 7, 8, 8, 9, 10, 10, 10, 11, 11, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6], 'season': ['spring', 'summer', 'summer', 'summer', 'autumn', 'autumn', 'winter', 'winter', 'spring', 'spring', 'summer', 'summer', 'summer', 'summer', 'summer', 'autumn', 'autumn', 'autumn', 'autumn', 'autumn', 'autumn', 'winter', 'winter', 'winter', 'winter', 'spring', 'spring', 'spring', 'spring', 'spring', 'spring', 'summer'], 'year': [2017, 2017, 2017, 2017, 2017, 2017, 2017, 2018, 2018, 2018, 2018, 2018, 2018, 2018, 2018, 2018, 2018, 2018, 2018, 2018, 2018, 2019, 2019, 2019, 2019, 2019, 2019, 2019, 2019, 2019, 2019, 2019]}
+# arr = {'img_ids': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34], 'month': [4, 6, 7, 7, 9, 10, 12, 2, 3, 5, 6, 6, 7, 8, 8, 9, 10, 10, 10, 11, 11, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6], 'season': ['spring', 'summer', 'summer', 'summer', 'autumn', 'autumn', 'winter', 'winter', 'spring', 'spring', 'summer', 'summer', 'summer', 'summer', 'summer', 'autumn', 'autumn', 'autumn', 'autumn', 'autumn', 'autumn', 'winter', 'winter', 'winter', 'winter', 'spring', 'spring', 'spring', 'spring', 'spring', 'spring', 'summer'], 'year': [2017, 2017, 2017, 2017, 2017, 2017, 2017, 2018, 2018, 2018, 2018, 2018, 2018, 2018, 2018, 2018, 2018, 2018, 2018, 2018, 2018, 2019, 2019, 2019, 2019, 2019, 2019, 2019, 2019, 2019, 2019, 2019]}
 # arr = {'img_ids': [1, 3, 6, 8], 'month': [4, 7, 9, 10], 'season': ['spring', 'summer', 'autumn', 'winter']}
 
 
@@ -102,15 +102,15 @@ def plot(heatmaps, args, img_ids, fold):
     # if len(heatmaps) not in [4, 12]:
     #     raise Exception('Number of heatmaps can be 4 or 12. Given: {}'.format(len(heatmaps)))
     # fig, axn = plt.subplots(len(heatmaps) // 4, 4, sharey=True)
-    # fig, axn = plt.subplots(1, 4, sharey=True)
-    fig, axn = plt.subplots(4, 8, figsize=(32, 16), sharey=True)
+    fig, axn = plt.subplots(1, 4, sharey=True)
+    # fig, axn = plt.subplots(4, 8, figsize=(32, 16), sharey=True)
     # cbar_ax = fig.add_axes([.9, .3, .02, .4])
-    # cbar_ax = fig.add_axes([.9, .355, .02, .29])
-    cbar_ax = fig.add_axes([.95, .355, .02, .29])
+    cbar_ax = fig.add_axes([.9, .355, .02, .29])
+    # cbar_ax = fig.add_axes([.95, .355, .02, .29])
     cbar_ax.tick_params(size=0)
     
     for i, ax in enumerate(axn.flat):
-        ax.set_title('img: {}, month: {}, {}, {}'.format(arr['img_ids'][i], arr['month'][i], arr['season'][i], arr['year'][i]))
+        # ax.set_title('img: {}, month: {}, {}, {}'.format(arr['img_ids'][i], arr['month'][i], arr['season'][i], arr['year'][i]))
         sns.heatmap(heatmaps[i], ax=ax, cbar=i == 0,
                     square=True, xticklabels=False, yticklabels=False,
                     cmap='jet', vmin=11.04, vmax=108.35,
@@ -186,9 +186,9 @@ if __name__ == "__main__":
     #     print('{} became {}'.format(r, unnorm_r))
     
     """ Generate heatmap for given image """
-    ids = [[*range(32)]]
+    # ids = [[*range(32)]]
     # ids = [[0, 1, 2, 3]]
-    # ids = [[0, 2, 5, 7]]
+    ids = [[0, 2, 4, 7]]
     for img_ids in ids:
         heatmaps = []
         # img_ids = [9, 13, 17, 23]
