@@ -102,12 +102,12 @@ def plot(heatmaps, args, img_ids, fold, reg_min, reg_max):
     # if len(heatmaps) not in [4, 12]:
     #     raise Exception('Number of heatmaps can be 4 or 12. Given: {}'.format(len(heatmaps)))
     # fig, axn = plt.subplots(len(heatmaps) // 4, 4, sharey=True)
-    # fig, axn = plt.subplots(1, 4, sharey=True)
-    fig, axn = plt.subplots(4, 8, figsize=(32, 16), sharey=True)
-    cbar_ax = fig.add_axes([.9, .3, .02, .4])
+    fig, axn = plt.subplots(1, 4, sharey=True)
+    # fig, axn = plt.subplots(4, 8, figsize=(32, 16), sharey=True)
+    # cbar_ax = fig.add_axes([.9, .3, .02, .4])
     # cbar_ax = fig.add_axes([.9, .355, .02, .27])
     # cbar_ax = fig.add_axes([.9, .378, .02, .26])
-    # cbar_ax = fig.add_axes([.9, .376, .02, .253])
+    cbar_ax = fig.add_axes([.9, .376, .02, .253])
     # cbar_ax = fig.add_axes([.95, .355, .02, .29])
     cbar_ax.tick_params(size=0)
     
@@ -188,9 +188,9 @@ if __name__ == "__main__":
     #     print('{} became {}'.format(r, unnorm_r))
     
     """ Generate heatmap for given image """
-    ids = [[*range(32)]]
+    # ids = [[*range(32)]]
     # ids = [[0, 1, 2, 3]]
-    # ids = [[0, 2, 4, 7]]
+    ids = [[0, 2, 4, 7]]
     for img_ids in ids:
         heatmaps = []
         # img_ids = [9, 13, 17, 23]
