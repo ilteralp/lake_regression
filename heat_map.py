@@ -120,7 +120,7 @@ def plot(heatmaps, args, img_ids, fold, reg_min, reg_max):
     fig.tight_layout(rect=[0, 0, .9, 1])
     heatmap_path = osp.join(C.ROOT_DIR, 'heatmaps', args['run_name'] + '_vmin_fold={}_img_ids_'.format(fold) + ''.join(['_{}'.format(str(i)) for i in img_ids]) + '.png')
     # plt.savefig(heatmap_path, format='pdf', dpi=300)
-    plt.savefig(heatmap_path, format='png', dpi=300, bbox_inches='tight')
+    plt.savefig(heatmap_path, format='png', dpi=600, bbox_inches='tight')
 
 """
 Verify args.
