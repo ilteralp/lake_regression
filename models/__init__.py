@@ -9,3 +9,4 @@ from .multi_layer_perceptron import MultiLayerPerceptron
 from .water_net import WaterNet
 from .ea_original_dan import EAOriginalDAN
 from .mdn import MDN
+from .maru_mdn import MaruMDN
