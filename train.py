@@ -191,7 +191,7 @@ def verify_args(args):
         raise Exception('Test percent should be less than 0.5 since validation set has the same length with it.')
     if args['pred_type'] not in ['reg', 'class', 'reg+class']:
         raise Exception('Expected prediction type to be one of [\'reg\', \'class\', \'reg+class\']')
-    if args['model'] not in ['dandadadan', 'eanet', 'eadan', 'eaoriginal', 'mlp', 'waternet', 'eaoriginaldan']:
+    if args['model'] not in ['dandadadan', 'eanet', 'eadan', 'eaoriginal', 'mlp', 'waternet', 'eaoriginaldan', 'mdn']:
         raise Exception('Model can be one of [\'dandadadan\', \'eanet\', \'eadan\', \'eaoriginal\', \'mlp\', \'waternet\', \'eaoriginaldan\']')
     if args['use_unlabeled_samples'] and (args['pred_type'] == 'reg' or args['pred_type'] == 'class'):
         raise Exception('Unlabeled samples cannot be used with regression or classification. They can only be used with \'reg+class\'.')
