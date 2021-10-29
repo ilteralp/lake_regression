@@ -25,7 +25,7 @@ import pickle
 import constants as C
 from datasets import Lake2dDataset, Lake2dFoldDataset
 from metrics import Metrics
-from models import DandadaDAN, EANet, EADAN, EAOriginal, MultiLayerPerceptron, WaterNet, EAOriginalDAN
+from models import DandadaDAN, EANet, EADAN, EAOriginal, MultiLayerPerceptron, WaterNet, EAOriginalDAN, MDN
 from report import Report
 from losses import AutomaticWeightedLoss
 
@@ -146,6 +146,9 @@ def reset_model(m, args):
     
     elif args['model'] == 'eaoriginaldan':
         return m.apply(weight_bias_init)
+    
+    elif args['model'] == 'mdn':
+        print('No model weight init defined for MDN')
 """
 Returns verbose message with loss and score.
 """
@@ -377,14 +380,22 @@ def add_losses(args, losses, unlabeled_loss, awl):
 Calculates loss(es) depending on prediction type. Returns calculated losses. 
 """
 def calc_losses_scores(model, patches, args, loss_arr, score_arr, e, target_regs, metrics, target_labels=None):
-    if args['pred_type'] == 'reg':    
-        reg_preds = model(patches)
-        if args['model'] in C.DAN_MODELS:
-            reg_preds, _ = reg_preds
-        reg_loss = args['loss_fn_reg'](input=reg_preds, target=target_regs)
-        loss_arr[e]['l_reg_loss'].append(reg_loss.item())
-        add_scores(preds=reg_preds, targets=target_regs, e=e, score_arr=score_arr, metrics=metrics)
-        return reg_loss, None
+    if args['pred_type'] == 'reg':
+        if args['model'] == 'mdn':
+            pi, sigma, mu = model(patches)
+            reg_loss = MDN.mdn_loss(pi, sigma, mu, target_regs)
+            loss_arr[e]['l_reg_loss'].append(reg_loss.item())
+            # add_scores(preds=reg_preds, targets=target_regs, e=e, score_arr=score_arr, metrics=metrics)
+            return reg_loss, None
+        
+        else:
+            reg_preds = model(patches)
+            if args['model'] in C.DAN_MODELS:
+                reg_preds, _ = reg_preds
+            reg_loss = args['loss_fn_reg'](input=reg_preds, target=target_regs)
+            loss_arr[e]['l_reg_loss'].append(reg_loss.item())
+            add_scores(preds=reg_preds, targets=target_regs, e=e, score_arr=score_arr, metrics=metrics)
+            return reg_loss, None
     
     elif args['pred_type'] == 'class':
         class_preds = model(patches)
@@ -1105,6 +1116,10 @@ def create_model(args):
                               use_atrous_conv=args['use_atrous_conv'], 
                               reshape_to_mosaic=args['reshape_to_mosaic'])
         
+    elif args['model'] == 'mdn':
+        model = MDN(in_channels=args['in_channels'], patch_size=args['patch_size'],
+                    out_features=1, num_gaussians=args['num_gaussians'])
+        
     model_trainable_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     args['total_model_params'] = model_trainable_total_params
         
@@ -1164,7 +1179,7 @@ Help with params in case you need it.
 def help():
     print('\'dandadan\', \'eadan\' and \'eaoriginaldan\' work with \'use_unlabeled_samples\'=[True, False], \'pred_type\'=[\'reg\', \'reg+class\', \'class\'] and \'date_type\'=[\'month\', \'season\', \'year\'].\n')
     print('\'eanet\', (and \'easeq\') work  with \'use_unlabeled_samples\'=False, \'pred_type\'=[\'reg\', \'class\'] and does not take \'date_type\'.\n')
-    print(' \'eaoriginal\',  \'mlp\' and \'waternet\' work with \'use_unlabeled_samples\'=False, \'pred_type\'=\'reg\' and does not take \'date_type\'.\n')
+    print(' \'eaoriginal\',  \'mlp\', \'waternet\' and \'mdn\' work with \'use_unlabeled_samples\'=False, \'pred_type\'=\'reg\' and does not take \'date_type\'.\n')
     print('With \'date_type\'=\'year\', validation set cannot be created.')
     
     
@@ -1187,12 +1202,13 @@ if __name__ == "__main__":
             'lr': C.BASE_LR,                                                       # From EA's model, default is 1e-2.
             # 'patch_norm': True,                                                # Normalizes patches
             # 'reg_norm': True,                                                  # Normalize regression values
-            'model': 'eaoriginaldan',                                                   # Model name, can be {dandadadan, eanet, eadan}.
+            'model': 'mdn',                                                   # Model name, can be {dandadadan, eanet, eadan}.
             'use_test_as_val': True,                                            # Uses test set for validation. 
             'num_early_stop_epoch': 3,                                         # Number of consecutive epochs that model loss does not decrease. 
             'sample_ids_from_run': SAMPLE_IDS_FROM_RUN_NAME,
             'reshape_to_mosaic': False,
             'start_fold': 0,
+            'num_gaussians': 5,                                                 # Number of gaussians for MDN
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'val': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4},
@@ -1206,8 +1222,8 @@ if __name__ == "__main__":
     """ Create experiment params """
     loss_names = ['sum']
     fold_setups = ['random']
-    pred_types = ['reg+class']
-    using_unlabeled_samples = [True]
+    pred_types = ['reg']
+    using_unlabeled_samples = [False]
     date_types = ['month']
     # split_layers = [*range(1,3)]
     split_layers = [4]
