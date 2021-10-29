@@ -25,7 +25,7 @@ import pickle
 import constants as C
 from datasets import Lake2dDataset, Lake2dFoldDataset
 from metrics import Metrics
-from models import DandadaDAN, EANet, EADAN, EAOriginal, MultiLayerPerceptron, WaterNet, EAOriginalDAN, MDN
+from models import DandadaDAN, EANet, EADAN, EAOriginal, MultiLayerPerceptron, WaterNet, EAOriginalDAN, MDN, MaruMDN
 from report import Report
 from losses import AutomaticWeightedLoss
 
@@ -147,7 +147,7 @@ def reset_model(m, args):
     elif args['model'] == 'eaoriginaldan':
         return m.apply(weight_bias_init)
     
-    elif args['model'] == 'mdn':
+    elif args['model'] in ['mdn', 'marumdn']:
         return m.apply(weights_init)
 """
 Returns verbose message with loss and score.
@@ -191,7 +191,7 @@ def verify_args(args):
         raise Exception('Test percent should be less than 0.5 since validation set has the same length with it.')
     if args['pred_type'] not in ['reg', 'class', 'reg+class']:
         raise Exception('Expected prediction type to be one of [\'reg\', \'class\', \'reg+class\']')
-    if args['model'] not in ['dandadadan', 'eanet', 'eadan', 'eaoriginal', 'mlp', 'waternet', 'eaoriginaldan', 'mdn']:
+    if args['model'] not in ['dandadadan', 'eanet', 'eadan', 'eaoriginal', 'mlp', 'waternet', 'eaoriginaldan', 'mdn', 'marumdn']:
         raise Exception('Model can be one of [\'dandadadan\', \'eanet\', \'eadan\', \'eaoriginal\', \'mlp\', \'waternet\', \'eaoriginaldan\']')
     if args['use_unlabeled_samples'] and (args['pred_type'] == 'reg' or args['pred_type'] == 'class'):
         raise Exception('Unlabeled samples cannot be used with regression or classification. They can only be used with \'reg+class\'.')
@@ -381,9 +381,9 @@ Calculates loss(es) depending on prediction type. Returns calculated losses.
 """
 def calc_losses_scores(model, patches, args, loss_arr, score_arr, e, target_regs, metrics, target_labels=None):
     if args['pred_type'] == 'reg':
-        if args['model'] == 'mdn':
+        if args['model'] in ['mdn', 'marumdn']:
             pi, sigma, mu = model(patches)
-            reg_loss = MDN.mdn_loss(pi, sigma, mu, target_regs)
+            reg_loss = MDN.mdn_loss(pi, sigma, mu, target_regs) if args['model'] == 'mdn' else MaruMDN.mdn_loss(pi, sigma, mu, target_regs)
             loss_arr[e]['l_reg_loss'].append(reg_loss.item())
             # add_scores(preds=reg_preds, targets=target_regs, e=e, score_arr=score_arr, metrics=metrics)
             return reg_loss, None
@@ -1120,6 +1120,10 @@ def create_model(args):
         model = MDN(in_channels=args['in_channels'], patch_size=args['patch_size'],
                     out_features=1, num_gaussians=args['num_gaussians'])
         
+    elif args['model'] == 'marumdn':
+        model = MaruMDN(in_channels=args['in_channels'], patch_size=args['patch_size'],
+                        n_hidden=args['n_hidden'], n_gaussians=args['num_gaussians'])
+        
     model_trainable_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     args['total_model_params'] = model_trainable_total_params
         
@@ -1179,7 +1183,7 @@ Help with params in case you need it.
 def help():
     print('\'dandadan\', \'eadan\' and \'eaoriginaldan\' work with \'use_unlabeled_samples\'=[True, False], \'pred_type\'=[\'reg\', \'reg+class\', \'class\'] and \'date_type\'=[\'month\', \'season\', \'year\'].\n')
     print('\'eanet\', (and \'easeq\') work  with \'use_unlabeled_samples\'=False, \'pred_type\'=[\'reg\', \'class\'] and does not take \'date_type\'.\n')
-    print(' \'eaoriginal\',  \'mlp\', \'waternet\' and \'mdn\' work with \'use_unlabeled_samples\'=False, \'pred_type\'=\'reg\' and does not take \'date_type\'.\n')
+    print('\'eaoriginal\',  \'mlp\', \'waternet\', \'mdn\' and \'marumdn\' work with \'use_unlabeled_samples\'=False, \'pred_type\'=\'reg\' and does not take \'date_type\'.\n')
     print('With \'date_type\'=\'year\', validation set cannot be created.')
     
     
@@ -1209,6 +1213,7 @@ if __name__ == "__main__":
             'reshape_to_mosaic': False,
             'start_fold': 0,
             'num_gaussians': 5,                                                 # Number of gaussians for MDN
+            'n_hidden': 20,
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'val': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4},
