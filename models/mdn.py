@@ -48,6 +48,7 @@ class MDN(nn.Module):
         self.mu = nn.Linear(self.in_features, out_features * num_gaussians)
 
     def forward(self, minibatch):
+        minibatch = torch.flatten(minibatch, dim=1)
         pi = self.pi(minibatch)
         sigma = torch.exp(self.sigma(minibatch))
         sigma = sigma.view(-1, self.num_gaussians, self.out_features)
