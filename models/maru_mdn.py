@@ -27,6 +27,7 @@ class MaruMDN(nn.Module):
         self.z_mu = nn.Linear(n_hidden, n_gaussians)  
 
     def forward(self, x):
+        x = torch.flatten(x, start_dim=1)
         z_h = self.z_h(x)
         pi = nn.functional.softmax(self.z_pi(z_h), -1)
         sigma = torch.exp(self.z_sigma(z_h))
