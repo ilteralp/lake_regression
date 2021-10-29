@@ -82,7 +82,7 @@ class MDN(nn.Module):
         parameters.
         """
         prob = pi * MDN.gaussian_probability(sigma, mu, target)
-        nll = -torch.log(torch.sum(prob, dim=1))
+        nll = -torch.log(torch.sum(prob, start_dim=1))
         return torch.mean(nll)
 
     @staticmethod 
