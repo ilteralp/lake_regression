@@ -148,7 +148,7 @@ def reset_model(m, args):
         return m.apply(weight_bias_init)
     
     elif args['model'] == 'mdn':
-        print('No model weight init defined for MDN')
+        return m.apply(weights_init)
 """
 Returns verbose message with loss and score.
 """
