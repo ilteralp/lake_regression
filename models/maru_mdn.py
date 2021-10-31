@@ -53,18 +53,18 @@ class MaruMDN(nn.Module):
 
     @staticmethod
     def gumbel_sample(x, axis=1):
-        # z = np.random.gumbel(loc=0, scale=1, size=x.shape)
-        # return (np.log(x) + z).argmax(axis=axis)
-        z = Gumbel(loc=torch.tensor([0.0]), scale=torch.tensor([1.0])).expand(x.shape).sample().to(x.device)
-        return torch.argmax((torch.log(x) + z), dim=axis)
+        z = np.random.gumbel(loc=0, scale=1, size=x.shape)
+        return torch.from_numpy((np.log(x) + z).argmax(axis=axis)).to(x.device)
+        # z = Gumbel(loc=torch.tensor([0.0]), scale=torch.tensor([1.0])).expand(x.shape).sample().to(x.device)
+        # return torch.argmax((torch.log(x) + z), dim=axis)
     
     @staticmethod
     def get_pred(pi_data, sigma_data, mu_data, n_samples):
         k = MaruMDN.gumbel_sample(pi_data)
-        # indices = (np.arange(n_samples), k)
-        # rn = np.random.randn(n_samples)
-        indices = (torch.arange(n_samples), k)
-        rn = torch.randn(n_samples, device=pi_data.device)
+        indices = (torch.from_numpy(np.arange(n_samples).to(pi_data.device)), k)
+        rn = torch.from_numpy(np.random.randn(n_samples)).to(pi_data.device)
+        # indices = (torch.arange(n_samples), k)
+        # rn = torch.randn(n_samples, device=pi_data.device)
         sampled = rn * sigma_data[indices] + mu_data[indices]
         return sampled
         
