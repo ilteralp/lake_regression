@@ -66,6 +66,6 @@ class MaruMDN(nn.Module):
         # indices = (torch.arange(n_samples), k)
         # rn = torch.randn(n_samples, device=pi_data.device)
         sampled = rn * sigma_data[indices] + mu_data[indices]
-        return sampled
+        return sampled.unsqueeze(-1)
         
         
