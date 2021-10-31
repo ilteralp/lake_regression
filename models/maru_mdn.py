@@ -64,7 +64,7 @@ class MaruMDN(nn.Module):
         # indices = (np.arange(n_samples), k)
         # rn = np.random.randn(n_samples)
         indices = (torch.arange(n_samples), k)
-        rn = torch.randn(n_samples)
+        rn = torch.randn(n_samples, device=pi_data.device)
         sampled = rn * sigma_data[indices] + mu_data[indices]
         return sampled
         
