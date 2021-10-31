@@ -4,6 +4,8 @@
 Created on Fri Oct 29 16:01:22 2021
 
 @author: melike
+
+From https://github.com/hardmaru/pytorch_notebooks/blob/master/mixture_density_networks.ipynb
 """
 
 import torch
@@ -47,3 +49,18 @@ class MaruMDN(nn.Module):
         result = torch.sum(result, dim=1)
         result = -torch.log(result)
         return torch.mean(result)
+
+    @staticmethod
+    def gumbel_sample(x, axis=1):
+        z = np.random.gumbel(loc=0, scale=1, size=x.shape)
+        return (np.log(x) + z).argmax(axis=axis)
+    
+    @staticmethod
+    def get_pred(pi_data, sigma_data, mu_data, n_samples):
+        k = MaruMDN.gumbel_sample(pi_data)
+        indices = (np.arange(n_samples), k)
+        rn = np.random.randn(n_samples)
+        sampled = rn * sigma_data[indices] + mu_data[indices]
+        return sampled
+        
+        
