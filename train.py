@@ -1213,8 +1213,8 @@ if __name__ == "__main__":
             'sample_ids_from_run': SAMPLE_IDS_FROM_RUN_NAME,
             'reshape_to_mosaic': False,
             'start_fold': 0,
-            'num_gaussians': 5,                                                 # Number of gaussians for MDN
-            'n_hidden': 40,
+            'num_gaussians': 15,                                                 # Number of gaussians for MDN
+            'n_hidden': 200,
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'val': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4},
