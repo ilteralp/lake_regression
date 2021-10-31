@@ -68,4 +68,12 @@ class MaruMDN(nn.Module):
         sampled = rn * sigma_data[indices] + mu_data[indices]
         return sampled.unsqueeze(-1)
         
-        
+
+if __name__ == "__main__":
+    args = {'in_channels': 12, 'patch_size': 3,
+            'n_hidden': 200, 'num_gaussians': 5}
+    model = MaruMDN(in_channels=args['in_channels'], patch_size=args['patch_size'],
+                        n_hidden=args['n_hidden'], n_gaussians=args['num_gaussians'])
+    
+    print('trainable params: {}'.format(sum(p.numel() for p in model.parameters() if p.requires_grad)))
+   
