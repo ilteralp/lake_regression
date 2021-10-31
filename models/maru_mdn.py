@@ -54,7 +54,7 @@ class MaruMDN(nn.Module):
     @staticmethod
     def gumbel_sample(x, axis=1):
         z = torch.from_numpy(np.random.gumbel(loc=0, scale=1, size=x.shape)).to(x.device)
-        return (np.log(x) + z).argmax(axis=axis)
+        return torch.argmax(torch.log(x) + z, dim=axis)
         # z = Gumbel(loc=torch.tensor([0.0]), scale=torch.tensor([1.0])).expand(x.shape).sample().to(x.device)
         # return torch.argmax((torch.log(x) + z), dim=axis)
     
