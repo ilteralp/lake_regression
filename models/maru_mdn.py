@@ -61,7 +61,7 @@ class MaruMDN(nn.Module):
     @staticmethod
     def get_pred(pi_data, sigma_data, mu_data, n_samples):
         k = MaruMDN.gumbel_sample(pi_data)
-        indices = (torch.from_numpy(np.arange(n_samples).to(pi_data.device)), k)
+        indices = (torch.from_numpy(np.arange(n_samples)).to(pi_data.device), k)
         rn = torch.from_numpy(np.random.randn(n_samples)).to(pi_data.device)
         # indices = (torch.arange(n_samples), k)
         # rn = torch.randn(n_samples, device=pi_data.device)
