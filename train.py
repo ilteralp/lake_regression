@@ -384,8 +384,9 @@ def calc_losses_scores(model, patches, args, loss_arr, score_arr, e, target_regs
         if args['model'] in ['mdn', 'marumdn']:
             pi, sigma, mu = model(patches)
             reg_loss = MDN.mdn_loss(pi, sigma, mu, target_regs) if args['model'] == 'mdn' else MaruMDN.mdn_loss(pi, sigma, mu, target_regs)
+            reg_preds = MaruMDN.get_pred(pi_data=pi, sigma_data=sigma, mu_data=mu, n_samples=patches.shape[0])
             loss_arr[e]['l_reg_loss'].append(reg_loss.item())
-            # add_scores(preds=reg_preds, targets=target_regs, e=e, score_arr=score_arr, metrics=metrics)
+            add_scores(preds=reg_preds, targets=target_regs, e=e, score_arr=score_arr, metrics=metrics)
             return reg_loss, None
         
         else:
