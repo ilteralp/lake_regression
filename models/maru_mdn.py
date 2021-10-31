@@ -10,6 +10,7 @@ From https://github.com/hardmaru/pytorch_notebooks/blob/master/mixture_density_n
 
 import torch
 import torch.nn as nn
+from torch.distributions.gumbel import Gumbel
 import math
 import numpy as np
 
@@ -52,14 +53,18 @@ class MaruMDN(nn.Module):
 
     @staticmethod
     def gumbel_sample(x, axis=1):
-        z = np.random.gumbel(loc=0, scale=1, size=x.shape)
-        return (np.log(x) + z).argmax(axis=axis)
+        # z = np.random.gumbel(loc=0, scale=1, size=x.shape)
+        # return (np.log(x) + z).argmax(axis=axis)
+        z = Gumbel(loc=torch.tensor([0.0]), scale=torch.tensor([1.0])).expand(x.shape).sample()
+        return torch.argmax((torch.log(x) + z), dim=axis)
     
     @staticmethod
     def get_pred(pi_data, sigma_data, mu_data, n_samples):
         k = MaruMDN.gumbel_sample(pi_data)
-        indices = (np.arange(n_samples), k)
-        rn = np.random.randn(n_samples)
+        # indices = (np.arange(n_samples), k)
+        # rn = np.random.randn(n_samples)
+        indices = (torch.arange(n_samples), k)
+        rn = torch.randn(n_samples)
         sampled = rn * sigma_data[indices] + mu_data[indices]
         return sampled
         
