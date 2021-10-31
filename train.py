@@ -1214,7 +1214,7 @@ if __name__ == "__main__":
             'reshape_to_mosaic': False,
             'start_fold': 0,
             'num_gaussians': 5,                                                 # Number of gaussians for MDN
-            'n_hidden': 20,
+            'n_hidden': 40,
             
             'tr': {'batch_size': C.BATCH_SIZE, 'shuffle': True, 'num_workers': 4},
             'val': {'batch_size': C.BATCH_SIZE, 'shuffle': False, 'num_workers': 4},
