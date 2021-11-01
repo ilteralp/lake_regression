@@ -32,7 +32,7 @@ class MaruMDN(nn.Module):
             nn.Linear(n_hidden, n_hidden),
             nn.Linear(n_hidden, n_hidden),
             nn.Linear(n_hidden, n_hidden),
-            nn.Tanh()
+            nn.ReLU()
         )
         self.z_pi = nn.Linear(n_hidden, n_gaussians)
         self.z_sigma = nn.Linear(n_hidden, n_gaussians)
