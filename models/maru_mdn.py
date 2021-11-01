@@ -23,14 +23,23 @@ class MaruMDN(nn.Module):
         
         self.z_h = nn.Sequential(
             nn.Linear(self.in_features, n_hidden),
+            nn.Tanh(),
             nn.Linear(n_hidden, n_hidden),
+            nn.Tanh(),
             nn.Linear(n_hidden, n_hidden),
+            nn.Tanh(),
             nn.Linear(n_hidden, n_hidden),
+            nn.Tanh(),
             nn.Linear(n_hidden, n_hidden),
+            nn.Tanh(),
             nn.Linear(n_hidden, n_hidden),
+            nn.Tanh(),
             nn.Linear(n_hidden, n_hidden),
+            nn.Tanh(),
             nn.Linear(n_hidden, n_hidden),
+            nn.Tanh(),
             nn.Linear(n_hidden, n_hidden),
+            nn.Tanh(),
             nn.Linear(n_hidden, n_hidden),
             nn.Tanh()
         )
