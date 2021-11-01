@@ -1234,7 +1234,7 @@ if __name__ == "__main__":
     # split_layers = [*range(1,3)]
     split_layers = [4]
     patch_sizes = [3]
-    patch_norms = [False]
+    patch_norms = [True]
     reg_norms = [True]
     if args['model'] in ['eaoriginaldan', 'eaoriginal']:
         args['use_atrous_conv'] = False
