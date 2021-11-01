@@ -23,6 +23,10 @@ class MaruMDN(nn.Module):
         
         self.z_h = nn.Sequential(
             nn.Linear(self.in_features, n_hidden),
+            nn.Linear(n_hidden, n_hidden),
+            nn.Linear(n_hidden, n_hidden),
+            nn.Linear(n_hidden, n_hidden),
+            nn.Linear(n_hidden, n_hidden),
             nn.Tanh()
         )
         self.z_pi = nn.Linear(n_hidden, n_gaussians)
@@ -71,7 +75,7 @@ class MaruMDN(nn.Module):
 
 if __name__ == "__main__":
     args = {'in_channels': 12, 'patch_size': 3,
-            'n_hidden': 200, 'num_gaussians': 5}
+            'n_hidden': 100, 'num_gaussians': 5}
     model = MaruMDN(in_channels=args['in_channels'], patch_size=args['patch_size'],
                         n_hidden=args['n_hidden'], n_gaussians=args['num_gaussians'])
     
