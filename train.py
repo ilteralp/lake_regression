@@ -386,7 +386,7 @@ def calc_losses_scores(model, patches, args, loss_arr, score_arr, e, target_regs
             reg_loss = MDN.mdn_loss(pi, sigma, mu, target_regs) if args['model'] == 'mdn' else MaruMDN.mdn_loss(pi, sigma, mu, target_regs)
             reg_preds = MaruMDN.get_pred(pi_data=pi, sigma_data=sigma, mu_data=mu, n_samples=patches.shape[0])
             loss_arr[e]['l_reg_loss'].append(reg_loss.item())
-            print('reg vs target, min: {:.2f} vs {:.2f}, median: {:.2f} vs {:.2f}, max: {:.2f} vs {:.2f}'.format(torch.min(reg_preds),
+            print('pred vs target, min: {:.2f} vs {:.2f}, median: {:.2f} vs {:.2f}, max: {:.2f} vs {:.2f}'.format(torch.min(reg_preds),
                                                                                                                  torch.min(target_regs),
                                                                                                                  torch.median(reg_preds),
                                                                                                                  torch.median(target_regs),
