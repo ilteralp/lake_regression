@@ -382,7 +382,7 @@ Calculates loss(es) depending on prediction type. Returns calculated losses.
 def calc_losses_scores(model, patches, args, loss_arr, score_arr, e, target_regs, metrics, target_labels=None):
     if args['pred_type'] == 'reg':
         if args['model'] in ['mdn', 'marumdn']:
-            patches = torch.log(patches)
+            # patches = torch.log(patches)
             pi, sigma, mu = model(patches)
             reg_loss = MDN.mdn_loss(pi, sigma, mu, target_regs) if args['model'] == 'mdn' else MaruMDN.mdn_loss(pi, sigma, mu, target_regs)
             reg_preds = MaruMDN.get_pred(pi_data=pi, sigma_data=sigma, mu_data=mu, n_samples=patches.shape[0])
