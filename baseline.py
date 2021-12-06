@@ -17,7 +17,6 @@ from datasets import Lake2dDataset, Lake2dFoldDataset
 from torch.utils.data import Subset, DataLoader
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 from sklearn.svm import LinearSVR
-from sklearn.model_selection import ParameterGrid
 from train import calc_mean_std, load_reg_min_max, get_reg_min_max
 
 def basic_svr():
@@ -143,17 +142,17 @@ Load data and train on folds.
 """
 def train_on_folds(run_name):
     fold_sample_ids, args = load_fold_sample_ids_args(run_name=run_name)
-    grid = [{'dual': False, 'loss': 'epsilon_insensitive', 'C': 10. ** np.arange(-3, 3)}, 
-        {'dual': True, 'loss':'epsilon_insensitive', 'loss': 'l2', 'C': 10. ** np.arange(-3, 3)}]
+    grid = {'dual': False, 'loss': 'epsilon_insensitive'}
     
-    for g in grid:
+    for c in [10. ** np.arange(-3, 3)]:
+        grid['c'] = c
         scores = {'r2': [], 'r': [], 'mae': [], 'rmse': []}
         for fold in range(args['num_folds']):
             X_train, y_train, X_test, y_test = load_data(args=args, fold=fold, fold_sample_ids=fold_sample_ids)
-            regressor = train(X_train=X_train, y_train=y_train, params=g)
+            regressor = train(X_train=X_train, y_train=y_train, params=grid)
             calc_scores(regressor=regressor, X_test=X_test, y_test=y_test, scores=scores)
         
-        print('grid: {}'.format(g))
+        print('grid: {}'.format(grid))
         for k, v in scores.items():
             print('{}, mean: {:.4f}, std: {:.4f}'.format(k, np.mean(v), np.std(v)))
 
