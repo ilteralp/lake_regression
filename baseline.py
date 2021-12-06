@@ -118,7 +118,8 @@ Takes train set and labels, fits the model and returns it.
 """
 def train(X_train, y_train):
     # regressor = SVR(kernel='linear', cache_size=7000)
-    regressor = LinearSVR(max_iter=50000)
+    regressor = LinearSVR(max_iter=50000, dual=False, loss='squared_epsilon_insensitive',
+                          tol=1e-3, epsilon=0.1)
     regressor.fit(X_train, y_train)
     return regressor
 
