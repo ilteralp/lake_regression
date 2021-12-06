@@ -17,6 +17,7 @@ from datasets import Lake2dDataset, Lake2dFoldDataset
 from torch.utils.data import Subset, DataLoader
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 from sklearn.svm import LinearSVR
+from sklearn.model_selection import ParameterGrid
 from train import calc_mean_std, load_reg_min_max, get_reg_min_max
 
 def basic_svr():
@@ -28,14 +29,15 @@ def basic_svr():
     y = np.sin(X).ravel()
     y[::5] += 3 * (0.5 - np.random.rand(8))                                     # Add noise
 
-    for kernel in ['linear', 'poly', 'rbf', 'sigmoid']:
-        regressor = SVR(kernel=kernel)
-        regressor.fit(X, y)
-        print(f'kernel: {kernel}, R2: {regressor.score(X, y):.4f}')
+    # for kernel in ['linear', 'poly', 'rbf', 'sigmoid']:
+    #     regressor = SVR(kernel=kernel)
+    #     regressor.fit(X, y)
+    #     print(f'kernel: {kernel}, R2: {regressor.score(X, y):.4f}')
+    
     
     reg = LinearSVR(max_iter=3000, tol=1e-3, epsilon=0.1)
     reg.fit(X, y)
-    print(f'LinearSVR, R2: {regressor.score(X, y):.4f}')
+    print(f'LinearSVR, R2: {reg.score(X, y):.4f}')
         
 """
 Loads and return fold sample ids from given path. 
@@ -116,10 +118,11 @@ def load_data(args, fold, fold_sample_ids):
 """
 Takes train set and labels, fits the model and returns it.  
 """
-def train(X_train, y_train):
+def train(X_train, y_train, params):
     # regressor = SVR(kernel='linear', cache_size=7000)
-    regressor = LinearSVR(max_iter=50000, dual=False, loss='squared_epsilon_insensitive',
-                          tol=1e-3, epsilon=0.1)
+    # regressor = LinearSVR(max_iter=50000, dual=False, loss='squared_epsilon_insensitive',
+    #                       tol=1e-3, epsilon=0.1)
+    regressor = LinearSVR(**params)
     regressor.fit(X_train, y_train)
     return regressor
 
@@ -140,14 +143,19 @@ Load data and train on folds.
 """
 def train_on_folds(run_name):
     fold_sample_ids, args = load_fold_sample_ids_args(run_name=run_name)
-    scores = {'r2': [], 'r': [], 'mae': [], 'rmse': []}
-    for fold in range(args['num_folds']):
-        X_train, y_train, X_test, y_test = load_data(args=args, fold=fold, fold_sample_ids=fold_sample_ids)
-        regressor = train(X_train=X_train, y_train=y_train)
-        calc_scores(regressor=regressor, X_test=X_test, y_test=y_test, scores=scores)
+    grid = [{'dual': False, 'penalty': 'l1', 'C': 10. ** np.arange(-3, 3)}, 
+        {'dual': True, 'penalty':'l2', 'loss': 'l2', 'C': 10. ** np.arange(-3, 3)}]
     
-    for k, v in scores.items():
-        print('{}, mean: {:.4f}, std: {:.4f}'.format(k, np.mean(v), np.std(v)))
+    for g in grid:
+        scores = {'r2': [], 'r': [], 'mae': [], 'rmse': []}
+        for fold in range(args['num_folds']):
+            X_train, y_train, X_test, y_test = load_data(args=args, fold=fold, fold_sample_ids=fold_sample_ids)
+            regressor = train(X_train=X_train, y_train=y_train, params=g)
+            calc_scores(regressor=regressor, X_test=X_test, y_test=y_test, scores=scores)
+        
+        print('grid: {}'.format(g))
+        for k, v in scores.items():
+            print('{}, mean: {:.4f}, std: {:.4f}'.format(k, np.mean(v), np.std(v)))
 
 if __name__ == "__main__":
     # basic_svr()
