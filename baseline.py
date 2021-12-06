@@ -144,7 +144,7 @@ def train_on_folds(run_name):
     fold_sample_ids, args = load_fold_sample_ids_args(run_name=run_name)
     grid = {'dual': False, 'loss': 'epsilon_insensitive'}
     
-    for c in [10. ** np.arange(-3, 3)]:
+    for c in [* 10. ** np.arange(-3, 3)]:
         grid['C'] = c
         scores = {'r2': [], 'r': [], 'mae': [], 'rmse': []}
         for fold in range(args['num_folds']):
