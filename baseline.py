@@ -145,7 +145,7 @@ def train_on_folds(run_name):
     grid = {'dual': False, 'loss': 'epsilon_insensitive'}
     
     for c in [10. ** np.arange(-3, 3)]:
-        grid['c'] = c
+        grid['C'] = c
         scores = {'r2': [], 'r': [], 'mae': [], 'rmse': []}
         for fold in range(args['num_folds']):
             X_train, y_train, X_test, y_test = load_data(args=args, fold=fold, fold_sample_ids=fold_sample_ids)
