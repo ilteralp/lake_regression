@@ -143,8 +143,8 @@ Load data and train on folds.
 """
 def train_on_folds(run_name):
     fold_sample_ids, args = load_fold_sample_ids_args(run_name=run_name)
-    grid = [{'dual': False, 'penalty': 'l1', 'C': 10. ** np.arange(-3, 3)}, 
-        {'dual': True, 'penalty':'l2', 'loss': 'l2', 'C': 10. ** np.arange(-3, 3)}]
+    grid = [{'dual': False, 'loss': 'epsilon_insensitive', 'C': 10. ** np.arange(-3, 3)}, 
+        {'dual': True, 'loss':'epsilon_insensitive', 'loss': 'l2', 'C': 10. ** np.arange(-3, 3)}]
     
     for g in grid:
         scores = {'r2': [], 'r': [], 'mae': [], 'rmse': []}
