@@ -16,6 +16,7 @@ from torch import device
 from datasets import Lake2dDataset, Lake2dFoldDataset
 from torch.utils.data import Subset, DataLoader
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
+from sklearn.svm import LinearSVR
 from train import calc_mean_std, load_reg_min_max, get_reg_min_max
 
 def basic_svr():
@@ -31,6 +32,10 @@ def basic_svr():
         regressor = SVR(kernel=kernel)
         regressor.fit(X, y)
         print(f'kernel: {kernel}, R2: {regressor.score(X, y):.4f}')
+    
+    reg = LinearSVR(max_iter=3000, tol=1e-3, epsilon=0.1)
+    reg.fit(X, y)
+    print(f'LinearSVR, R2: {regressor.score(X, y):.4f}')
         
 """
 Loads and return fold sample ids from given path. 
@@ -112,7 +117,8 @@ def load_data(args, fold, fold_sample_ids):
 Takes train set and labels, fits the model and returns it.  
 """
 def train(X_train, y_train):
-    regressor = SVR(kernel='linear', cache_size=7000)
+    # regressor = SVR(kernel='linear', cache_size=7000)
+    regressor = LinearSVR()
     regressor.fit(X_train, y_train)
     return regressor
 
