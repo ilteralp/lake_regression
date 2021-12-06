@@ -112,7 +112,7 @@ def load_data(args, fold, fold_sample_ids):
 Takes train set and labels, fits the model and returns it.  
 """
 def train(X_train, y_train):
-    regressor = SVR(kernel='rbf')
+    regressor = SVR(kernel='linear')
     regressor.fit(X_train, y_train)
     return regressor
 
