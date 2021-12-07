@@ -207,8 +207,8 @@ def verify_args(args):
         raise Exception('AWL loss only works with reg+class!')
     if args['patch_size'] != 3 and args['model'] not in ['eadan', 'eaoriginal', 'mlp', 'waternet', 'eaoriginaldan']:
         raise Exception('Only model eadan, eaoriginal, mlp, waternet and eaoriginaldan work with patch sizes different from 3. Given, {} to {}'.format(args['patch_size'], args['model']))
-    if args['model'] in ['eaoriginal', 'mlp', 'waternet'] and args['pred_type'] != 'reg':
-        raise Exception('Models eaoriginal, mlp and waternet only works with regression! Given {}'.format(args['pred_type']))
+    if args['model'] in ['mlp', 'waternet'] and args['pred_type'] != 'reg':
+        raise Exception('Models mlp and waternet only work with regression! Given {}'.format(args['pred_type']))
     if args['use_test_as_val'] and args['create_val']:
         raise Exception('Validation set should not be created for using test set as validation.')
     if args['start_fold'] != 0 and args['num_folds'] is None:
