@@ -678,12 +678,12 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, t
     # Test'te sadece regresyon sonucunu al, DAN oyle yapiyor. 
     
 """
-Saves args in order to compare model params. 
+Saves given dict (i.e. args, confusion matrix) in order to compare with other models.
 """
-def save_args(args):
-    with open(osp.join(C.MODEL_DIR_PATH, args['run_name'], 'args.txt'), 'w') as f:                # Save args  
+def save_dict(args, fname):
+    with open(osp.join(C.MODEL_DIR_PATH, args['run_name'], fname), 'w') as f:                # Save args  
         f.write(str(args))
-    with open(osp.join(os.getcwd(), 'runs', args['run_name'], 'args.txt'), 'w') as f:
+    with open(osp.join(os.getcwd(), 'runs', args['run_name'], fname), 'w') as f:
         f.write(str(args))
     
 """
@@ -832,6 +832,9 @@ def train_random_on_folds(model, dataset, unlabeled_dataset, train_fn, args, rep
     """ Save all fold sample ids """
     save_all_fold_sample_ids(fold_sample_ids=fold_sample_ids, args=args)
     save_sample_ids_with_pickle(fold_sample_ids, args)
+    
+    """ Save confusion matrix """
+    save_dict(metrics.get_normed_conf_mat(), fname='conf_mat.txt')
     
     """ Return ids in order to use same ids in each run """
     return fold_sample_ids
@@ -1075,6 +1078,9 @@ def train_on_folds(args, report, fold_sample_ids):
     
     """ Save all fold sample ids """
     save_sample_ids_with_pickle(fold_sample_ids, args)
+    
+    """ Save confusion matrix """
+    save_dict(metrics.get_normed_conf_mat(), fname='conf_mat.txt')
 
     """ Return ids in order to use same ids in each run """
     return fold_sample_ids
@@ -1296,7 +1302,7 @@ if __name__ == "__main__":
 
         prev_setup_name = args['fold_setup']
         """ Save args """
-        save_args(args)
+        save_dict(args, fname='args.txt')
         print('*' * 72)
         
 """
