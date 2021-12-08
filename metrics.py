@@ -30,6 +30,8 @@ class Metrics:
         self.test_score_names = self._init_test_score_names()
         self.test_scores = self._init_test_scores()
         self.num_classes = num_classes
+        if self.pred_type in ['reg+class', 'class']:                            # Init confusion matrix for test set
+            self.conf_mat = self._init_conf_matrix()
         
     def _init_test_score_names(self):
         if self.pred_type == 'reg':
@@ -38,6 +40,22 @@ class Metrics:
             return ['kappa']
         elif self.pred_type == 'reg+class':
             return ['kappa', 'r2', 'r', 'rmse', 'mae']
+        
+    """
+    Inits confusion matrix of all models for all folds. This one is 
+    num_classes x num_classes instead of keeping TP, TN, FP, FN of each class
+    because reviewers requested for this in the revision. 
+    """
+    def _init_conf_matrix(self):
+        return {c: torch.zeros(self.num_classes, self.num_classes, dtype=torch.long) for c in range(self.num_folds)}
+    
+    """
+    Updates given fold's confusion matrix with given values. 
+    """
+    def update_conf_matrix(self, preds, targets, fold):
+        preds = torch.argmax(preds, 1)
+        for t, p in zip(targets.view(-1), preds.view(-1)):
+            self.conf_mat[fold][t.long(), p.long()] += 1
     
     """
     Create score dict to keep test scores of all folds.
@@ -234,19 +252,27 @@ X 1. Implement regression and classification scores in Pytorch.
 """
 
 if __name__ == '__main__':
-    num_classes = 12
-    num_samples = 2
-    metrics = Metrics(num_folds=3, device='cpu', pred_type='reg+class', num_classes=num_classes)
+    num_classes = 4
+    num_samples = 8
+    metrics = Metrics(num_folds=3, device='cpu', pred_type='reg+class', num_classes=num_classes, set_name='val')
     
-    """ Classification """
-    labels = torch.randint(0, num_classes, (num_samples,))
+    fold = 0
     preds = torch.rand(num_samples, num_classes)
-    metrics.eval_class_batch_metrics(preds=preds, targets=labels)
+    targets = torch.randint(num_classes, (num_samples,))
+    metrics.update_conf_matrix(preds=preds, targets=targets, fold=fold)
+    print('preds: {}\ntargets: {}\nfold: {}\n'.format(preds, targets, fold))
+    for k, v in metrics.conf_mat.items():
+        print('{}: \n {}'.format(k, v))
     
-    """ Regression """
-    # preds = torch.rand(num_samples)
-    # targets = torch.rand(num_samples)
-    # metrics.eval_reg_batch_metrics(preds=preds, targets=targets)
+    # """ Classification """
+    # labels = torch.randint(0, num_classes, (num_samples,))
+    # preds = torch.rand(num_samples, num_classes)
+    # metrics.eval_class_batch_metrics(preds=preds, targets=labels)
+    
+    # """ Regression """
+    # # preds = torch.rand(num_samples)
+    # # targets = torch.rand(num_samples)
+    # # metrics.eval_reg_batch_metrics(preds=preds, targets=targets)
     
     
 
