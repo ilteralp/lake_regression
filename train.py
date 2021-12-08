@@ -291,7 +291,8 @@ def _test(test_loader, model_name, metrics, args, fold, awl):
             test_scores = [{'kappa' : [], 'f1' : [], 'acc' : []}]
         
         _validate(model=test_model, val_loader=test_loader, metrics=metrics, args=args,
-                  val_loss=test_loss, val_scores=test_scores, epoch=0, awl=awl)
+                  val_loss=test_loss, val_scores=test_scores, epoch=0, awl=awl, fold=fold,
+                  update_conf_matrix=args['pred_type'] in ['reg+class', 'class'])
         
         """ Save result to file """
         msg = get_msg(test_loss, test_scores, e=0, dataset='test', args=args)
@@ -311,7 +312,7 @@ def _test(test_loader, model_name, metrics, args, fold, awl):
 Takes model and validation set. Calculates metrics on validation set. 
 Runs for each epoch. 
 """
-def _validate(model, val_loader, metrics, args, val_loss, val_scores, epoch, awl):
+def _validate(model, val_loader, metrics, args, val_loss, val_scores, epoch, awl, fold, update_conf_matrix=False):
     model.eval()
     
     with torch.no_grad():
@@ -321,11 +322,12 @@ def _validate(model, val_loader, metrics, args, val_loss, val_scores, epoch, awl
             
             """ Calculate losses and scores. """
             losses = calc_losses_scores(model=model, patches=v_patches, args=args, loss_arr=val_loss, score_arr=val_scores, 
-                                        e=epoch, target_regs=v_reg_vals, target_labels=v_date_types, metrics=metrics)
+                                        e=epoch, target_regs=v_reg_vals, target_labels=v_date_types, metrics=metrics,
+                                        fold=fold, update_conf_matrix=update_conf_matrix)
             
             """ Add losses to calculate final loss in case of multi-task and keep total loss. """
             loss = add_losses(args=args, losses=losses, unlabeled_loss=None, awl=awl)
-            val_loss[epoch]['total'].append(loss.item())      
+            val_loss[epoch]['total'].append(loss.item())
             
 """
 Updates scores. 
@@ -379,7 +381,7 @@ def add_losses(args, losses, unlabeled_loss, awl):
 """
 Calculates loss(es) depending on prediction type. Returns calculated losses. 
 """
-def calc_losses_scores(model, patches, args, loss_arr, score_arr, e, target_regs, metrics, target_labels=None):
+def calc_losses_scores(model, patches, args, loss_arr, score_arr, e, target_regs, metrics, fold, target_labels=None, update_conf_matrix=False):
     if args['pred_type'] == 'reg':
         if args['model'] in ['mdn', 'marumdn']:
             # patches = torch.log(patches)
@@ -412,6 +414,7 @@ def calc_losses_scores(model, patches, args, loss_arr, score_arr, e, target_regs
         class_loss = args['loss_fn_class'](input=class_preds, target=target_labels)
         loss_arr[e]['l_class_loss'].append(class_loss.item())                                       # No more 'l_class_loss', all samples are labeled for classification case. 
         add_scores(preds=class_preds, targets=target_labels, e=e, score_arr=score_arr, metrics=metrics)
+        metrics.update_conf_matrix(preds=class_preds, targets=target_labels, fold=fold)             # Update confusion matrix with each batch. 
         return class_loss, None
 
     elif args['pred_type'] == 'reg+class':
@@ -422,6 +425,7 @@ def calc_losses_scores(model, patches, args, loss_arr, score_arr, e, target_regs
         loss_arr[e]['l_class_loss'].append(class_loss.item())
         add_scores_reg_class(reg_preds=reg_preds, target_regs=target_regs, class_preds=class_preds, 
                              target_labels=target_labels, score_arr=score_arr, metrics=metrics, e=e)
+        metrics.update_conf_matrix(preds=class_preds, targets=target_labels, fold=fold)             # Update confusion matrix with each batch. 
         # return reg_loss + class_loss
         return reg_loss, class_loss
 
@@ -495,10 +499,10 @@ def create_optimizer_loss(model, args):
 Takes a set loader, validation or test, and saves the model with metrics from this set.
 """
 def evaluate_save_model(model, loader, args, set_loss, set_scores, model_dir_path, set_name, 
-                        metrics, e, awl, score_name, best_set_loss, best_set_score):
+                        metrics, e, awl, score_name, best_set_loss, best_set_score, fold):
     
     _validate(model=model, val_loader=loader, metrics=metrics, args=args,
-              val_loss=set_loss, val_scores=set_scores, epoch=e, awl=awl)
+              val_loss=set_loss, val_scores=set_scores, epoch=e, awl=awl, fold=fold)
     if np.mean(set_loss[e]['total']) < best_set_loss:
         best_set_loss = np.mean(set_loss[e]['total'])
         torch.save(model.state_dict(), 
@@ -553,7 +557,7 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, t
             
             """ Prediction on labeled data """
             losses = calc_losses_scores(model=model, patches=l_patches, args=args, loss_arr=tr_loss, score_arr=tr_scores, 
-                                        e=e, target_regs=l_reg_vals, target_labels=l_date_types, metrics=metrics)
+                                        e=e, target_regs=l_reg_vals, target_labels=l_date_types, metrics=metrics, fold=fold)
             # half_time = time.time()
             
             """ Unlabeled data """
@@ -605,9 +609,11 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, t
         if args['use_test_as_val']:
             # best_set_loss, best_set_score = evaluate_save_model(model, test_loader, args, set_loss, 
             #                                                     set_scores, model_dir_path, set_name, 
-            #                                                     metrics, e, awl, score_name, 
+            #                                                     metrics, e, awl, score_name, fold=fold,
             #                                                     best_set_loss, best_set_score)
-            _validate(model, test_loader, metrics, args, set_loss, set_scores, e, awl)
+            _validate(model=model, val_loader=test_loader, metrics=metrics, 
+                      args=args, val_loss=set_loss, val_scores=set_scores, 
+                      epoch=e, awl=awl, fold=fold)
             if np.mean(set_loss[e]['total']) < best_set_loss:
                 best_set_loss = np.mean(set_loss[e]['total'])
                 torch.save(model.state_dict(), osp.join(model_dir_path, 'best_test_loss.pth'))
@@ -623,9 +629,9 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, t
             if val_loader is not None:
                 # best_set_loss, best_set_score = evaluate_save_model(model, val_loader, args, set_loss, 
                 #                                                     set_scores, model_dir_path, set_name,  
-                #                                                     metrics, e, awl, score_name, 
+                #                                                     metrics, e, awl, score_name, fold=fold,
                 #                                                     best_set_loss, best_set_score)
-                # # _validate(model, val_loader, metrics, args, val_loss, val_scores, e, awl)
+                # # _validate(model, val_loader, metrics, args, val_loss, val_scores, e, awl, fold)
                 # # if np.mean(val_loss[e]['total']) < best_val_loss:
                 # #     best_val_loss = np.mean(val_loss[e]['total'])
                 # #     torch.save(model.state_dict(), osp.join(model_dir_path, 'best_val_loss.pth'))
@@ -633,7 +639,9 @@ def _train(model, train_loader, unlabeled_loader, args, metrics, fold, writer, t
                 # #     best_val_score = np.nanmean(val_scores[e][score_name])
                 # #     torch.save(model.state_dict(), osp.join(model_dir_path, 'best_val_score.pth'))
                 # # # print(get_msg(val_loss, val_scores, e, dataset='val', args=args))              # Print validation set loss & score for each **epoch**. 
-                _validate(model, val_loader, metrics, args, set_loss, set_scores, e, awl)
+                _validate(model=model, val_loader=val_loader, metrics=metrics, 
+                          args=args, val_loss=set_loss, val_scores=set_scores, 
+                          epoch=e, awl=awl, fold=fold)
                 if np.mean(set_loss[e]['total']) < best_set_loss:
                     best_set_loss = np.mean(set_loss[e]['total'])
                     torch.save(model.state_dict(), osp.join(model_dir_path, 'best_val_loss.pth'))
