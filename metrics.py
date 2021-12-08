@@ -73,7 +73,7 @@ class Metrics:
     Returns normalizes confusion matrix
     """
     def get_normed_conf_mat(self):
-        return {k: torch.nan_to_num(v / v.sum(1), nan=0.0, posinf=0.0, neginf=0.0).view(-1, 1).expand(v.shape) for k, v in self.conf_mat.items()}
+        return {k: torch.nan_to_num(v / v.sum(1).view(-1, 1).expand(v.shape), nan=0.0, posinf=0.0, neginf=0.0) for k, v in self.conf_mat.items()}
         # torch.nan_to_num(x, nan=0.0, posinf=0.0, neginf=0.0)
             
     """
