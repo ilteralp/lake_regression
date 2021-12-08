@@ -68,6 +68,13 @@ class Metrics:
                                   'best_{}_score.pth'.format(self.set_name): [], # Best validation score model
                                   'model_early_stopping.pth': []}                # Early stopping model               
         return scores
+    
+    """
+    Returns normalizes confusion matrix
+    """
+    def get_normed_conf_mat(self):
+        return {k: torch.nan_to_num(v / v.sum(1), nan=0.0, posinf=0.0, neginf=0.0).view(-1, 1).expand(v.shape) for k, v in self.conf_mat.items()}
+        # torch.nan_to_num(x, nan=0.0, posinf=0.0, neginf=0.0)
             
     """
     Adds one fold score to test scores. 
@@ -252,7 +259,7 @@ X 1. Implement regression and classification scores in Pytorch.
 """
 
 if __name__ == '__main__':
-    num_classes = 4
+    num_classes = 3
     num_samples = 8
     metrics = Metrics(num_folds=3, device='cpu', pred_type='reg+class', num_classes=num_classes, set_name='val')
     
@@ -262,6 +269,10 @@ if __name__ == '__main__':
     metrics.update_conf_matrix(preds=preds, targets=targets, fold=fold)
     print('preds: {}\ntargets: {}\nfold: {}\n'.format(preds, targets, fold))
     for k, v in metrics.conf_mat.items():
+        print('{}: \n {}'.format(k, v))
+    
+    print('Normed conf mat')
+    for k, v in metrics.get_normed_conf_mat().items():
         print('{}: \n {}'.format(k, v))
     
     # """ Classification """
