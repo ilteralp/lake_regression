@@ -8,10 +8,17 @@ Created on Thu Dec  9 16:52:04 2021
 import numpy as np
 from sklearn import datasets
 import matplotlib.pyplot as plt
+import torch
 
 num_values = 100
-y = np.arange(0, num_values)
-predicted = np.random.randint(0, num_values, num_values)
+# y = np.arange(0, num_values)
+# predicted = np.random.randint(0, num_values, num_values)
+# y = np.random.rand(num_values)
+# predicted = np.random.rand(num_values)
+
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+y = torch.rand(num_values, device=device)
+predicted = torch.rand(num_values, device=device)
 
 fig, ax = plt.subplots()
 ax.scatter(y, predicted)
