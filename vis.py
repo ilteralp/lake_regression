@@ -20,6 +20,10 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 y = torch.rand(num_values, device=device)
 predicted = torch.rand(num_values, device=device)
 
+if device.type == 'cuda':
+    y = y.cpu()
+    predicted = predicted.cpu()
+
 fig, ax = plt.subplots()
 ax.scatter(y, predicted)
 ax.plot([y.min(), y.max()], [y.min(), y.max()], 'k--', lw=4)
