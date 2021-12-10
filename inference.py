@@ -81,7 +81,7 @@ def inference(run_name, model_name, best_fold):
 
 if __name__ == "__main__":
     
-    SAMPLE_IDS_FROM_RUN_NAME = '2021_07_01__11_23_50'
+    SAMPLE_IDS_FROM_RUN_NAME = '2021_07_07__23_02_22'
     model_name = 'best_test_score.pth'
     best_fold = 8
     
