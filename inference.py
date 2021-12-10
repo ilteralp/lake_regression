@@ -48,9 +48,9 @@ def load_model(model_name, best_fold, args):
 Returns estimated and target values
 """
 def inference(run_name, best_run_name, model_name, best_fold):
-    all_preds, all_targets = torch.tensor([]), torch.tensor([])
     test_loader, args = get_test_loader_args(run_name, best_run_name, best_fold)
     model = load_model(model_name, best_fold, args)
+    all_preds, all_targets = torch.tensor([]).to(args['device']), torch.tensor([]).to(args['device'])
     
     model.eval()
     with torch.no_grad():
