@@ -16,8 +16,8 @@ from metrics import Metrics
 from models import DandadaDAN, EANet, EADAN, EAOriginal, MultiLayerPerceptron, WaterNet, EAOriginalDAN, MDN, MaruMDN
 from report import Report
 from losses import AutomaticWeightedLoss
-from baseline import load_data, load_fold_sample_ids_args
-from train import create_model
+from baseline import load_data, load_args
+from train import create_model, load_fold_sample_ids_args
 from vis import save_estimates_targets, plot_estimates_targets
 
 """
@@ -25,8 +25,8 @@ Returns test set loader for given fold. Beware that it has to be normalized
 with labeled train set values, so that's why load_data() is used here. 
 """
 def get_test_loader_args(run_name, best_run_name, best_fold):
-    fold_sample_ids, _ = load_fold_sample_ids_args(run_name=run_name)           # Sample ids come from this one.
-    _, args = load_fold_sample_ids_args(run_name=best_run_name)                 # args come from best run.
+    fold_sample_ids = load_fold_sample_ids_args(run_name=run_name)           # Sample ids come from this one.
+    args = load_args(run_name=best_run_name)                                 # args come from best run.
     _, test_loader = load_data(args=args, fold=best_fold, 
                                fold_sample_ids=fold_sample_ids, return_loaders=True)
     return test_loader, args

@@ -52,7 +52,20 @@ def load_fold_sample_ids_args(run_name):
     with open(args_path, 'rb') as f:                                            # Load args        
         args = eval(f.read())
     return fold_sample_ids, args
-        
+
+"""
+Loads only args because above functions causes trouble when run does not have 
+any samples saved. 
+"""
+def load_args(run_name):
+    run_path = osp.join(os.getcwd(), 'runs', run_name)
+    args_path = osp.join(run_path, 'args.txt')
+    if not osp.isfile(args_path):
+        raise Exception('Given path could not be found on {}.'.format(run_path))
+    with open(args_path, 'rb') as f:                                            # Load args        
+        args = eval(f.read())
+    return args
+    
 """
 Takes args and fold number. Loads and returns that fold's train and test samples
 in X, y format. 
