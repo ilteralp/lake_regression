@@ -57,7 +57,7 @@ def load_fold_sample_ids_args(run_name):
 Takes args and fold number. Loads and returns that fold's train and test samples
 in X, y format. 
 """
-def load_data(args, fold, fold_sample_ids):
+def load_data(args, fold, fold_sample_ids, return_loaders=False):
     # Create dataset
     dataset_dict = {'learning': 'labeled',
                     'date_type': args['date_type'],
@@ -98,6 +98,8 @@ def load_data(args, fold, fold_sample_ids):
     """ Load data with laoders """
     tr_loader = DataLoader(tr_set, **args['tr'])
     test_loader = DataLoader(test_set, **args['test'])
+    if return_loaders:                                                          # Need it for inference. 
+        return tr_loader, test_loader
     
     X_train, y_train, X_test, y_test = [], [], [], []
     for data in tr_loader:
