@@ -26,7 +26,8 @@ with labeled train set values, so that's why load_data() is used here.
 """
 def get_test_loader_args(run_name, best_fold):
     fold_sample_ids, args = load_fold_sample_ids_args(run_name=run_name)
-    _, test_loader = load_data(args=args, fold=best_fold, return_loaders=True)
+    _, test_loader = load_data(args=args, fold=best_fold, 
+                               fold_sample_ids=fold_sample_ids, return_loaders=True)
     return test_loader, args
 
 """
