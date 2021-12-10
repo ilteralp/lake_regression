@@ -89,7 +89,7 @@ if __name__ == "__main__":
     
     preds, targets = inference(run_name=SAMPLE_IDS_FROM_RUN_NAME, best_run_name=best_run_name,
                                model_name=model_name, best_fold=best_fold)
-    plot_estimates_targets(preds, targets)
+    plot_estimates_targets(preds, targets, SAMPLE_IDS_FROM_RUN_NAME, model_name, best_fold)
     save_estimates_targets(preds, targets, SAMPLE_IDS_FROM_RUN_NAME, model_name, best_fold)
 
 
