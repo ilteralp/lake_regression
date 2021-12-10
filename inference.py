@@ -49,7 +49,7 @@ Returns estimated and target values
 def inference(run_name, model_name, best_fold):
     all_preds, all_targets = torch.tensor([]), torch.tensor([])
     test_loader, args = get_test_loader_args(run_name, best_fold)
-    model = load_model(model_name, best_fold)
+    model = load_model(model_name, best_fold, args)
     
     model.eval()
     with torch.no_grad():
