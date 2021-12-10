@@ -24,8 +24,9 @@ from vis import save_estimates_targets, plot_estimates_targets
 Returns test set loader for given fold. Beware that it has to be normalized 
 with labeled train set values, so that's why load_data() is used here. 
 """
-def get_test_loader_args(run_name, best_fold):
-    fold_sample_ids, args = load_fold_sample_ids_args(run_name=run_name)
+def get_test_loader_args(run_name, best_run_name, best_fold):
+    fold_sample_ids, _ = load_fold_sample_ids_args(run_name=run_name)           # Sample ids come from this one.
+    _, args = load_fold_sample_ids_args(run_name=best_run_name)                 # args come from best run.
     _, test_loader = load_data(args=args, fold=best_fold, 
                                fold_sample_ids=fold_sample_ids, return_loaders=True)
     return test_loader, args
@@ -46,9 +47,9 @@ def load_model(model_name, best_fold, args):
 """
 Returns estimated and target values
 """
-def inference(run_name, model_name, best_fold):
+def inference(run_name, best_run_name, model_name, best_fold):
     all_preds, all_targets = torch.tensor([]), torch.tensor([])
-    test_loader, args = get_test_loader_args(run_name, best_fold)
+    test_loader, args = get_test_loader_args(run_name, best_run_name, best_fold)
     model = load_model(model_name, best_fold, args)
     
     model.eval()
@@ -81,11 +82,13 @@ def inference(run_name, model_name, best_fold):
 
 if __name__ == "__main__":
     
-    SAMPLE_IDS_FROM_RUN_NAME = '2021_07_07__23_02_22'
+    SAMPLE_IDS_FROM_RUN_NAME = '2021_07_01__11_23_50'
+    best_run_name = '2021_07_07__23_02_22'
     model_name = 'best_test_score.pth'
     best_fold = 8
     
-    preds, targets = inference(run_name=SAMPLE_IDS_FROM_RUN_NAME, model_name=model_name, best_fold=best_fold)
+    preds, targets = inference(run_name=SAMPLE_IDS_FROM_RUN_NAME, best_run_name=best_run_name,
+                               model_name=model_name, best_fold=best_fold)
     plot_estimates_targets(preds, targets)
     save_estimates_targets(preds, targets, SAMPLE_IDS_FROM_RUN_NAME, model_name, best_fold)
 
