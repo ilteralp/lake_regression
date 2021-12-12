@@ -13,13 +13,34 @@ import torch
 
 
 """
+Changes range from target's [min, max]  to [0., 100]
+"""
+def change_val(old_val, old_min, new_range, old_range, new_min):
+    return (((old_val - old_min) * new_range) / old_range) + new_min
+
+"""
+Changes ranges from current one to [0, 100] for *hopefully* better visualizations. 
+"""
+def change_range(preds, targets):
+    old_range = torch.max(targets) - torch.min(targets)
+    old_min = torch.min(targets)
+    old_range = torch.max(targets) - torch.min(targets)
+    new_range, new_min = 100., 0.
+    preds = preds.apply_(lambda x: (change_val(x, old_min, new_range, old_range, new_min)))
+    targets = targets.apply_(lambda x: (change_val(x, old_min, new_range, old_range, new_min)))
+    return preds, targets
+
+"""
 Takes preds and targets tensor and saves them into separate readable files. 
 """
-def save_estimates_targets(preds, targets, run_name, model_name, fold):
+def save_estimates_targets(preds, targets, run_name, model_name, fold, change_range):
     if preds.device.type == 'cuda':
         targets = targets.cpu()
         preds = preds.cpu()
-    
+        
+    if change_range:                                                            # Change range from around [-2, 2] to [0, 100]
+        preds, targets = change_range(preds, targets)
+        
     for t, n in zip([preds, targets], ['preds', 'targets']):
         path = osp.join(os.getcwd(), 'vis', 'run={}_model={}_fold={}_{}.txt'.format(run_name, model_name, fold, n))
         np.savetxt(path, t.numpy())
@@ -28,10 +49,13 @@ def save_estimates_targets(preds, targets, run_name, model_name, fold):
 Takes preds and targets tensor, plots them where targets form the baseline and
 saves the plot. 
 """
-def plot_estimates_targets(preds, targets, run_name, model_name, fold):
+def plot_estimates_targets(preds, targets, run_name, model_name, fold, change_range):
     if preds.device.type == 'cuda':
         targets = targets.cpu()
         preds = preds.cpu()
+        
+    if change_range:                                                            # Change range from around [-2, 2] to [0, 100]
+        preds, targets = change_range(preds, targets)
     
     fig, ax = plt.subplots()
     ax.scatter(targets, preds)
@@ -77,4 +101,16 @@ if __name__ == "__main__":
     PATH = osp.join(os.getcwd(), 'tmp.png')
     plt.savefig(PATH, format='png', dpi=300)
     plt.show()
+    
+    # # preds = torch.tensor([0., 0.1, 0.3, 1])
+    # # targets = torch.tensor([0., 0.1, 0.3, 1])
+    # preds = (torch.randn(1, 5) * 10).long()
+    # targets = (torch.randn(1, 5) * 10).long()
+    # print('preds: \n', preds)
+    # print('targets: \n', targets)
+    # preds, targets = change_range(preds, targets)
+    # print('after')
+    # print('preds: \n', preds)
+    # print('targets: \n', targets)
+    
 
