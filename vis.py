@@ -49,12 +49,12 @@ def save_estimates_targets(preds, targets, run_name, model_name, fold, change_ra
 Takes preds and targets tensor, plots them where targets form the baseline and
 saves the plot. 
 """
-def plot_estimates_targets(preds, targets, run_name, model_name, fold, change_range):
+def plot_estimates_targets(preds, targets, run_name, model_name, fold, change):
     if preds.device.type == 'cuda':
         targets = targets.cpu()
         preds = preds.cpu()
         
-    if change_range:                                                            # Change range from around [-2, 2] to [0, 100]
+    if change:                                                                  # Change range from around [-2, 2] to [0, 100]
         preds, targets = change_range(preds, targets)
     
     fig, ax = plt.subplots()
