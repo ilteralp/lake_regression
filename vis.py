@@ -63,8 +63,8 @@ def plot_estimates_targets(preds, targets, run_name, model_name, fold, change):
     ax.set_xlabel('Observed')
     ax.set_ylabel('Estimated')
     path = osp.join(os.getcwd(), 'vis', 'run={}_model={}_fold={}_R.png'.format(run_name, model_name, fold))
-    plt.show()
     plt.savefig(path, format='png', dpi=300)
+    plt.show()
 
     
 if __name__ == "__main__":
