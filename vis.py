@@ -33,12 +33,12 @@ def change_range(preds, targets):
 """
 Takes preds and targets tensor and saves them into separate readable files. 
 """
-def save_estimates_targets(preds, targets, run_name, model_name, fold, change_range):
+def save_estimates_targets(preds, targets, run_name, model_name, fold, change):
     if preds.device.type == 'cuda':
         targets = targets.cpu()
         preds = preds.cpu()
         
-    if change_range:                                                            # Change range from around [-2, 2] to [0, 100]
+    if change:                                                                  # Change range from around [-2, 2] to [0, 100]
         preds, targets = change_range(preds, targets)
         
     for t, n in zip([preds, targets], ['preds', 'targets']):
