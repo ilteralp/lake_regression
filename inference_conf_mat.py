@@ -15,7 +15,6 @@ from datasets import Lake2dFoldDataset
 from metrics import Metrics
 from models import DandadaDAN, EANet, EADAN, EAOriginal, MultiLayerPerceptron, WaterNet, EAOriginalDAN, MDN, MaruMDN
 from losses import AutomaticWeightedLoss
-from baseline import load_data, load_args
 from train import _test, create_model
 from inference import load_model, get_test_loader_args
 
@@ -24,9 +23,9 @@ from inference import load_model, get_test_loader_args
 Generates confusion matrix for given fold. 
 """
 def generate_conf_mat(run_name, best_run_name, model_name, best_fold):
-    test_loader, args = get_test_loader_args(run_name, best_run_name, best_fold)
-    # model = load_model(model_name, best_fold, args)
-    model = create_model(args)                                                  # Testing with untrained model. 
+    test_loader, args = get_test_loader_args(run_name, best_run_name, best_fold, unlabeled=True) # Load unlabeled samples, because conf.mat is filled with 1's with labeled one. 
+    model = load_model(model_name, best_fold, args)
+    # model = create_model(args)                                                  # Testing with untrained model. 
     metrics = Metrics(num_folds=args['num_folds'], device=args['device'].type, 
                       pred_type=args['pred_type'], num_classes=args['num_classes'],
                       set_name='test')
@@ -51,8 +50,8 @@ def generate_conf_mat(run_name, best_run_name, model_name, best_fold):
                 
             metrics.update_conf_matrix(preds=class_preds, targets=date_types, fold=best_fold) # Update confusion matrix
            
-    print('conf mat')
-    print(metrics.conf_mat[best_fold])
+    # print('conf mat')
+    # print(metrics.conf_mat[best_fold])
     print('Normed conf mat')
     print(metrics.get_normed_conf_mat()[best_fold])
 
