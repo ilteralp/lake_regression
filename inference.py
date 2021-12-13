@@ -21,6 +21,11 @@ from train import create_model, load_fold_sample_ids_args
 from vis import save_estimates_targets, plot_estimates_targets
 
 """
+Creates plot to show that the relationship between observed and estimated value
+is linear. 
+"""
+
+"""
 Returns test set loader for given fold. Beware that it has to be normalized 
 with labeled train set values, so that's why load_data() is used here. 
 """
@@ -40,7 +45,7 @@ def load_model(model_name, best_fold, args):
     model_path = osp.join(model_dir_path, model_name)
     if osp.isfile(model_path):
         test_model.load_state_dict(torch.load(model_path))
-        return test_model
+        return test_model.to(args['device']) 
     else:
         raise Exception('model: {} for fold#{} does not exist.'.format(model_name, best_fold))
     
