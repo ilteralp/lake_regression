@@ -60,6 +60,9 @@ def generate_feature_maps(model_name, best_fold, test_sample, args):
     _ = model(test_sample.unsqueeze(0))                                          # Feed model one test sample to see its activations.
     activation['reg_tanh'] = activation['reg_tanh'].view(16, -1)                 # Change view, otherwise they (128, 1) which is hard to comprehend visually.
     activation['class_tanh'] = activation['class_tanh'].view(16, -1)
+    if activation['reg_tanh'].device.type != 'cpu':
+        activation['reg_tanh'] = activation['reg_tanh'].cpu()
+        activation['class_tanh'] = activation['class_tanh'].cpu()    
     return activation
     
 def plot(activation, img_id, run_name, model_name, fold):
