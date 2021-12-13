@@ -62,6 +62,9 @@ def generate_conf_mat(run_name, best_run_name, model_name, best_fold):
                 _, class_preds = model(patches)
                 
             metrics.update_conf_matrix(preds=class_preds, targets=date_types, fold=best_fold) # Update confusion matrix
+            
+            if batch_id % 10 == 0:
+                print('{} of {}'.format(batch_id, len(test_loader)))
            
     # print('conf mat')
     # print(metrics.conf_mat[best_fold])
