@@ -20,13 +20,13 @@ from inference import load_model, get_test_loader_args
 """
 Returns a sample from test set and its name. 
 """
-def get_test_sample(run_name, best_run_name, best_fold):
+def get_test_sample_args(run_name, best_run_name, best_fold):
     test_loader, args = get_test_loader_args(run_name, best_run_name, best_fold)
     test_iter = iter(test_loader)
     data = next(test_iter)
     patches, reg_vals, date_types, (img_ids, pxs, pys) = data
     print('patches[0].shape: {}'.format(patches[0].shape))
-    return patches[0]
+    return {'patch': patches[0], 'reg_val': reg_vals[0], 'img_id': img_ids[0]}, args
 
 """
 Returns min/max of given feature maps. Will be used for visualization
@@ -49,20 +49,19 @@ def get_activation(activation, name, task_name):
 """
 Generates features maps of each task and saves them in dict. 
 """
-def generate_feature_maps(model_name, best_fold, args):
+def generate_feature_maps(model_name, best_fold, test_sample, args):
     model = load_model(model_name, best_fold, args)
-    test_sample = get_test_sample()
     
     activation = {}
     model.regressor[0][2].register_forward_hook(get_activation(activation=activation, name='tanh', task_name='reg'))
     model.classifier[0][2].register_forward_hook(get_activation(activation=activation, name='tanh', task_name='class'))
     
-    _ = model(test_sample)                                                      # Feed model one test sample to see its activations.
+    _ = model(test_sample)                                                       # Feed model one test sample to see its activations.
     activation['reg_tanh'] = activation['reg_tanh'].view(16, -1)                 # Change view, otherwise they (128, 1) which is hard to comprehend visually.
     activation['class_tanh'] = activation['class_tanh'].view(16, -1)
     return activation
     
-def plot(activation):
+def plot(activation, img_id, run_name, model_name, fold):
     vmin, vmax = get_min_max(activation)
     params = {'vmin': vmin, 'vmax': vmax, 'aspect': 'equal', 'cmap': 'RdYlGn'}
     fig, axn = plt.subplots(nrows=2, ncols=1, sharey=True)
@@ -90,7 +89,16 @@ def plot(activation):
     # cbar_ax = fig.add_axes([0.88, 0.15, 0.04, 0.7])
     # cbar_ax.tick_params(size=0)
     # fig.colorbar(im2, cax=cbar_ax)
-    plt.savefig(osp.join(os.getcwd(), 'vis', 'fc_feature_map.png'), format='png', dpi=300, bbox_inches='tight')
+    plt.savefig(osp.join(os.getcwd(), 'vis', 'fc_feature_map_run={}_model={}_fold={}_.png'.format(run_name, model_name, fold)), 
+                format='png', dpi=300, bbox_inches='tight')
+    
+"""
+Visualizes feature maps of first FC layers for given model. 
+"""
+def visualize_feature_maps(run_name, model_name, best_run_name, best_fold):
+    (test_sample, args) = get_test_sample_args(run_name, best_run_name, best_fold)
+    activation = generate_feature_maps(model_name, best_fold, test_sample['patch'], args)
+    plot(activation, test_sample['img_id'], best_run_name, model_name, best_fold)
 
     
 # # plot_params = {'xticklabels': False, 'yticklabels': False}
@@ -106,6 +114,7 @@ if __name__ == "__main__":
     best_run_name = '2021_07_07__23_02_22'
     model_name = 'best_test_score.pth'
     best_fold = 8
+    
     
 
     # patch_size, num_classes, split_layer, num_samples = 3, 12, 4, 1
@@ -127,5 +136,5 @@ if __name__ == "__main__":
     # activation['reg_tanh'] = activation['reg_tanh'].view(8, -1)
     # activation['class_tanh'] = activation['class_tanh'].view(8, -1)
 
-    # plot(activation)
-    sample = get_test_sample(SAMPLE_IDS_FROM_RUN_NAME, best_run_name, best_fold)
+    ## plot(activation)
+    ## sample = get_test_sample(SAMPLE_IDS_FROM_RUN_NAME, best_run_name, best_fold)
