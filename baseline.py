@@ -103,7 +103,7 @@ def load_data(args, fold, fold_sample_ids, return_loaders=False, unlabeled=False
                 d.set_patch_mean_std(means=patches_mean, stds=patches_std)
                 
     """ Normalize regression values """
-    if args['reg_norm']:
+    if args['reg_norm'] and not unlabeled:
         reg_min, reg_max = load_reg_min_max(DataLoader(tr_set, **args['tr']))
         if args['fold_setup'] == 'random':
             reg_min, reg_max = get_reg_min_max(dataset.reg_vals[tr_ids])
