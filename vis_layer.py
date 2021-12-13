@@ -68,7 +68,7 @@ def generate_feature_maps(model_name, best_fold, test_sample, args):
 def plot(activation, img_id, run_name, model_name, fold):
     vmin, vmax = get_min_max(activation)
     params = {'vmin': vmin, 'vmax': vmax, 'aspect': 'equal', 'cmap': 'RdYlGn'}
-    fig, axn = plt.subplots(nrows=2, ncols=1, sharey=True)
+    fig, axn = plt.subplots(nrows=1, ncols=2, sharey=True)
     for ax, name in zip(axn.flat, ['reg_tanh', 'class_tanh']):
         # im = ax.imshow(np.random.random((10,10)), vmin=0, vmax=1)
         im = ax.imshow(activation[name], **params)
@@ -93,7 +93,7 @@ def plot(activation, img_id, run_name, model_name, fold):
     # cbar_ax = fig.add_axes([0.88, 0.15, 0.04, 0.7])
     # cbar_ax.tick_params(size=0)
     # fig.colorbar(im2, cax=cbar_ax)
-    plt.savefig(osp.join(os.getcwd(), 'vis', 'fc_feature_map_run={}_model={}_fold={}_.png'.format(run_name, model_name, fold)), 
+    plt.savefig(osp.join(os.getcwd(), 'vis', 'fc_feature_map_run={}_model={}_fold={}_img={}.png'.format(run_name, model_name, fold, img_id)), 
                 format='png', dpi=300, bbox_inches='tight')
     
 """
