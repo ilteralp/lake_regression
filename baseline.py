@@ -17,6 +17,7 @@ from datasets import Lake2dDataset, Lake2dFoldDataset
 from torch.utils.data import Subset, DataLoader
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 from sklearn.svm import LinearSVR
+import constants as C
 from train import calc_mean_std, load_reg_min_max, get_reg_min_max
 
 def basic_svr():
@@ -70,12 +71,15 @@ def load_args(run_name):
 Takes args and fold number. Loads and returns that fold's train and test samples
 in X, y format. 
 """
-def load_data(args, fold, fold_sample_ids, return_loaders=False):
+def load_data(args, fold, fold_sample_ids, return_loaders=False, unlabeled=False):
     # Create dataset
-    dataset_dict = {'learning': 'labeled',
+    dataset_dict = {'learning': 'labeled' if not unlabeled else 'unlabeled',
                     'date_type': args['date_type'],
                     'patch_size': args['patch_size'],
                     'reshape_to_mosaic': False }
+
+    if unlabeled:
+        args['test']['batch_size'] = C.UNLABELED_BATCH_SIZE                     # Increase batch size, o.w it would take too long...
 
     tr_ids = fold_sample_ids['tr_ids'][fold]
     test_ids = fold_sample_ids['test_ids'][fold]
