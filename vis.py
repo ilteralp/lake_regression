@@ -62,10 +62,10 @@ def plot_estimates_targets(preds, targets, run_name, model_name, fold, change):
     ax.plot([targets.min(), targets.max()], [targets.min(), targets.max()], 'k--', lw=4)
     ax.set_xlabel('Observed')
     ax.set_ylabel('Estimated')
-    path = osp.join(os.getcwd(), 'vis', 'run={}_model={}_fold={}_R2.png'.format(run_name, model_name, fold))
-    plt.savefig(path)
+    path = osp.join(os.getcwd(), 'vis', 'run={}_model={}_fold={}_R.png'.format(run_name, model_name, fold))
     plt.show()
-    
+    plt.savefig(path, format='png', dpi=300)
+
     
 if __name__ == "__main__":
     num_values = 100
