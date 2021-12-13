@@ -11,16 +11,22 @@ from os import path as osp
 import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
+import itertools
 from models import EAOriginalDAN
 import matplotlib.pyplot as plt
-from inference import load_model
+from inference import load_model, get_test_loader_args
 
 
 """
 Returns a sample from test set and its name. 
 """
-def get_test_sample():
-    pass
+def get_test_sample(run_name, best_run_name, best_fold):
+    test_loader, args = get_test_loader_args(run_name, best_run_name, best_fold)
+    test_iter = iter(test_loader)
+    data = next(test_iter)
+    patches, reg_vals, date_types, (img_ids, pxs, pys) = data
+    print('patches[0].shape: {}'.format(patches[0].shape))
+    return patches[0]
 
 """
 Returns min/max of given feature maps. Will be used for visualization
@@ -39,15 +45,6 @@ def get_activation(activation, name, task_name):
     def hook(model, input, output):
         activation[task_name + '_' + name] = output.detach()
     return hook
-
-
-# """
-# Visualizes outputs of FC layers of each each task. 
-# """
-# def visualize_feature_maps(activation):
-#     vmin, vmax = get_min_max(activation)
-    
-    
 
 """
 Generates features maps of each task and saves them in dict. 
@@ -105,29 +102,30 @@ def plot(activation):
 
 if __name__ == "__main__":
     
-    # SAMPLE_IDS_FROM_RUN_NAME = '2021_07_01__11_23_50'
-    # best_run_name = '2021_07_07__23_02_22'
-    # model_name = 'best_test_score.pth'
-    # best_fold = 8
+    SAMPLE_IDS_FROM_RUN_NAME = '2021_07_01__11_23_50'
+    best_run_name = '2021_07_07__23_02_22'
+    model_name = 'best_test_score.pth'
+    best_fold = 8
     
 
-    patch_size, num_classes, split_layer, num_samples = 3, 12, 4, 1
-    in_channels = 12
-    use_atrous_conv, reshape_to_mosaic = False, False
+    # patch_size, num_classes, split_layer, num_samples = 3, 12, 4, 1
+    # in_channels = 12
+    # use_atrous_conv, reshape_to_mosaic = False, False
     
-    model = EAOriginalDAN(in_channels=in_channels, patch_size=patch_size, 
-                          split_layer=split_layer, num_classes=num_classes,
-                          use_atrous_conv=use_atrous_conv,
-                          reshape_to_mosaic=reshape_to_mosaic)
+    # model = EAOriginalDAN(in_channels=in_channels, patch_size=patch_size, 
+    #                       split_layer=split_layer, num_classes=num_classes,
+    #                       use_atrous_conv=use_atrous_conv,
+    #                       reshape_to_mosaic=reshape_to_mosaic)
     
-    activation = {}
-    model.regressor[0][2].register_forward_hook(get_activation(activation=activation, name='tanh', task_name='reg'))
-    model.classifier[0][2].register_forward_hook(get_activation(activation=activation, name='tanh', task_name='class'))
+    # activation = {}
+    # model.regressor[0][2].register_forward_hook(get_activation(activation=activation, name='tanh', task_name='reg'))
+    # model.classifier[0][2].register_forward_hook(get_activation(activation=activation, name='tanh', task_name='class'))
     
-    inp = torch.randn(num_samples, in_channels, patch_size, patch_size)
-    outp = model(inp)
+    # inp = torch.randn(num_samples, in_channels, patch_size, patch_size)
+    # outp = model(inp)
     
-    activation['reg_tanh'] = activation['reg_tanh'].view(8, -1)
-    activation['class_tanh'] = activation['class_tanh'].view(8, -1)
+    # activation['reg_tanh'] = activation['reg_tanh'].view(8, -1)
+    # activation['class_tanh'] = activation['class_tanh'].view(8, -1)
 
-    plot(activation)
+    # plot(activation)
+    sample = get_test_sample(SAMPLE_IDS_FROM_RUN_NAME, best_run_name, best_fold)
