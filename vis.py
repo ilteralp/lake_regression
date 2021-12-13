@@ -58,7 +58,7 @@ def plot_estimates_targets(preds, targets, run_name, model_name, fold, change):
         preds, targets = change_range(preds, targets)
     
     fig, ax = plt.subplots()
-    ax.scatter(targets, preds, color='pink')
+    ax.scatter(targets, preds, color='magenta')
     ax.plot([targets.min(), targets.max()], [targets.min(), targets.max()], 'k--', lw=4)
     ax.set_xlabel('Observed')
     ax.set_ylabel('Estimated')
