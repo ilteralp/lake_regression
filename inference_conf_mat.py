@@ -25,7 +25,6 @@ Generates confusion matrix for given fold.
 """
 def generate_conf_mat(run_name, best_run_name, model_name, best_fold):
     test_loader, args = get_test_loader_args(run_name, best_run_name, best_fold)
-    test_loader = test_loader.to(args['device'])
     model = load_model(model_name, best_fold, args)
     metrics = Metrics(num_folds=args['num_folds'], device=args['device'].type, 
                       pred_type=args['pred_type'], num_classes=args['num_classes'],
