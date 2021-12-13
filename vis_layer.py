@@ -115,7 +115,8 @@ if __name__ == "__main__":
     model_name = 'best_test_score.pth'
     best_fold = 8
     
-    
+    visualize_feature_maps(run_name=SAMPLE_IDS_FROM_RUN_NAME, model_name=model_name, 
+                           best_run_name=best_run_name, best_fold=best_fold)
 
     # patch_size, num_classes, split_layer, num_samples = 3, 12, 4, 1
     # in_channels = 12
