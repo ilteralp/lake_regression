@@ -26,7 +26,8 @@ def get_test_sample_args(run_name, best_run_name, best_fold):
     data = next(test_iter)
     patches, reg_vals, date_types, (img_ids, pxs, pys) = data
     print('patches[0].shape: {}'.format(patches[0].shape))
-    return {'patch': patches[0], 'reg_val': reg_vals[0], 'img_id': img_ids[0]}, args
+    patch = patches[0].to(args['device'])
+    return {'patch': patch, 'reg_val': reg_vals[0], 'img_id': img_ids[0]}, args
 
 """
 Returns min/max of given feature maps. Will be used for visualization
