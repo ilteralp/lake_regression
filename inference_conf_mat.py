@@ -56,9 +56,10 @@ def generate_conf_mat(run_name, best_run_name, model_name, best_fold):
     print(metrics.get_normed_conf_mat()[best_fold])
 
 if __name__ == "__main__":
-    # SAMPLE_IDS_FROM_RUN_NAME = '2021_07_01__11_23_50'                           # best MTL model (2.3M unlabeled samples)
-    SAMPLE_IDS_FROM_RUN_NAME = '2021_07_04__20_02_39'                                                      # MTL model with 28K unlabeled samples
-    best_run_name = '2021_07_07__23_02_22'
+    SAMPLE_IDS_FROM_RUN_NAME = '2021_07_01__11_23_50'
+    # best_run_name = '2021_07_07__23_02_22'                                      # best MTL model (2.3M unlabeled samples)
+    best_run_name = '2021_07_04__20_02_39'                                        # MTL model with 28K unlabeled samples
+
     model_name = 'best_test_score.pth'
     best_fold = 8
     
