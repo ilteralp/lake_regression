@@ -16,6 +16,9 @@ from models import EAOriginalDAN
 import matplotlib.pyplot as plt
 from inference import load_model, get_test_loader_args
 
+"""
+Visualizes activation of FC layers for each task. 
+"""
 
 """
 Returns a sample from test set and its name. 
