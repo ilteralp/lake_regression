@@ -56,7 +56,7 @@ def generate_feature_maps(model_name, best_fold, test_sample, args):
     model.regressor[0][2].register_forward_hook(get_activation(activation=activation, name='tanh', task_name='reg'))
     model.classifier[0][2].register_forward_hook(get_activation(activation=activation, name='tanh', task_name='class'))
     
-    _ = model(test_sample)                                                       # Feed model one test sample to see its activations.
+    _ = model(test_sample.unsqueeze(0))                                          # Feed model one test sample to see its activations.
     activation['reg_tanh'] = activation['reg_tanh'].view(16, -1)                 # Change view, otherwise they (128, 1) which is hard to comprehend visually.
     activation['class_tanh'] = activation['class_tanh'].view(16, -1)
     return activation
