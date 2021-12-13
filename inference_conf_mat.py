@@ -49,10 +49,13 @@ def generate_conf_mat(run_name, best_run_name, model_name, best_fold):
                 _, class_preds = model(patches)
                 
             metrics.update_conf_matrix(preds=class_preds, targets=date_types, fold=best_fold) # Update confusion matrix
-            
+           
+    print('conf mat')
+    print(metrics.conf_mat[best_fold])
     print('Normed conf mat')
-    for k, v in metrics.get_normed_conf_mat().items():
-        print('{}: \n {}'.format(k, v))                            
+    # for k, v in metrics.get_normed_conf_mat().items():
+    #     print('{}: \n {}'.format(k, v))      
+    print(metrics.get_normed_conf_mat()[best_fold])
 
 if __name__ == "__main__":
     SAMPLE_IDS_FROM_RUN_NAME = '2021_07_01__11_23_50'
