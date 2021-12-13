@@ -29,11 +29,12 @@ is linear.
 Returns test set loader for given fold. Beware that it has to be normalized 
 with labeled train set values, so that's why load_data() is used here. 
 """
-def get_test_loader_args(run_name, best_run_name, best_fold):
+def get_test_loader_args(run_name, best_run_name, best_fold, unlabeled=False):
     fold_sample_ids = load_fold_sample_ids_args(run_name=run_name)           # Sample ids come from this one.
     args = load_args(run_name=best_run_name)                                 # args come from best run.
     _, test_loader = load_data(args=args, fold=best_fold, 
-                               fold_sample_ids=fold_sample_ids, return_loaders=True)
+                               fold_sample_ids=fold_sample_ids, 
+                               return_loaders=True, unlabeled=unlabeled)
     return test_loader, args
 
 """
