@@ -90,6 +90,7 @@ def plot(activation, img_id, run_name, model_name, fold):
     # fig.colorbar(im, cax=cbar_ax)
     cbar = fig.colorbar(im, ax=axn.ravel().tolist())
     cbar.set_ticks([])
+    cbar.ax.set_ylabel('Activation response', rotation=270)
     
     
     # fig.subplots_adjust(right=0.98)
